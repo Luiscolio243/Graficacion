@@ -1,50 +1,16 @@
 export default function Login() {
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#f3f4f6",
-        padding: "16px",
-        fontFamily:
-          "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "380px",
-          backgroundColor: "#ffffff",
-          borderRadius: "12px",
-          padding: "24px 20px",
-          boxShadow: "0 10px 25px rgba(15, 23, 42, 0.12)",
-          border: "1px solid #e5e7eb",
-        }}
-      >
-        <h1
-          style={{
-            fontSize: "22px",
-            fontWeight: 700,
-            marginBottom: "4px",
-            color: "#111827",
-            textAlign: "center",
-          }}
-        >
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+      <div className="w-full max-w-sm bg-white border border-gray-200 rounded-xl shadow-lg p-6">
+        <h1 className="text-xl font-bold text-gray-900 text-center mb-1">
           Iniciar sesión
         </h1>
-        <form>
-          <div style={{ marginBottom: "14px" }}>
+
+        <form className="mt-4 space-y-4">
+          <div>
             <label
               htmlFor="email"
-              style={{
-                display: "block",
-                fontSize: "13px",
-                fontWeight: 500,
-                color: "#4b5563",
-                marginBottom: "4px",
-              }}
+              className="block text-sm font-medium text-gray-700 mb-1"
             >
               Correo
             </label>
@@ -52,27 +18,14 @@ export default function Login() {
               id="email"
               type="email"
               placeholder="nombre@correo.com"
-              style={{
-                width: "100%",
-                padding: "8px 10px",
-                fontSize: "14px",
-                borderRadius: "8px",
-                border: "1px solid #d1d5db",
-                outline: "none",
-              }}
+              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
-          <div style={{ marginBottom: "18px" }}>
+          <div>
             <label
               htmlFor="password"
-              style={{
-                display: "block",
-                fontSize: "13px",
-                fontWeight: 500,
-                color: "#4b5563",
-                marginBottom: "4px",
-              }}
+              className="block text-sm font-medium text-gray-700 mb-1"
             >
               Contraseña
             </label>
@@ -80,55 +33,23 @@ export default function Login() {
               id="password"
               type="password"
               placeholder="Ingresa tu contraseña"
-              style={{
-                width: "100%",
-                padding: "8px 10px",
-                fontSize: "14px",
-                borderRadius: "8px",
-                border: "1px solid #d1d5db",
-                outline: "none",
-              }}
+              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
           <button
             type="submit"
-            style={{
-              width: "100%",
-              padding: "9px 10px",
-              borderRadius: "8px",
-              border: "none",
-              backgroundColor: "#2563eb",
-              color: "#ffffff",
-              fontSize: "14px",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
+            className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2.5 transition-colors"
           >
             Entrar
           </button>
         </form>
 
-        <div
-          style={{
-            marginTop: "14px",
-            fontSize: "13px",
-            color: "#6b7280",
-            textAlign: "center",
-          }}
-        >
+        <div className="mt-3 text-center text-sm text-gray-500">
           ¿No tienes cuenta?{" "}
           <button
             type="button"
-            style={{
-              background: "none",
-              border: "none",
-              padding: 0,
-              margin: 0,
-              color: "#2563eb",
-              fontWeight: 500,
-              cursor: "pointer",
-            }}
+            className="text-blue-600 hover:underline font-medium"
           >
             Crear usuario
           </button>
