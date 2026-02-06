@@ -4,10 +4,36 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
   
-    console.log("Login attempt:", { email, password });
+    //console.log("Login attempt:", { email, password });
+
+    try {
+    const response = await fetch("http://127.0.0.1:8000/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: email,
+        password: password,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || "Error en login");
+    }
+
+    const data = await response.json();
+    console.log("✅ Login exitoso:", data);
+
+  } catch (error) {
+    console.error("Error el login", error.message);
+  }
+
+
   };
 
   return (
