@@ -1,6 +1,7 @@
 // Vista donde se ven los proyectos que tiene el usuario
 
 import TarjetaProyecto from "../components/TarjetaProyecto";
+import { useNavigate } from "react-router-dom";
 
 // Datos por mientras se hace el back
 const proyectosPrueba = [
@@ -25,6 +26,8 @@ const proyectosPrueba = [
 
 
 export default function Proyectos() {
+  const navigate = useNavigate();
+
   return (
     <div className="space-y-8">
 
@@ -40,8 +43,10 @@ export default function Proyectos() {
         </div>
 
         {/* Boton para crear proyecto */}
-        <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
-          + Nuevo Proyecto
+        <button 
+            onClick={() => navigate("/app/proyectos/nuevo")}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                + Nuevo Proyecto
         </button>
       </div>
 

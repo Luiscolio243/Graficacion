@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from "react-router-dom"
 import Login from "../auth/pages/Login"
 import Proyectos from "../proyectos/pages/Proyectos";
 import Layout from "./layout";
+import NuevoProyecto from "../proyectos/pages/NuevoProyecto";
 
 export const router = createBrowserRouter([
     {
@@ -22,7 +23,11 @@ export const router = createBrowserRouter([
             {
                 //Modulo de proyectos
                 path: "proyectos",
-                element: <Proyectos />
+                element: <Proyectos />,
+            },
+            {
+                path: "proyectos/nuevo",
+                element: <NuevoProyecto />,
             }
         ]
     }
