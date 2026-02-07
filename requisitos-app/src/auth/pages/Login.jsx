@@ -10,7 +10,7 @@ export default function Login() {
     //console.log("Login attempt:", { email, password });
 
     try {
-    const response = await fetch("http://127.0.0.1:8000/login", {
+    const response = await fetch("http://127.0.0.1:5000/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -27,7 +27,7 @@ export default function Login() {
     }
 
     const data = await response.json();
-    console.log("✅ Login exitoso:", data);
+    console.log(" Login exitoso:", data);
 
   } catch (error) {
     console.error("Error el login", error.message);
