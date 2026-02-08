@@ -4,6 +4,8 @@ import Proyectos from "../proyectos/pages/Proyectos";
 import Layout from "./layout";
 import NuevoProyecto from "../proyectos/pages/NuevoProyecto";
 import ProyectoDashboard from "../proyectos/pages/ProyectoDashboard"
+import Stakeholders from "../stakeholders/pages/Stakeholders";
+import TI from "../ti/pages/ti";
 
 export const router = createBrowserRouter([
     {
@@ -32,8 +34,19 @@ export const router = createBrowserRouter([
                 element: <NuevoProyecto />,
             },
             {
+                //Dashboard de cada proyecto
                 path: "proyectos/:id",
                 element: <ProyectoDashboard />
+            },
+            {
+                //Stakeholders de cada proyecto
+                path: "proyectos/:id/stakeholders",
+                element: <Stakeholders />
+            },
+            {
+                //TI de cada proyecto
+                path: "proyectos/:id/TI",
+                element: <TI />
             }
         ]
     }
