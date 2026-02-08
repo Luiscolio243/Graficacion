@@ -3,6 +3,7 @@
 export default function TarjetaProyecto({ proyecto }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition">
+    onClick={() => Navigate(`/app/proyectos/${proyecto.id}`)}
       
       {/* Nombre y estado del proyecto */}
       <div className="flex justify-between items-start mb-3">

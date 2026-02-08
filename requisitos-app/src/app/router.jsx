@@ -3,6 +3,7 @@ import Login from "../auth/pages/Login"
 import Proyectos from "../proyectos/pages/Proyectos";
 import Layout from "./layout";
 import NuevoProyecto from "../proyectos/pages/NuevoProyecto";
+import ProyectoDashboard from "../proyectos/pages/ProyectoDashboard"
 
 export const router = createBrowserRouter([
     {
@@ -26,8 +27,13 @@ export const router = createBrowserRouter([
                 element: <Proyectos />,
             },
             {
+                //Pantalla para crear un proyecto
                 path: "proyectos/nuevo",
                 element: <NuevoProyecto />,
+            },
+            {
+                path: "proyectos/:id",
+                element: <ProyectoDashboard />
             }
         ]
     }
