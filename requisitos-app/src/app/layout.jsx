@@ -1,9 +1,16 @@
 // Layout de la app, aqui es donde va el contenido de los proyectos 
 
 import Sidebar from "../component/Sidebar";
-import { Outlet } from "react-router-dom";
+import { Outlet, Navigate } from "react-router-dom";
 
 export default function Layout({ children }) {
+
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar fijo */}

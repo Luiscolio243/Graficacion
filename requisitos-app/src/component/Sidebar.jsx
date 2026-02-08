@@ -2,7 +2,27 @@
 // Sidebar que esta a la izquierda
 // Por mientras solo puse el modulo de proyectos, despues se sabra si haremos mas modulos (yo creo que si)
 
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 export default function Sidebar() {
+
+  const navigate = useNavigate();
+
+  const [user] = useState(() => {
+  const storedUser = localStorage.getItem("user");
+  return storedUser ? JSON.parse(storedUser) : null;
+});
+
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
+    navigate("/login");
+  };
+
+
   return (
     <aside className="w-64 bg-white border-r min-h-screen px-5 py-6 flex flex-col">
       
@@ -41,8 +61,15 @@ export default function Sidebar() {
       {/* Usuario */}
       <div className="pt-4 border-t">
         <p className="text-sm font-medium text-gray-800">
-          Paulina Chavira
+          {user ? `${user.nombre} ${user.apellido}` : "Usuario"}
         </p>
+
+        <button
+        onClick={handleLogout}
+        className="mt-2 text-xs text-red-500 hover:underline"
+        >
+        Cerrar sesión
+        </button>
       </div>
 
     </aside>
