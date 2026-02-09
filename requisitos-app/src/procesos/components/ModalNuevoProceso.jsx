@@ -4,6 +4,7 @@ import { useState } from "react";
 
 export default function ModalNuevoProceso({ onClose, onGuardar, listaTI = [] }) {
 
+  //alamcena los campos del formulario
   const [proceso, setProceso] = useState({
     nombre: "",
     descripcion: "",
@@ -11,10 +12,11 @@ export default function ModalNuevoProceso({ onClose, onGuardar, listaTI = [] }) 
     responsableId: "",
   });
 
+  //cambios de cualquier input del formularios
   const handleChange = (e) => {
     setProceso({
-      ...proceso,
-      [e.target.name]: e.target.value,
+      ...proceso, //se mantiene el estado anterior
+      [e.target.name]: e.target.value, // se actualiza el estado que e corresponde
     });
   };
 

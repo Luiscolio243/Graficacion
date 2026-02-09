@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 export default function ModalNuevoStakeholder({ onClose, onGuardar }) {
+  //aqui se alamcenan todos lo campos que hay en el formulario de los stakeholders
   const [form, setForm] = useState({
     nombre: "",
     apellidos: "",
@@ -21,17 +22,19 @@ export default function ModalNuevoStakeholder({ onClose, onGuardar }) {
     "Analista",
   ]);
 
+  //cambios de cualquier input del formularios
   const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
+    setForm({ 
+      ...form, //se mantiene el estado anterior
+      [e.target.name]: e.target.value, // se actualiza el estado que e corresponde
     });
   };
 
+  //agrega el rol a la lista y lo pone en el formulario
   const agregarRol = (nuevoRol) => {
-    setRoles([...roles, nuevoRol.nombre]);
-    setForm({ ...form, rol: nuevoRol.nombre });
-    setMostrarModalRol(false);
+    setRoles([...roles, nuevoRol.nombre]); //se agregar el rol al arreglo 
+    setForm({ ...form, rol: nuevoRol.nombre }); 
+    setMostrarModalRol(false); // se cierra le modal de los roles
   };
 
   return (

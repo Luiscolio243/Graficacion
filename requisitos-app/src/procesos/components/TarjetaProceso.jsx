@@ -69,27 +69,29 @@ export default function TarjetaProceso({ proceso, onAgregarSubproceso, onAsignar
         </div>
       )}
 
+      {/*Modal que crear un nuevo subproceso*/}
       {mostrarModal && (
         <ModalNuevoSubproceso
-          onClose={() => setMostrarModal(false)}
-          onGuardar={(subproceso) => {
-            // si onAgregarSubproceso no llega, aquí se notaría
+          onClose={() => setMostrarModal(false)} // Cierra el modal de subproceso
+          onGuardar={(subproceso) => { //se guarda el nuevo subproceso
+            // si onAgregarSubproceso no llega, aqui se notarioa
             if (!onAgregarSubproceso) return;
-
+            // Se agrega el subproceso al proceso correspondiente
             onAgregarSubproceso(proceso.id, subproceso);
-            setMostrarModal(false);
+            setMostrarModal(false); //cierra modal
           }}
         />
       )}
 
-      {/* Modal técnicas */}
+      {/* Modal asigna tecnicas a un subproceso */}
       {mostrarTecnicas && subprocesoActivo && (
         <ModalAsignarTecnicas
-          tecnicasIniciales={subprocesoActivo.tecnicas}
-          onClose={() => setMostrarTecnicas(false)}
-          onGuardar={(tecnicas) => {
-            onAsignarTecnicas(proceso.id, subprocesoActivo.id, tecnicas);
-            setMostrarTecnicas(false);
+          tecnicasIniciales={subprocesoActivo.tecnicas} //tecnicas que ya tiene asignadas
+          onClose={() => setMostrarTecnicas(false)} //cierra modal
+          onGuardar={(tecnicas) => { //guarda las tecnicas que se seleccionaron
+            //se ponen las tecnicas al subproceso dentro del proceso
+            onAsignarTecnicas(proceso.id, subprocesoActivo.id, tecnicas); 
+            setMostrarTecnicas(false); //cierra modal
           }}
         />
       )}

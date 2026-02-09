@@ -14,13 +14,17 @@ export default function ModalAsignarTecnicas({
   onGuardar,
   tecnicasIniciales = [],
 }) {
+  
+  //alamcena las tecnicas que se seleccionaron
+  // se inicialician las tecnicas marcadas
   const [seleccionadas, setSeleccionadas] = useState(tecnicasIniciales);
 
+  //esta funcion alterna entre agrega o quita una tectnica del arreglo
   const toggleTecnica = (tecnica) => {
     setSeleccionadas((prev) =>
-      prev.includes(tecnica)
-        ? prev.filter((t) => t !== tecnica)
-        : [...prev, tecnica]
+      prev.includes(tecnica)  //si la tecnica ya esta seleccionada 
+        ? prev.filter((t) => t !== tecnica)//se elimina del arreglo
+        : [...prev, tecnica] //si no esta seleccionada se agrega
     );
   };
 

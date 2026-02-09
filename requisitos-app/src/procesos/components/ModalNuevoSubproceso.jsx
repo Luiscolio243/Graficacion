@@ -4,15 +4,17 @@ export default function ModalNuevoSubproceso({
   onClose,
   onGuardar,
 }) {
+  //alamcena los campos del formulario
   const [subproceso, setSubproceso] = useState({
     nombre: "",
     descripcion: "",
   });
 
+  //cambios de cualquier input del formularios
   const handleChange = (e) => {
     setSubproceso({
-      ...subproceso,
-      [e.target.name]: e.target.value,
+      ...subproceso,//se mantiene el estado anterior
+      [e.target.name]: e.target.value, // se actualiza el estado que e corresponde
     });
   };
 

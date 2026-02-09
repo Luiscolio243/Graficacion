@@ -127,10 +127,10 @@ export default function Stakeholders() {
       {/* modal del stakeholder */}
       {mostrarNuevoStakeholder && (
         <ModalNuevoStakeholder
-          onClose={() => setMostrarNuevoStakeholder(false)}
-          onGuardar={(nuevo) => {
-            setStakeholders([...stakeholders, nuevo]);
-            setMostrarNuevoStakeholder(false);
+          onClose={() => setMostrarNuevoStakeholder(false)} //se ejecuta esta funcion cuando se cierra el modal
+          onGuardar={(nuevo) => { //se ejecuta esta funcion cuando se guarda un stakeholder
+            setStakeholders([...stakeholders, nuevo]); //se agregar el stakeholder al arreglo
+            setMostrarNuevoStakeholder(false); //se cierra el modal ya que lo guarda
           }}
         />
       )}
@@ -138,10 +138,10 @@ export default function Stakeholders() {
       {/* modal de rol */}
       {mostrarNuevoRol && (
         <ModalNuevoRol
-          onClose={() => setMostrarNuevoRol(false)}
-          onGuardar={(rol) => {
-            console.log("Rol guardado:", rol);
-            setMostrarNuevoRol(false);
+          onClose={() => setMostrarNuevoRol(false)} //se ejecuta esta funcion cuando se cierra el modal
+          onGuardar={(rol) => { //guarda el rol
+            console.log("Rol guardado:", rol); //lo imprime en cosola
+            setMostrarNuevoRol(false); //se cierra el modal
           }}
         />
       )}
