@@ -1,10 +1,16 @@
+from itertools import product
+
 from flask_cors import cross_origin, CORS
-from sqlalchemy import create_engine,text #importamos clase create engine del ORM sqlAlchemy
+from sqlalchemy import create_engine,text, select #importamos clase create engine del ORM sqlAlchemy
 from sqlalchemy.exc import SQLAlchemyError
 from pydantic import BaseModel
 from flask import Flask,request, jsonify
 import jwt
+from sqlalchemy.orm import Session
 from fastapi import FastAPI, HTTPException
+from Models.Proyectos import Proyecto
+from Models.ProductOwner import ProductOwner
+
 
 
 secret_key = "secret"
@@ -92,12 +98,87 @@ def verify_token(func):
     return wrapper
 
 
+@app.route('/proyectos/crear', methods=['POST'])
+def crear_proyecto():
+    try:
+        data = request.get_json()
+
+        if not data:
+            return jsonify({"error": "JSON inválido"}), 400
+
+        nombre = data.get("nombre")
+        descripcion = data.get("password")
+        objetivo = data.get("objetivo")
+        organizacion = data.get("organizacion")
+
+        nombre_po = data.get("nombre_po")
+        apellidos_po = data.get("apellidos_po")
+        correo_po = data.get("correo_po")
+        telefono_po = data.get("telefono_po")
+
+        nombre_tl = data.get("nombre_tl")
+        apellidos_tl = data.get("apellidos_tl")
+        correo_tl = data.get("correo_tl")
+        telefono_tl = data.get("telefono_tl")
+
+        id_usuario = data.get("id_usuario")
+
+        with Session(engine) as session:
+            proyecto = Proyecto(
+                nombre= nombre,
+                descripcion = descripcion,
+                objetivo_general = objetivo,
+                estado= "En progreso",
+                id_creador=1
+
+            )
+
+            session.add(proyecto)
+            session.commit()
+            session.refresh(proyecto)
+
+        with Session(engine) as session:
+            product_owner = ProductOwner(
+                id_proyecto= proyecto.id_proyecto,
+                id_usuario= id_usuario,
+                nombre= nombre_po,
+                correo= correo_po
+            )
+
+        return jsonify({
+            "mensaje": "Proyecto creado correctamente",
+            "id": proyecto.id_proyecto
+        }), 201
+    except SQLAlchemyError as e:
+        print(str(e))
+        return jsonify({"error": str(e)}), 500
 
 
-@app.route('/protected', methods=['GET'])
-@verify_token
-def protected():
-    return jsonify({'message': 'You have access'}), 200
+
+@app.route('/proyectos/obtener', methods=['GET'])
+def obtener_proyetos():
+    with Session(engine) as session:
+        proyectos = session.scalars(select(Proyecto)).all()
+
+        return[
+        {
+            "id_proyecto": p.id_proyecto,
+            "nombre": p.nombre,
+            "estado": p.estado,
+            "descripcion": p.descripcion
+        }
+        for p in proyectos
+    ], 200
+
+
+@app.route('/productowner/<int:id>', methods=['GET'])
+def obtener_product_owner_proyecto(id):
+    with Session(engine) as session:
+        product_owner = ProductOwner(
+
+        )
+
+
 
 
 

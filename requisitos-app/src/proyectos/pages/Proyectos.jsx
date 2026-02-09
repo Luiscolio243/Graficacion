@@ -1,32 +1,34 @@
-// Vista donde se ven los proyectos que tiene el usuario
-
-import TarjetaProyecto from "../components/TarjetaProyecto";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-// Datos por mientras se hace el back
-const proyectosPrueba = [
-  {
-    id: 1,
-    nombre: "Sistema de Gestión Académica",
-    descripcion: "Plataforma para administrar alumnos y calificaciones",
-    estado: "En progreso",
-    requisitos: 24,
-    fecha: "15 Ene 2026",
-  },
-  {
-    id: 2,
-    nombre: "App Móvil de Delivery",
-    descripcion: "Aplicación para pedidos de comida a domicilio",
-    estado: "Planificación",
-    requisitos: 12,
-    fecha: "3 Feb 2026",
-  },
-];
-
-
+import TarjetaProyecto from "../components/TarjetaProyecto";
 
 export default function Proyectos() {
   const navigate = useNavigate();
+
+  const [proyectos, setProyectos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const obtenerProyectos = async () => {
+      try {
+        const response = await fetch("http://127.0.0.1:5000/proyectos/obtener");
+
+        if (!response.ok) {
+          throw new Error("Error al obtener proyectos");
+        }
+
+        const data = await response.json();
+        setProyectos(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    obtenerProyectos();
+  }, []);
 
   return (
     <div className="space-y-8">
@@ -42,40 +44,29 @@ export default function Proyectos() {
           </p>
         </div>
 
-        {/* Boton para crear proyecto */}
-        <button 
-            onClick={() => navigate("/app/proyectos/nuevo")}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                + Nuevo Proyecto
+        <button
+          onClick={() => navigate("/app/proyectos/nuevo")}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+        >
+          + Nuevo Proyecto
         </button>
       </div>
 
-      {/* Filtros */}
-      <div className="flex gap-3">
-        <button className="px-3 py-1.5 rounded-lg text-sm bg-indigo-50 text-indigo-600 font-medium">
-          Todos
-        </button>
-        <button className="px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100">
-          En progreso
-        </button>
-        <button className="px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100">
-          Planificación
-        </button>
-        <button className="px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100">
-          Completado
-        </button>
-      </div>
+      {}
+      {loading && <p className="text-gray-500">Cargando proyectos...</p>}
+      {error && <p className="text-red-500">{error}</p>}
 
       {/* Lista de proyectos */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {proyectosPrueba.map((proyecto) => (
-          <TarjetaProyecto
-            key={proyecto.id}
-            proyecto={proyecto}
-          />
-        ))}
-      </div>
-
+      {!loading && !error && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {proyectos.map((proyecto) => (
+            <TarjetaProyecto
+              key={proyecto.id}
+              proyecto={proyecto}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
