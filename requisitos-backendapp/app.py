@@ -1,5 +1,4 @@
 from itertools import product
-
 from flask_cors import cross_origin, CORS
 from sqlalchemy import create_engine,text, select #importamos clase create engine del ORM sqlAlchemy
 from sqlalchemy.exc import SQLAlchemyError
@@ -10,7 +9,9 @@ from sqlalchemy.orm import Session
 from fastapi import FastAPI, HTTPException
 from Models.Proyectos import Proyecto
 from Models.ProductOwner import ProductOwner
-
+from Models.Stakeholders import Stakeholders
+from Models.tech_leaders import TechLeader
+from Models.roles import Roles
 
 
 secret_key = "secret"
@@ -145,6 +146,22 @@ def crear_proyecto():
                 correo= correo_po
             )
 
+        session.add(product_owner)
+        session.commit()
+        session.refresh(product_owner)
+
+        with Session(engine) as session:
+            tech_leader = TechLeader(
+                id_proyecto= proyecto.id_proyecto,
+                id_usuario= id_usuario,
+                nombre= nombre_tl,
+                correo= correo_tl
+            )
+
+        session.add(tech_leader)
+        session.commit()
+        session.refresh(tech_leader)
+
         return jsonify({
             "mensaje": "Proyecto creado correctamente",
             "id": proyecto.id_proyecto
@@ -159,7 +176,6 @@ def crear_proyecto():
 def obtener_proyetos():
     with Session(engine) as session:
         proyectos = session.scalars(select(Proyecto)).all()
-
         return[
         {
             "id_proyecto": p.id_proyecto,
@@ -171,16 +187,131 @@ def obtener_proyetos():
     ], 200
 
 
-@app.route('/productowner/<int:id>', methods=['GET'])
-def obtener_product_owner_proyecto(id):
-    with Session(engine) as session:
-        product_owner = ProductOwner(
 
+@app.route('/proyectos/<int:id_proyecto>', methods=['GET'])
+def obtener_proyecto(id_proyecto):
+    with Session(engine) as session:
+        proyecto = session.get(Proyecto, id_proyecto)
+
+        if not proyecto:
+            return {"error": "No se encontro del proyecto"}, 404
+
+        return {
+            "id_proyecto": proyecto.id_proyecto,
+            "nombre": proyecto.nombre,
+            "estado": proyecto.estado,
+            "descripcion": proyecto.descripcion
+        }, 200
+
+
+
+
+@app.route('/productowner/<int:id_proyecto>', methods=['GET'])
+def obtener_product_owner_proyecto(id_proyecto):
+    with Session(engine) as session:
+        product_owner = session.query(ProductOwner).filter(ProductOwner.id_proyecto == id_proyecto).first()
+
+        if product_owner is None:
+            return jsonify({"mensaje: ": "No se encontro un product owner en este proyecto"})
+
+        return jsonify({
+            "id": product_owner.id_product_owner,
+            "nombre": product_owner.nombre,
+            "id_proyecto": product_owner.id_proyecto
+        })
+
+@app.route('/tech_leaders/<int:id_proyecto>', methods=['GET'])
+def obtener_techleader_proyecto(id_proyecto):
+    with Session(engine) as session:
+        tech_leader = session.query(TechLeader).filter(TechLeader.id_proyecto == id_proyecto).first()
+
+        if tech_leader is None:
+            return jsonify({"mensaje: ": "No se encontro un tech leader en este proyecto"})
+
+        return jsonify({
+            "id": tech_leader.id_tech_leader,
+            "nombre": tech_leader.nombre,
+            "id_proyecto": tech_leader.id_proyecto
+        })
+
+
+@app.route('/roles/agregar', methods=['POST'])
+def agregar_roles():
+    data = request.get_json()
+
+    nombre = data.get("nombre")
+    descripcion = data.get("descripcion")
+
+    with Session(engine) as session:
+        roles = Roles(
+            nombre=nombre,
+            descripcion=descripcion
         )
 
+        session.add(roles)
+        session.commit()
+        session.refresh(roles)
+
+        return jsonify({
+            "id": roles.id,
+            "nombre": roles.nombre,
+            "descripcion": roles.descripcion
+        }), 201
+
+
+@app.route('/roles/obtener', methods=['POST'])
+def obtener_roles(id_proyecto):
+    with Session(engine) as session:
+        roles = session.scalars(select(Roles)).all()
+        return[
+        {
+            "id_rol": r.id_rol,
+            "nombre": r.nombre,
+            "descripcion": r.descripcion
+        }
+        for r in roles
+    ], 200
 
 
 
+
+@app.route('/stakeholders/agregar', methods=['POST'])
+def agregar_stakeholders(id_proyecto):
+
+    data = request.get_json()
+
+    nombre = data.get("nombre")
+    descripcion = data.get("descripcion")
+
+    with Session(engine) as session:
+        roles = Roles(
+            nombre= nombre,
+            descripcion= descripcion
+        )
+
+    session.add(roles)
+    session.commit()
+    session.refresh(roles)
+
+
+@app.route('/stakeholders/<int:id_proyecto>', methods=['GET'])
+def obtener_stakeholders(id_proyecto):
+    with Session(engine) as session:
+        # Filtrar por id_proyecto
+        stakeholders = session.scalars(
+            select(Stakeholders).where(Stakeholders.id_proyecto == id_proyecto)
+        ).all()
+
+        return jsonify([
+            {
+                "id_stakeholder": s.id_stakeholder,
+                "nombre": s.nombre,
+                "rol": s.rol,
+                "tipo": s.tipo,
+                "email": s.email
+            }
+            for s in stakeholders
+        ]), 200
 
 #funcion para correr la app en flask
 if __name__ == '__main__':

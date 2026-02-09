@@ -1,9 +1,13 @@
 // Tarjetas que muestra la informacion basica de un proyecto
 
+import { useNavigate } from "react-router-dom";
+
 export default function TarjetaProyecto({ proyecto }) {
+
+  const navigate = useNavigate();
+
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition">
-    onClick={() => Navigate(`/app/proyectos/${proyecto.id}`)}
+    <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition" onClick={() => navigate(`/app/proyectos/${proyecto.id_proyecto}`)}>
       
       {/* Nombre y estado del proyecto */}
       <div className="flex justify-between items-start mb-3">

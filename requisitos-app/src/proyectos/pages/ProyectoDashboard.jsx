@@ -1,56 +1,127 @@
 import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 export default function ProyectoDashboard() {
   const { id } = useParams(); //esto es para el back
+  const navigate = useNavigate();
+
+  const [proyecto, setProyecto] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const [productOwner, setProductOwner] = useState(null);
+  const [techLeader, setTechLeader] = useState(null);
+
+   useEffect(() => {
+    const obtenerProyecto = async () => {
+      try {
+        const response = await fetch(`http://127.0.0.1:5000/proyectos/${id}`);
+
+        if (!response.ok) {
+          throw new Error("Error al obtener el proyecto");
+        }
+
+        const data = await response.json();
+        setProyecto(data);
+
+        const responsePO = await fetch(`http://127.0.0.1:5000/productowner/${id}`);
+      if (responsePO.ok) {
+        const dataPO = await responsePO.json();
+        setProductOwner(dataPO);
+      }
+
+      const responseTL = await fetch(`http://127.0.0.1:5000/tech_leaders/${id}`);
+      if (responseTL.ok) {
+        const dataTL = await responseTL.json();
+        setTechLeader(dataTL);
+      }
+
+
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    obtenerProyecto();
+  }, [id]); 
+
+  if (loading) {
+    return <div className="text-gray-500">Cargando proyecto...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-500">{error}</div>;
+  }
+
+  if (!proyecto) {
+    return <div className="text-gray-500">No se encontró el proyecto</div>;
+  }
+
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+  <div className="space-y-8 max-w-7xl mx-auto">
 
-      {/* Encabezado */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">
-            Dashboard del proyecto
-          </h1>
-        </div>
-
-        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-          En progreso
-        </span>
+    {/* Encabezado */}
+    <div className="flex justify-between items-start">
+      <div>
+        <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">
+          {proyecto.nombre}
+        </h1>
       </div>
 
-      {/* Informacion general del proyecto con cartitas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card titulo="Objetivo General">
-          Desarrollar un sistema moderno que permita el control en tiempo real
-          de productos, almacenes y movimientos de inventario.
-        </Card>
+      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+        {proyecto.estado}
+      </span>
+    </div>
 
-        <Card titulo="Fecha de Inicio">
-          14 de enero de 2026
-        </Card>
+    {/* Información general del proyecto */}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <Card titulo="Descripción">
+        {proyecto.descripcion}
+      </Card>
 
-        <Card titulo="Organización">
-          LogiTech Solutions
-        </Card>
-      </div>
+      {/* Estos campos aún no vienen de la API, 
+          los dejaremos estáticos por ahora o mostrar "N/A" */}
+      <Card titulo="Fecha de Inicio">
+        Por definir
+      </Card>
 
-      {/* PO y Tech Leader */}
+      <Card titulo="Organización">
+        Por definir
+      </Card>
+    </div>
+
+    {/* PO y Tech Leader */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Persona
-          titulo="Product Owner"
-          nombre="María González Pérez"
-          correo="maria.gonzalez@logitech.com"
-          telefono="+34 612 345 678"
-        />
+  {productOwner ? (
+    <Persona
+      titulo="Product Owner"
+      nombre={productOwner.nombre}
+      correo="Correo no disponible"
+      telefono="Teléfono no disponible"
+    />
+  ) : (
+    <Card titulo="Product Owner">
+      No asignado
+    </Card>
+  )}
 
-        <Persona
-          titulo="Tech Leader"
-          nombre="Carlos Rodríguez Sánchez"
-          correo="carlos.rodriguez@logitech.com"
-          telefono="+34 623 456 789"
-        />
-      </div>
+  {techLeader ? (
+    <Persona
+      titulo="Tech Leader"
+      nombre={techLeader.nombre}
+      correo="Correo no disponible"
+      telefono="Teléfono no disponible"
+    />
+  ) : (
+    <Card titulo="Tech Leader">
+      No asignado
+    </Card>
+  )}
+</div>
 
       {/* Módulos */}
       <div>
@@ -63,6 +134,7 @@ export default function ProyectoDashboard() {
             titulo="Stakeholders"
             descripcion="Gestión de personas relacionadas con el Product Owner"
             color="blue"
+            onClick={() => navigate(`/app/proyectos/${id}/stakeholders`)}
           />
 
           <Modulo
@@ -80,6 +152,7 @@ export default function ProyectoDashboard() {
       </div>
     </div>
   );
+
 }
 
 /* COMPONENTES */
@@ -102,7 +175,7 @@ function Persona({ titulo, nombre, correo, telefono }) {
     ">
       {/* Avatar */}
       <div className="h-10 w-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-semibold">
-        {nombre[0]}
+        {nombre ? nombre[0] : "?"}
       </div>
 
       <div>
@@ -110,16 +183,16 @@ function Persona({ titulo, nombre, correo, telefono }) {
           {titulo}
         </h3>
 
-        <p className="font-medium text-gray-900">{nombre}</p>
-        <p className="text-sm text-gray-500">{correo}</p>
-        <p className="text-sm text-gray-500">{telefono}</p>
+        <p className="font-medium text-gray-900">{nombre || "No disponible"}</p>
+        <p className="text-sm text-gray-500">{correo || "Correo no disponible"}</p>
+        <p className="text-sm text-gray-500">{telefono || "Teléfono no disponible"}</p>
       </div>
     </div>
   );
 }
 
 
-function Modulo({ titulo, descripcion, color = "indigo" }) {
+function Modulo({ titulo, descripcion, color = "indigo", onClick }) {
 
   // Aqui pongo los estilos segun el color
   const estilosPorColor = {
@@ -149,6 +222,7 @@ function Modulo({ titulo, descripcion, color = "indigo" }) {
 
   return (
     <div
+      onClick={onClick}
       className={`
         ${estilos.fondo} ${estilos.borde}
         border rounded-xl p-5
