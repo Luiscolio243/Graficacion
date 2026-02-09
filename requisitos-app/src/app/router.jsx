@@ -6,6 +6,7 @@ import NuevoProyecto from "../proyectos/pages/NuevoProyecto";
 import ProyectoDashboard from "../proyectos/pages/ProyectoDashboard"
 import Stakeholders from "../stakeholders/pages/Stakeholders";
 import TI from "../ti/pages/ti";
+import Procesos from "../procesos/pages/Procesos";
 
 export const router = createBrowserRouter([
     {
@@ -47,6 +48,11 @@ export const router = createBrowserRouter([
                 //TI de cada proyecto
                 path: "proyectos/:id/TI",
                 element: <TI />
+            },
+            {
+                //Procesos de cada proyecto
+                path: "proyectos/:id/procesos",
+                element: <Procesos />
             }
         ]
     }
