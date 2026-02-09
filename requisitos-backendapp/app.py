@@ -108,7 +108,7 @@ def crear_proyecto():
             return jsonify({"error": "JSON inválido"}), 400
 
         nombre = data.get("nombre")
-        descripcion = data.get("password")
+        descripcion = data.get("descripcion")
         objetivo = data.get("objetivo")
         organizacion = data.get("organizacion")
 
@@ -217,7 +217,8 @@ def obtener_product_owner_proyecto(id_proyecto):
         return jsonify({
             "id": product_owner.id_product_owner,
             "nombre": product_owner.nombre,
-            "id_proyecto": product_owner.id_proyecto
+            "id_proyecto": product_owner.id_proyecto,
+            "correo": product_owner.correo
         })
 
 @app.route('/tech_leaders/<int:id_proyecto>', methods=['GET'])
@@ -253,7 +254,7 @@ def agregar_roles():
         session.refresh(roles)
 
         return jsonify({
-            "id": roles.id,
+            "id": roles.id_rol,
             "nombre": roles.nombre,
             "descripcion": roles.descripcion
         }), 201
