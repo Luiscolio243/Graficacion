@@ -100,7 +100,7 @@ export default function ProyectoDashboard() {
     <Persona
       titulo="Product Owner"
       nombre={productOwner.nombre}
-      correo="Correo no disponible"
+      correo={productOwner.correo}
       telefono="Teléfono no disponible"
     />
   ) : (
@@ -113,7 +113,7 @@ export default function ProyectoDashboard() {
     <Persona
       titulo="Tech Leader"
       nombre={techLeader.nombre}
-      correo="Correo no disponible"
+      correo={techLeader.correo}
       telefono="Teléfono no disponible"
     />
   ) : (
