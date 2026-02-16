@@ -16,8 +16,8 @@ from Models.roles import Roles
 
 secret_key = "secret"
 
-engine = create_engine('postgresql+psycopg2://postgres:root\
-@localhost:5432/Graficacion')
+engine = create_engine('postgresql+psycopg2://postgres:Fernando2003\
+@localhost:5432/Graficacion ')
 
 app = Flask(__name__)
 
