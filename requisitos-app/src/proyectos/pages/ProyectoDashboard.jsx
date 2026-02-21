@@ -141,12 +141,14 @@ export default function ProyectoDashboard() {
             titulo="Equipo de TI"
             descripcion="Equipo técnico que trabaja con el Tech Leader"
             color="indigo"
+            onClick={() => navigate(`/app/proyectos/${id}/TI`)}
           />
 
           <Modulo
             titulo="Procesos"
             descripcion="Definición de procesos y subprocesos del negocio"
             color="emerald"
+            onClick={() => navigate(`/app/proyectos/${id}/procesos`)}
           />
         </div>
       </div>

@@ -8,12 +8,47 @@ export default function ModalNuevoRol({ onClose, onGuardar }) {
     descripcion: "",
     tipo: "Stakeholder", // o TI
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleChange = (e) => {
     setRol({
       ...rol,
       [e.target.name]: e.target.value,
     });
+  };
+
+  const handleGuardar = async () => {
+    if (!rol.nombre.trim()) {
+      setError("El nombre del rol es obligatorio");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("http://127.0.0.1:5000/roles/agregar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: rol.nombre,
+          descripcion: rol.descripcion,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al guardar el rol");
+      }
+
+      const data = await response.json();
+      onGuardar(data);
+      onClose();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -27,6 +62,7 @@ export default function ModalNuevoRol({ onClose, onGuardar }) {
         <input
           name="nombre"
           placeholder="Nombre del rol (ej. Usuario clave)"
+          value={rol.nombre}
           onChange={handleChange}
           className="input"
         />
@@ -34,23 +70,28 @@ export default function ModalNuevoRol({ onClose, onGuardar }) {
         <textarea
           name="descripcion"
           placeholder="Descripción del rol"
+          value={rol.descripcion}
           onChange={handleChange}
           className="input"
         />
 
+        {error && <p className="text-red-600 text-sm">{error}</p>}
+
         <div className="flex justify-end gap-3 pt-2">
           <button
             onClick={onClose}
-            className="px-4 py-2 border border-gray-300 rounded-lg"
+            disabled={loading}
+            className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50"
           >
             Cancelar
           </button>
 
           <button
-            onClick={() => onGuardar(rol)}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg"
+            onClick={handleGuardar}
+            disabled={loading}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg disabled:opacity-50"
           >
-            Guardar
+            {loading ? "Guardando..." : "Guardar"}
           </button>
         </div>
       </div>

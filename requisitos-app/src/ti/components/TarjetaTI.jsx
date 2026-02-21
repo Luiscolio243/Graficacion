@@ -1,4 +1,4 @@
-// Tarjeta para cada de un stakeholder
+// Tarjeta para cada integrante de TI
 
 export default function TarjetaTI({ ti }) {
   return (
@@ -6,22 +6,16 @@ export default function TarjetaTI({ ti }) {
 
       <div>
         <p className="font-medium text-gray-900">
-          {ti.nombre} {ti.apellidos}
+          {ti?.usuario?.nombre} {ti?.usuario?.apellido}
         </p>
 
         <p className="text-sm text-gray-500">
-          {ti.rol} · {ti.tipo}
+          {ti?.rol?.nombre || "Sin rol"} {ti?.activo === false ? "· Inactivo" : ""}
         </p>
 
         <p className="text-sm text-gray-500">
-          {ti.correo}
+          {ti?.usuario?.email}
         </p>
-
-        {ti.organizacion && (
-          <p className="text-sm text-gray-400">
-            {ti.organizacion}
-          </p>
-        )}
       </div>
 
       {/* Acciones futuras */}

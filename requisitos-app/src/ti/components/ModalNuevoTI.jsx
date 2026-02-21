@@ -2,36 +2,19 @@
 
 import { useState } from "react";
 
-export default function ModalNuevoTI({ onClose, onGuardar }) {
+export default function ModalNuevoTI({ onClose, onGuardar, roles = [] }) {
   const [form, setForm] = useState({
     nombre: "",
-    apellidos: "",
-    rol: "",
-    tipo: "Interno",
-    correo: "",
-    telefono: "",
-    organizacion: "",
-    notas: "",
+    apellido: "",
+    email: "",
+    id_rol: "",
   });
-
-  // Ejemplo de roles (luego son los de back)
-  const [roles, setRoles] = useState([
-    "Usuario clave",
-    "Sponsor",
-    "Analista",
-  ]);
 
   const handleChange = (e) => {
     setForm({
       ...form,
       [e.target.name]: e.target.value,
     });
-  };
-
-  const agregarRol = (nuevoRol) => {
-    setRoles([...roles, nuevoRol.nombre]);
-    setForm({ ...form, rol: nuevoRol.nombre });
-    setMostrarModalRol(false);
   };
 
   return (
@@ -46,76 +29,40 @@ export default function ModalNuevoTI({ onClose, onGuardar }) {
         <input
           name="nombre"
           placeholder="Nombre"
+          value={form.nombre}
           onChange={handleChange}
           className="input"
         />
 
         <input
-          name="apellidos"
-          placeholder="Apellidos"
+          name="apellido"
+          placeholder="Apellido"
+          value={form.apellido}
           onChange={handleChange}
           className="input"
         />
 
         <input
-          name="correo"
-          placeholder="Correo electrónico"
-          onChange={handleChange}
-          className="input"
-        />
-
-        <input
-          name="telefono"
-          placeholder="Teléfono"
+          name="email"
+          placeholder="Correo electrónico (login)"
+          value={form.email}
           onChange={handleChange}
           className="input"
         />
 
         <select
-          name="tipo"
+          name="id_rol"
           onChange={handleChange}
           className="input"
+          value={form.id_rol}
         >
-          <option>Interno</option>
-          <option>Externo</option>
+          <option value="">Selecciona un rol</option>
+          {roles.map((r) => (
+            <option key={r.id_rol} value={r.id_rol}>
+              {r.nombre}
+            </option>
+          ))}
         </select>
-
-        <input
-          name="organizacion"
-          placeholder="Organización / Empresa"
-          onChange={handleChange}
-          className="input"
-        />
-
-        {/* Rol y boton para crear uno nuevo */}
-        <div className="flex gap-2">
-            <select
-              name="rol"
-              className="input flex-1"
-              value={form.rol}
-              onChange={handleChange}
-            >
-              <option value="">Selecciona un rol</option>
-              {roles.map((rol, i) => (
-                <option key={i}>{rol}</option>
-              ))}
-            </select>
-
-            <button
-              type="button"
-              onClick={() => setMostrarModalRol(true)}
-              className="px-3 border border-gray-300 rounded-lg text-sm"
-            >
-              + Rol
-            </button>
-        </div>
-
-        <textarea
-          name="notas"
-          placeholder="Notas adicionales"
-          onChange={handleChange}
-          className="input"
-        />
 
         {/* Acciones */}
         <div className="flex justify-end gap-3">
@@ -127,7 +74,12 @@ export default function ModalNuevoTI({ onClose, onGuardar }) {
           </button>
 
           <button
-            onClick={() => onGuardar(form)}
+            onClick={() =>
+              onGuardar({
+                ...form,
+                id_rol: form.id_rol ? Number(form.id_rol) : "",
+              })
+            }
             className="px-4 py-2 bg-indigo-600 text-white rounded-lg"
           >
             Guardar

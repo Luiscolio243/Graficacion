@@ -5,10 +5,10 @@ from sqlalchemy.engine import URL
 connection_url = URL.create(
     drivername="postgresql+psycopg2",
     username="postgres",
-    password="Fernando2003",
+    password="18052004pau",
     host="localhost",
     port=5432,
-    database="Graficacion "
+    database="Graficacion"
 )
 
 engine = create_engine(connection_url)
@@ -16,6 +16,6 @@ engine = create_engine(connection_url)
 try:
     with engine.connect() as connection:
         result = connection.execute(text("SELECT 1"))
-        print("✅ Conexión exitosa a PostgreSQL")
+        print("Conexión exitosa a PostgreSQL")
 except Exception as e:
-    print(f"❌ Error al conectar: {e}")
+    print(f"Error al conectar: {e}")
