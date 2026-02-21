@@ -24,10 +24,6 @@ import string
 secret_key = "secret"
 
 engine = create_engine('postgresql+psycopg2://postgres:18052004pau@localhost:5432/Graficacion')
-<<<<<<< Updated upstream
-=======
-
->>>>>>> Stashed changes
 
 app = Flask(__name__)
 
