@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 from __future__ import annotations
 
 from datetime import datetime
@@ -5,10 +6,17 @@ from datetime import datetime
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+=======
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import String, Integer, Text, Date, DateTime, ForeignKey
+from datetime import date, datetime
+>>>>>>> Stashed changes
 
 class Base(DeclarativeBase):
     pass
 
+<<<<<<< Updated upstream
 
 class PersonalTI(Base):
     """
@@ -38,3 +46,32 @@ class PersonalTI(Base):
     fecha_asignacion: Mapped[datetime | None] = mapped_column(DateTime)
 
     id_rol: Mapped[int] = mapped_column(Integer, ForeignKey("roles.id_rol"), nullable=False)
+=======
+class TechLeader(Base):
+    __tablename__ = "tech_leaders"
+
+    id_tech_leader: Mapped[int] = mapped_column(
+        Integer, primary_key=True
+
+    id_proyecto: Mapped[int] = mapped_column(
+        ForeignKey("proyectos.id_proyecto"),
+        Integer, nullable=False
+    )
+
+    id_usuario: Mapped[int] = mapped_column(
+        ForeignKey("usuarios.id_usuarios"),
+        Integer,nullable=False
+    )
+
+    nombre: Mapped[str] = mapped_column(
+        Text
+    )
+
+    correo: Mapped[str] = mapped_column(
+        Text
+    )
+
+    #Relaciones
+    proyecto = relationship("Proyecto")
+    usuario = relationship("Usuario")
+>>>>>>> Stashed changes
