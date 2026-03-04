@@ -25,11 +25,19 @@ export default function NuevoProyecto() {
 
   const crearProyecto = async () => {
     try {
+    const userStorage = localStorage.getItem("user");
+    const user = userStorage ? JSON.parse(userStorage) : null;
+
+    if (!user) {
+      throw new Error("Usuario no autenticado");
+    }
+
     const proyecto = {
       nombre,
       descripcion,
       objetivo,
       organizacion,
+      id_usuario: user.id,
       productOwner: {
         nombre: poNombre,
         apellidos: poApellidos,

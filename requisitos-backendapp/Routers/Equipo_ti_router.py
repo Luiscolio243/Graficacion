@@ -1,8 +1,8 @@
 from flask import Blueprint, request, jsonify
 from sqlalchemy.orm import session
-from sqlAlchemy import select
+from sqlalchemy import select
 from Models.personal_ti import personal_ti
-from database import engine
+from db import engine
 
 equipo_ti_bp = Blueprint("equipo_ti", __name__) #creacion de modulo
 

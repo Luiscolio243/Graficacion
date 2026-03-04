@@ -19,11 +19,21 @@ from Models.SubprocesoTecnica import SubprocesoTecnica
 from datetime import datetime
 import secrets
 import string
+from config import Config
+try:
+    Config.validate()
+except EnvironmentError as e:
+    print(e)
+    exit(1)
 
+#Antes de usar env
+#secret_key = "secret"
 
-secret_key = "secret"
+#Antes de usar env
+#engine = create_engine('postgresql+psycopg2://postgres:18052004pau@localhost:5432/Graficacion')
 
-engine = create_engine('postgresql+psycopg2://postgres:18052004pau@localhost:5432/Graficacion')
+secret_key = Config.SECRET_KEY
+engine = create_engine(Config.DATABASE_URL)
 
 app = Flask(__name__)
 
@@ -781,4 +791,4 @@ def asignar_tecnicas():
 
 #funcion para correr la app en flask
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port= 5000, debug = True)
+    app.run(host='0.0.0.0', port= Config.FLASK_PORT, debug = True)

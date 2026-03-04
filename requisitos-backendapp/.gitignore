@@ -1,0 +1,9 @@
+#por seguridad despues podemos poner del env ignorado mas adelante
+
+# Python
+__pycache__/
+*.pyc
+
+# IDEs
+.idea/
+.vscode/
