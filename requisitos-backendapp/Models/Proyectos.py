@@ -37,6 +37,9 @@ class Proyecto(Base):
         String(20)
     )
 
+    organizacion: Mapped[str | None] = mapped_column(
+        String(50)
+    )
 
     id_creador: Mapped[int | None] = mapped_column(
         Integer

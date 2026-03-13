@@ -17,14 +17,18 @@ class TechLeader(Base):
         Integer, nullable=False
     )
 
-    id_usuario: Mapped[int] = mapped_column(
-        Integer,nullable=False
+    id_usuario: Mapped[int | None] = mapped_column(
+        Integer, nullable=True
     )
 
-    nombre: Mapped[str] = mapped_column(
-        Text
+    nombre: Mapped[str | None] = mapped_column(
+        String(50)
     )
 
-    correo: Mapped[str] = mapped_column(
-        Text
+    correo: Mapped[str | None] = mapped_column(
+        String(100)
+    )
+
+    telefono: Mapped[str | None] = mapped_column(
+        String(10)
     )

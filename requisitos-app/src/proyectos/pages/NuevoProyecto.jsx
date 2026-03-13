@@ -12,6 +12,7 @@ export default function NuevoProyecto() {
   const [descripcion, setDescripcion] = useState("");
   const [objetivo, setObjetivo] = useState("");
   const [organizacion, setOrganizacion] = useState("");
+  const [fechaInicio, setFechaInicio] = useState("");
 
   const [poNombre, setPoNombre] = useState("");
   const [poApellidos, setPoApellidos] = useState("");
@@ -37,7 +38,11 @@ export default function NuevoProyecto() {
       descripcion,
       objetivo,
       organizacion,
+<<<<<<< Updated upstream
       id_usuario: user.id,
+=======
+      fechaInicio,
+>>>>>>> Stashed changes
       productOwner: {
         nombre: poNombre,
         apellidos: poApellidos,
@@ -123,6 +128,7 @@ setTimeout(() => {
                 <CampoArea label="Descripción" placeholder="Describe brevemente de qué se trata el proyecto..." value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
                 <CampoArea label="Objetivo General" placeholder="¿Qué problema busca resolver este proyecto?" value={objetivo} onChange={(e) => setObjetivo(e.target.value)} />
                 <Campo label="Organización" placeholder="Ej: Empresa..." value={organizacion} onChange={(e) => setOrganizacion(e.target.value)} />
+                <Campo label="Fecha de Inicio" type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} />
             </div>
             </section>
 

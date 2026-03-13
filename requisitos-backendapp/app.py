@@ -127,56 +127,57 @@ def crear_proyecto():
         descripcion = data.get("descripcion")
         objetivo = data.get("objetivo")
         organizacion = data.get("organizacion")
+        fecha_inicio = data.get("fechaInicio")
 
-        nombre_po = data.get("nombre_po")
-        apellidos_po = data.get("apellidos_po")
-        correo_po = data.get("correo_po")
-        telefono_po = data.get("telefono_po")
+        po = data.get("productOwner") or {}
+        nombre_po = (po.get("nombre") or "").strip()
+        apellidos_po = (po.get("apellidos") or "").strip()
+        correo_po = po.get("email")
+        telefono_po = po.get("telefono")
 
-        nombre_tl = data.get("nombre_tl")
-        apellidos_tl = data.get("apellidos_tl")
-        correo_tl = data.get("correo_tl")
-        telefono_tl = data.get("telefono_tl")
+        tl = data.get("liderTecnico") or {}
+        nombre_tl = (tl.get("nombre") or "").strip()
+        apellidos_tl = (tl.get("apellidos") or "").strip()
+        correo_tl = tl.get("email")
+        telefono_tl = tl.get("telefono")
 
         id_usuario = data.get("id_usuario")
 
         with Session(engine) as session:
             proyecto = Proyecto(
-                nombre= nombre,
-                descripcion = descripcion,
-                objetivo_general = objetivo,
-                estado= "En progreso",
+                nombre=nombre,
+                descripcion=descripcion,
+                objetivo_general=objetivo,
+                fecha_inicio=datetime.strptime(fecha_inicio, "%Y-%m-%d").date() if fecha_inicio else None,
+                organizacion=organizacion,
+                estado="En progreso",
                 id_creador=1
-
             )
-
             session.add(proyecto)
             session.commit()
             session.refresh(proyecto)
 
-        with Session(engine) as session:
+            nombre_completo_po = " ".join(filter(None, [nombre_po, apellidos_po])) or None
             product_owner = ProductOwner(
-                id_proyecto= proyecto.id_proyecto,
-                id_usuario= id_usuario,
-                nombre= nombre_po,
-                correo= correo_po
+                id_proyecto=proyecto.id_proyecto,
+                id_usuario=id_usuario,
+                nombre=nombre_completo_po,
+                correo=correo_po,
+                telefono=telefono_po
             )
+            session.add(product_owner)
 
-        session.add(product_owner)
-        session.commit()
-        session.refresh(product_owner)
-
-        with Session(engine) as session:
+            nombre_completo_tl = " ".join(filter(None, [nombre_tl, apellidos_tl])) or None
             tech_leader = TechLeader(
-                id_proyecto= proyecto.id_proyecto,
-                id_usuario= id_usuario,
-                nombre= nombre_tl,
-                correo= correo_tl
+                id_proyecto=proyecto.id_proyecto,
+                id_usuario=id_usuario,
+                nombre=nombre_completo_tl,
+                correo=correo_tl,
+                telefono=telefono_tl
             )
+            session.add(tech_leader)
 
-        session.add(tech_leader)
-        session.commit()
-        session.refresh(tech_leader)
+            session.commit()
 
         return jsonify({
             "mensaje": "Proyecto creado correctamente",
