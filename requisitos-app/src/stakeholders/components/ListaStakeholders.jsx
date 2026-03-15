@@ -19,7 +19,7 @@ export default function ListaStakeholders({ stakeholders }) {
   return (
     <div className="space-y-3">
       {stakeholders.map((s, index) => (
-        <TarjetaStakeholder key={index} stakeholder={s} />
+        <TarjetaStakeholder key={s.id_stakeholder ?? `sh-${index}`} stakeholder={s} />
       ))}
     </div>
   );

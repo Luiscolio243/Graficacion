@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 
-export default function ModalNuevoStakeholder({ onClose, onGuardar }) {
-  //aqui se alamcenan todos lo campos que hay en el formulario de los stakeholders
+export default function ModalNuevoStakeholder({ onClose, onGuardar, idProyecto }) {
   const [form, setForm] = useState({
     nombre: "",
     apellidos: "",
@@ -15,26 +14,16 @@ export default function ModalNuevoStakeholder({ onClose, onGuardar }) {
     notas: "",
   });
 
-  // Ejemplo de roles (luego son los de back)
-  const [roles, setRoles] = useState([
-    "Usuario clave",
-    "Sponsor",
-    "Analista",
-  ]);
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState(null);
 
-  //cambios de cualquier input del formularios
+  const roles = ["Usuario clave", "Sponsor", "Analista"];
+
   const handleChange = (e) => {
-    setForm({ 
-      ...form, //se mantiene el estado anterior
-      [e.target.name]: e.target.value, // se actualiza el estado que e corresponde
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
     });
-  };
-
-  //agrega el rol a la lista y lo pone en el formulario
-  const agregarRol = (nuevoRol) => {
-    setRoles([...roles, nuevoRol.nombre]); //se agregar el rol al arreglo 
-    setForm({ ...form, rol: nuevoRol.nombre }); 
-    setMostrarModalRol(false); // se cierra le modal de los roles
   };
 
   return (
@@ -45,10 +34,15 @@ export default function ModalNuevoStakeholder({ onClose, onGuardar }) {
           Nuevo Stakeholder
         </h2>
 
+        {error && (
+          <p className="text-sm text-red-500">{error}</p>
+        )}
+
         {/* Campos */}
         <input
           name="nombre"
           placeholder="Nombre"
+          value={form.nombre}
           onChange={handleChange}
           className="input"
         />
@@ -56,6 +50,7 @@ export default function ModalNuevoStakeholder({ onClose, onGuardar }) {
         <input
           name="apellidos"
           placeholder="Apellidos"
+          value={form.apellidos}
           onChange={handleChange}
           className="input"
         />
@@ -63,6 +58,7 @@ export default function ModalNuevoStakeholder({ onClose, onGuardar }) {
         <input
           name="correo"
           placeholder="Correo electrónico"
+          value={form.correo}
           onChange={handleChange}
           className="input"
         />
@@ -70,12 +66,14 @@ export default function ModalNuevoStakeholder({ onClose, onGuardar }) {
         <input
           name="telefono"
           placeholder="Teléfono"
+          value={form.telefono}
           onChange={handleChange}
           className="input"
         />
 
         <select
           name="tipo"
+          value={form.tipo}
           onChange={handleChange}
           className="input"
         >
@@ -86,36 +84,27 @@ export default function ModalNuevoStakeholder({ onClose, onGuardar }) {
         <input
           name="organizacion"
           placeholder="Organización / Empresa"
+          value={form.organizacion}
           onChange={handleChange}
           className="input"
         />
 
-        {/* Rol y boton para crear uno nuevo */}
-        <div className="flex gap-2">
-            <select
-              name="rol"
-              className="input flex-1"
-              value={form.rol}
-              onChange={handleChange}
-            >
-              <option value="">Selecciona un rol</option>
-              {roles.map((rol, i) => (
-                <option key={i}>{rol}</option>
-              ))}
-            </select>
-
-            <button
-              type="button"
-              onClick={() => setMostrarModalRol(true)}
-              className="px-3 border border-gray-300 rounded-lg text-sm"
-            >
-              + Rol
-            </button>
-        </div>
+        <select
+          name="rol"
+          className="input"
+          value={form.rol}
+          onChange={handleChange}
+        >
+          <option value="">Selecciona un rol</option>
+          {roles.map((rol, i) => (
+            <option key={i} value={rol}>{rol}</option>
+          ))}
+        </select>
 
         <textarea
           name="notas"
           placeholder="Notas adicionales"
+          value={form.notas}
           onChange={handleChange}
           className="input"
         />
@@ -124,16 +113,50 @@ export default function ModalNuevoStakeholder({ onClose, onGuardar }) {
         <div className="flex justify-end gap-3">
           <button
             onClick={onClose}
+            disabled={guardando}
             className="px-4 py-2 border border-gray-300 rounded-lg"
           >
             Cancelar
           </button>
 
           <button
-            onClick={() => onGuardar(form)}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg"
+            disabled={guardando}
+            onClick={async () => {
+              setError(null);
+              setGuardando(true);
+              try {
+                const res = await fetch("http://127.0.0.1:5000/stakeholders/agregar", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    id_proyecto: idProyecto,
+                    ...form,
+                  }),
+                });
+                if (!res.ok) {
+                  const err = await res.json();
+                  throw new Error(err.error || "Error al guardar");
+                }
+                const data = await res.json();
+                const sh = data.stakeholder;
+                onGuardar({
+                  id_stakeholder: sh.id_stakeholder,
+                  nombre: sh.nombre,
+                  apellidos: "",
+                  rol: sh.rol,
+                  tipo: sh.tipo,
+                  correo: sh.email,
+                  organizacion: sh.organizacion || "",
+                });
+              } catch (e) {
+                setError(e.message);
+              } finally {
+                setGuardando(false);
+              }
+            }}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg disabled:opacity-70"
           >
-            Guardar
+            {guardando ? "Guardando..." : "Guardar"}
           </button>
         </div>
       </div>

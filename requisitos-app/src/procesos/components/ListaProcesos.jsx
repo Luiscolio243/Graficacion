@@ -1,6 +1,6 @@
 import TarjetaProceso from "./TarjetaProceso";
 
-export default function ListaProcesos({ procesos, onAgregarSubproceso, onAsignarTecnicas }) {
+export default function ListaProcesos({ procesos, stakeholders = [], onAgregarSubproceso, onAsignarTecnicas }) {
 
   if (procesos.length === 0) {
     return (
@@ -21,6 +21,7 @@ export default function ListaProcesos({ procesos, onAgregarSubproceso, onAsignar
         <TarjetaProceso
           key={proceso.id}
           proceso={proceso}
+          stakeholders={stakeholders}
           onAgregarSubproceso={onAgregarSubproceso}
           onAsignarTecnicas={onAsignarTecnicas}
         />

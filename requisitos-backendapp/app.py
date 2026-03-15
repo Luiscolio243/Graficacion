@@ -1,12 +1,3 @@
-from itertools import product
-from flask_cors import cross_origin, CORS
-from sqlalchemy import create_engine,text, select #importamos clase create engine del ORM sqlAlchemy
-from sqlalchemy.exc import SQLAlchemyError
-from pydantic import BaseModel
-from flask import Flask,request, jsonify
-import jwt
-from sqlalchemy.orm import Session
-from fastapi import FastAPI, HTTPException
 from Models.Proyectos import Proyecto
 from Models.ProductOwner import ProductOwner
 from Models.Stakeholders import Stakeholders
@@ -16,6 +7,14 @@ from Models.Proceso import Proceso
 from Models.Subproceso import Subproceso
 from Models.Tecnica import Tecnica
 from Models.SubprocesoTecnica import SubprocesoTecnica
+from flask_cors import cross_origin, CORS
+from sqlalchemy import create_engine,text, select #importamos clase create engine del ORM sqlAlchemy
+from sqlalchemy.exc import SQLAlchemyError
+from pydantic import BaseModel
+from flask import Flask,request, jsonify
+import jwt
+from sqlalchemy.orm import Session
+from fastapi import FastAPI, HTTPException
 from datetime import datetime
 import secrets
 import string
@@ -115,6 +114,49 @@ def verify_token(func):
     return wrapper
 
 
+def _obtener_o_crear_usuario_po(conn, correo, nombre, apellido):
+    """Busca usuario por email. Si no existe, lo crea. Retorna id_usuario o None si no hay correo."""
+    if not correo or not (correo or "").strip():
+        return None
+    correo = str(correo).strip().lower()
+    nombre = (nombre or "").strip() or "Sin nombre"
+    apellido = (apellido or "").strip() or "Sin apellido"
+
+    u = conn.execute(
+        text("""SELECT id_usuario FROM usuarios WHERE email = :email LIMIT 1"""),
+        {"email": correo},
+    ).fetchone()
+    if u is not None:
+        return u[0]
+
+    r = conn.execute(
+        text("""SELECT id_rol FROM roles WHERE nombre IN ('Product Owner', 'colaborador') LIMIT 1"""),
+    ).fetchone()
+    if r is None:
+        r = conn.execute(
+            text("""INSERT INTO roles (nombre, descripcion) VALUES ('colaborador', 'Rol por defecto') RETURNING id_rol"""),
+        ).fetchone()
+    id_rol = r[0]
+
+    pass_temp = _generar_password_temporal()
+    nuevo = conn.execute(
+        text("""
+            INSERT INTO usuarios (nombre, apellido, email, password_hash, id_rol, fecha_registro, activo)
+            VALUES (:nombre, :apellido, :email, :password_hash, :id_rol, :fecha_registro, TRUE)
+            RETURNING id_usuario
+        """),
+        {
+            "nombre": nombre,
+            "apellido": apellido,
+            "email": correo,
+            "password_hash": pass_temp,
+            "id_rol": id_rol,
+            "fecha_registro": datetime.utcnow(),
+        },
+    ).fetchone()
+    return nuevo[0]
+
+
 @app.route('/proyectos/crear', methods=['POST'])
 def crear_proyecto():
     try:
@@ -128,6 +170,7 @@ def crear_proyecto():
         objetivo = data.get("objetivo")
         organizacion = data.get("organizacion")
         fecha_inicio = data.get("fechaInicio")
+        id_creador = data.get("id_usuario") or 1
 
         po = data.get("productOwner") or {}
         nombre_po = (po.get("nombre") or "").strip()
@@ -141,47 +184,61 @@ def crear_proyecto():
         correo_tl = tl.get("email")
         telefono_tl = tl.get("telefono")
 
-        id_usuario = data.get("id_usuario")
+        with engine.begin() as conn:
+            id_usuario_po = _obtener_o_crear_usuario_po(conn, correo_po, nombre_po, apellidos_po)
+            id_usuario_tl = _obtener_o_crear_usuario_po(conn, correo_tl, nombre_tl, apellidos_tl)
 
-        with Session(engine) as session:
-            proyecto = Proyecto(
-                nombre=nombre,
-                descripcion=descripcion,
-                objetivo_general=objetivo,
-                fecha_inicio=datetime.strptime(fecha_inicio, "%Y-%m-%d").date() if fecha_inicio else None,
-                organizacion=organizacion,
-                estado="En progreso",
-                id_creador=1
-            )
-            session.add(proyecto)
-            session.commit()
-            session.refresh(proyecto)
+            proyecto = conn.execute(
+                text("""
+                    INSERT INTO proyectos (nombre, descripcion, objetivo_general, fecha_inicio, organizacion, estado, id_creador, fecha_creacion, fecha_actualizacion)
+                    VALUES (:nombre, :descripcion, :objetivo, :fecha_inicio, :organizacion, 'En progreso', :id_creador, :ahora, :ahora)
+                    RETURNING id_proyecto
+                """),
+                {
+                    "nombre": nombre,
+                    "descripcion": descripcion or None,
+                    "objetivo": objetivo or None,
+                    "fecha_inicio": datetime.strptime(fecha_inicio, "%Y-%m-%d").date() if fecha_inicio else None,
+                    "organizacion": organizacion or None,
+                    "id_creador": id_creador,
+                    "ahora": datetime.utcnow(),
+                },
+            ).fetchone()
+            id_proyecto = proyecto[0]
 
             nombre_completo_po = " ".join(filter(None, [nombre_po, apellidos_po])) or None
-            product_owner = ProductOwner(
-                id_proyecto=proyecto.id_proyecto,
-                id_usuario=id_usuario,
-                nombre=nombre_completo_po,
-                correo=correo_po,
-                telefono=telefono_po
+            conn.execute(
+                text("""
+                    INSERT INTO product_owners (id_proyecto, id_usuario, nombre, correo, telefono, activo)
+                    VALUES (:id_proyecto, :id_usuario, :nombre, :correo, :telefono, TRUE)
+                """),
+                {
+                    "id_proyecto": id_proyecto,
+                    "id_usuario": id_usuario_po,
+                    "nombre": nombre_completo_po,
+                    "correo": correo_po,
+                    "telefono": telefono_po,
+                },
             )
-            session.add(product_owner)
 
             nombre_completo_tl = " ".join(filter(None, [nombre_tl, apellidos_tl])) or None
-            tech_leader = TechLeader(
-                id_proyecto=proyecto.id_proyecto,
-                id_usuario=id_usuario,
-                nombre=nombre_completo_tl,
-                correo=correo_tl,
-                telefono=telefono_tl
+            conn.execute(
+                text("""
+                    INSERT INTO tech_leaders (id_proyecto, id_usuario, nombre, correo, telefono, activo)
+                    VALUES (:id_proyecto, :id_usuario, :nombre, :correo, :telefono, TRUE)
+                """),
+                {
+                    "id_proyecto": id_proyecto,
+                    "id_usuario": id_usuario_tl,
+                    "nombre": nombre_completo_tl,
+                    "correo": correo_tl,
+                    "telefono": telefono_tl,
+                },
             )
-            session.add(tech_leader)
-
-            session.commit()
 
         return jsonify({
             "mensaje": "Proyecto creado correctamente",
-            "id": proyecto.id_proyecto
+            "id": id_proyecto
         }), 201
     except SQLAlchemyError as e:
         print(str(e))
@@ -217,7 +274,9 @@ def obtener_proyecto(id_proyecto):
             "id_proyecto": proyecto.id_proyecto,
             "nombre": proyecto.nombre,
             "estado": proyecto.estado,
-            "descripcion": proyecto.descripcion
+            "descripcion": proyecto.descripcion,
+            "fecha_inicio": proyecto.fecha_inicio.isoformat() if proyecto.fecha_inicio else None,
+            "organizacion": proyecto.organizacion
         }, 200
 
 
@@ -235,7 +294,8 @@ def obtener_product_owner_proyecto(id_proyecto):
             "id": product_owner.id_product_owner,
             "nombre": product_owner.nombre,
             "id_proyecto": product_owner.id_proyecto,
-            "correo": product_owner.correo
+            "correo": product_owner.correo,
+            "telefono": product_owner.telefono
         })
 
 @app.route('/tech_leaders/<int:id_proyecto>', methods=['GET'])
@@ -249,7 +309,9 @@ def obtener_techleader_proyecto(id_proyecto):
         return jsonify({
             "id": tech_leader.id_tech_leader,
             "nombre": tech_leader.nombre,
-            "id_proyecto": tech_leader.id_proyecto
+            "id_proyecto": tech_leader.id_proyecto,
+            "correo": tech_leader.correo,
+            "telefono": tech_leader.telefono
         })
 
 #ruta para crear rol
@@ -540,22 +602,55 @@ def crear_integrante_ti(id_proyecto):
 
 
 @app.route('/stakeholders/agregar', methods=['POST'])
-def agregar_stakeholders(id_proyecto):
+def agregar_stakeholder():
+    try:
+        data = request.get_json() or {}
+        id_proyecto = data.get("id_proyecto")
+        nombre = (data.get("nombre") or "").strip()
+        apellidos = (data.get("apellidos") or "").strip()
+        rol = (data.get("rol") or "").strip()
+        tipo = (data.get("tipo") or "Interno").strip()
+        correo = (data.get("correo") or data.get("email") or "").strip()
+        telefono = (data.get("telefono") or "").strip()
+        organizacion = (data.get("organizacion") or "").strip()
+        notas = (data.get("notas") or "").strip()
 
-    data = request.get_json()
+        if not id_proyecto or not nombre:
+            return jsonify({"error": "id_proyecto y nombre son requeridos"}), 400
 
-    nombre = data.get("nombre")
-    descripcion = data.get("descripcion")
+        nombre_completo = f"{nombre} {apellidos}".strip() if apellidos else nombre
 
-    with Session(engine) as session:
-        roles = Roles(
-            nombre= nombre,
-            descripcion= descripcion
-        )
+        with Session(engine) as session:
+            stakeholder = Stakeholders(
+                id_proyecto=int(id_proyecto),
+                nombre=nombre_completo,
+                rol=rol or "Sin rol",
+                tipo=tipo,
+                email=correo or None,
+                telefono=telefono or None,
+                organizacion=organizacion or None,
+                notas=notas or None,
+            )
+            session.add(stakeholder)
+            session.commit()
+            session.refresh(stakeholder)
 
-    session.add(roles)
-    session.commit()
-    session.refresh(roles)
+            return jsonify({
+                "mensaje": "Stakeholder creado correctamente",
+                "stakeholder": {
+                    "id_stakeholder": stakeholder.id_stakeholder,
+                    "id_proyecto": stakeholder.id_proyecto,
+                    "nombre": stakeholder.nombre,
+                    "rol": stakeholder.rol,
+                    "tipo": stakeholder.tipo,
+                    "email": stakeholder.email,
+                    "telefono": stakeholder.telefono,
+                    "organizacion": stakeholder.organizacion,
+                }
+            }), 201
+    except SQLAlchemyError as e:
+        print(str(e))
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/stakeholders/<int:id_proyecto>', methods=['GET'])
@@ -572,7 +667,9 @@ def obtener_stakeholders(id_proyecto):
                 "nombre": s.nombre,
                 "rol": s.rol,
                 "tipo": s.tipo,
-                "email": s.email
+                "email": s.email,
+                "telefono": s.telefono,
+                "organizacion": s.organizacion,
             }
             for s in stakeholders
         ]), 200
@@ -580,7 +677,6 @@ def obtener_stakeholders(id_proyecto):
 
 @app.route('/procesos/crear', methods=['POST'])
 def crear_proceso():
-    # Registra un proceso principal en el sistema
     try:
         data = request.get_json()
 
@@ -597,25 +693,28 @@ def crear_proceso():
         if not id_proyecto or not nombre:
             return jsonify({"error": "id_proyecto y nombre son requeridos"}), 400
 
-        with Session(engine) as session:
-            proceso = Proceso(
-                id_proyecto=id_proyecto,
-                nombre=nombre,
-                descripcion=descripcion,
-                objetivo=objetivo,
-                area_responsable=area_responsable,
-                id_responsable=id_responsable,
-                estado='activo'
-            )
-
-            session.add(proceso)
-            session.commit()
-            session.refresh(proceso)
+        with engine.begin() as conn:
+            resultado = conn.execute(
+                text("""
+                    INSERT INTO procesos (id_proyecto, nombre, descripcion, objetivo, area_responsable, id_responsable, estado, fecha_creacion)
+                    VALUES (:id_proyecto, :nombre, :descripcion, :objetivo, :area_responsable, :id_responsable, 'activo', :fecha_creacion)
+                    RETURNING id_proceso, nombre
+                """),
+                {
+                    "id_proyecto": id_proyecto,
+                    "nombre": nombre,
+                    "descripcion": descripcion or None,
+                    "objetivo": objetivo or None,
+                    "area_responsable": area_responsable or None,
+                    "id_responsable": id_responsable or None,
+                    "fecha_creacion": datetime.utcnow(),
+                }
+            ).fetchone()
 
             return jsonify({
                 "mensaje": "Proceso creado correctamente",
-                "id_proceso": proceso.id_proceso,
-                "nombre": proceso.nombre
+                "id_proceso": resultado[0],
+                "nombre": resultado[1]
             }), 201
 
     except SQLAlchemyError as e:

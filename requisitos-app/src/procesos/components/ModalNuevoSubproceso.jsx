@@ -1,20 +1,23 @@
 import { useState } from "react";
 
 export default function ModalNuevoSubproceso({
+  idProceso,
+  stakeholders = [],
   onClose,
   onGuardar,
 }) {
-  //alamcena los campos del formulario
   const [subproceso, setSubproceso] = useState({
     nombre: "",
     descripcion: "",
+    id_stakeholder: "",
   });
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState(null);
 
-  //cambios de cualquier input del formularios
   const handleChange = (e) => {
     setSubproceso({
-      ...subproceso,//se mantiene el estado anterior
-      [e.target.name]: e.target.value, // se actualiza el estado que e corresponde
+      ...subproceso,
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -32,6 +35,8 @@ export default function ModalNuevoSubproceso({
           </p>
         </div>
 
+        {error && <p className="text-sm text-red-500">{error}</p>}
+
         {/* Nombre */}
         <div>
           <label className="block text-sm font-medium text-gray-700">
@@ -40,9 +45,35 @@ export default function ModalNuevoSubproceso({
           <input
             name="nombre"
             placeholder="Ej. Alta de productos"
+            value={subproceso.nombre}
             className="input mt-1"
             onChange={handleChange}
           />
+        </div>
+
+        {/* Stakeholder */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Stakeholder responsable *
+          </label>
+          <select
+            name="id_stakeholder"
+            value={subproceso.id_stakeholder}
+            onChange={handleChange}
+            className="input mt-1"
+          >
+            <option value="">Selecciona un stakeholder</option>
+            {stakeholders.map((s) => (
+              <option key={s.id_stakeholder} value={s.id_stakeholder}>
+                {s.nombre}
+              </option>
+            ))}
+          </select>
+          {stakeholders.length === 0 && (
+            <p className="text-xs text-amber-600 mt-1">
+              Agrega stakeholders al proyecto primero
+            </p>
+          )}
         </div>
 
         {/* Descripción */}
@@ -54,6 +85,7 @@ export default function ModalNuevoSubproceso({
             name="descripcion"
             rows={3}
             placeholder="Describe brevemente qué se hace en este subproceso"
+            value={subproceso.descripcion}
             className="input mt-1 resize-none"
             onChange={handleChange}
           />
@@ -63,6 +95,7 @@ export default function ModalNuevoSubproceso({
         <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
           <button
             onClick={onClose}
+            disabled={guardando}
             className="px-4 py-2 rounded-lg border text-sm"
           >
             Cancelar
@@ -70,13 +103,42 @@ export default function ModalNuevoSubproceso({
 
           <button
             type="button"
-            onClick={() => {
-                if(!subproceso.nombre.trim()) return;
-                onGuardar(subproceso);
+            disabled={guardando || stakeholders.length === 0}
+            onClick={async () => {
+              if (!subproceso.nombre.trim() || !subproceso.id_stakeholder) return;
+              setError(null);
+              setGuardando(true);
+              try {
+                const res = await fetch("http://127.0.0.1:5000/subprocesos/crear", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    id_proceso: parseInt(idProceso, 10),
+                    id_stakeholder: parseInt(subproceso.id_stakeholder, 10),
+                    nombre: subproceso.nombre.trim(),
+                    descripcion: subproceso.descripcion || null,
+                  }),
+                });
+                if (!res.ok) {
+                  const err = await res.json();
+                  throw new Error(err.error || "Error al crear subproceso");
+                }
+                const data = await res.json();
+                onGuardar({
+                  id: data.id_subproceso,
+                  nombre: data.nombre,
+                  descripcion: subproceso.descripcion,
+                  tecnicas: [],
+                });
+              } catch (e) {
+                setError(e.message);
+              } finally {
+                setGuardando(false);
+              }
             }}
-            className="px-5 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium"
+            className="px-5 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium disabled:opacity-70"
           >
-            Crear subproceso
+            {guardando ? "Creando..." : "Crear subproceso"}
           </button>
         </div>
       </div>

@@ -38,11 +38,8 @@ export default function NuevoProyecto() {
       descripcion,
       objetivo,
       organizacion,
-<<<<<<< Updated upstream
       id_usuario: user.id,
-=======
       fechaInicio,
->>>>>>> Stashed changes
       productOwner: {
         nombre: poNombre,
         apellidos: poApellidos,

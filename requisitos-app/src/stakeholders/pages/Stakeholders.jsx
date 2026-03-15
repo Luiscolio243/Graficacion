@@ -35,8 +35,8 @@ export default function Stakeholders() {
             apellidos: "",
             rol: "Product Owner",
             tipo: "Interno",
-            correo: "Correo no disponible",
-            organizacion: ""
+            correo: dataPO.correo || "Correo no disponible",
+            organizacion: "",
           });
         }
 
@@ -49,8 +49,8 @@ export default function Stakeholders() {
             apellidos: "",
             rol: "Tech Leader",
             tipo: "Interno",
-            correo: "Correo no disponible",
-            organizacion: ""
+            correo: dataTL.correo || "Correo no disponible",
+            organizacion: "",
           });
         }
 
@@ -60,12 +60,13 @@ export default function Stakeholders() {
         
         dataStakeholders.forEach(s => {
           listaStakeholders.push({
+            id_stakeholder: s.id_stakeholder,
             nombre: s.nombre,
-            apellidos: "", 
+            apellidos: "",
             rol: s.rol,
             tipo: s.tipo,
             correo: s.email,
-            organizacion: "" 
+            organizacion: s.organizacion || "",
           });
         });
       }
@@ -127,10 +128,11 @@ export default function Stakeholders() {
       {/* modal del stakeholder */}
       {mostrarNuevoStakeholder && (
         <ModalNuevoStakeholder
-          onClose={() => setMostrarNuevoStakeholder(false)} //se ejecuta esta funcion cuando se cierra el modal
-          onGuardar={(nuevo) => { //se ejecuta esta funcion cuando se guarda un stakeholder
-            setStakeholders([...stakeholders, nuevo]); //se agregar el stakeholder al arreglo
-            setMostrarNuevoStakeholder(false); //se cierra el modal ya que lo guarda
+          idProyecto={id}
+          onClose={() => setMostrarNuevoStakeholder(false)}
+          onGuardar={(nuevo) => {
+            setStakeholders([...stakeholders, nuevo]);
+            setMostrarNuevoStakeholder(false);
           }}
         />
       )}

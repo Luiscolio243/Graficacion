@@ -2,10 +2,7 @@ from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from sqlalchemy.orm import DeclarativeBase
-
-class Base(DeclarativeBase):
-    pass
-
+from db import Base
 
 class Subproceso(Base):
     __tablename__ = 'subprocesos'
@@ -19,7 +16,7 @@ class Subproceso(Base):
     estado = Column(String(20), default='activo')
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
 
-    # Relationships
+    # Relaciones
     proceso = relationship("Proceso", back_populates="subprocesos")
-    stakeholder = relationship("Stakeholder")
+    stakeholder = relationship("Stakeholders")
     tecnicas = relationship("SubprocesoTecnica", back_populates="subproceso", cascade="all, delete-orphan")

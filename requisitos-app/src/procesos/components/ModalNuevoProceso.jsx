@@ -4,10 +4,10 @@ import { useState } from "react";
 
 export default function ModalNuevoProceso({ onClose, onGuardar, listaTI = [] }) {
 
-  //alamcena los campos del formulario
   const [proceso, setProceso] = useState({
     nombre: "",
     descripcion: "",
+    objetivo: "",
     area: "",
     responsableId: "",
   });
@@ -43,6 +43,7 @@ export default function ModalNuevoProceso({ onClose, onGuardar, listaTI = [] }) 
             <input
               name="nombre"
               placeholder="Ej. Gestión de almacén"
+              value={proceso.nombre}
               onChange={handleChange}
               className="input mt-1"
             />
@@ -56,6 +57,7 @@ export default function ModalNuevoProceso({ onClose, onGuardar, listaTI = [] }) 
             <textarea
               name="descripcion"
               placeholder="Describe brevemente el proceso..."
+              value={proceso.descripcion}
               onChange={handleChange}
               rows={3}
               className="input mt-1 resize-none"
@@ -76,6 +78,7 @@ export default function ModalNuevoProceso({ onClose, onGuardar, listaTI = [] }) 
             <input
               name="area"
               placeholder="Ej. Operaciones, Ventas, TI"
+              value={proceso.area}
               onChange={handleChange}
               className="input mt-1"
             />
@@ -88,15 +91,16 @@ export default function ModalNuevoProceso({ onClose, onGuardar, listaTI = [] }) 
                 </label>
                 <select
                 name="responsableId"
+                value={proceso.responsableId}
                 onChange={handleChange}
                 className="input mt-1"
                 >
                 <option value="">
                     Selecciona un responsable
                 </option>
-                {listaTI.map((persona, index) => (
-                    <option key={index} value={index}>
-                    {persona.nombre} {persona.apellidos}
+                {(listaTI || []).map((pti) => (
+                    <option key={pti.id_personal_ti} value={pti.usuario?.id_usuario ?? ""}>
+                    {pti.usuario?.nombre} {pti.usuario?.apellido}
                     </option>
                 ))}
                 </select>

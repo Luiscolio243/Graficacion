@@ -2,9 +2,7 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import String, Integer, Text, Date, DateTime, func
 from datetime import date, datetime
-
-class Base(DeclarativeBase):
-    pass
+from db import Base
 
 class Stakeholders(Base):
     __tablename__ = "stakeholders"

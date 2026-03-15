@@ -1,15 +1,48 @@
 // Pantalla de Procesos
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import ListaProcesos from "../components/ListaProcesos";
 import ModalNuevoProceso from "../components/ModalNuevoProceso";
 
 export default function Procesos() {
-
+  const { id } = useParams();
   const [mostrarNuevoProceso, setMostrarNuevoProceso] = useState(false);
-
-  // datos de prueba
   const [procesos, setProcesos] = useState([]);
+  const [equipoTI, setEquipoTI] = useState([]);
+  const [stakeholders, setStakeholders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const cargar = async () => {
+      if (!id) return;
+      try {
+        const [resProcesos, resTI, resStakeholders] = await Promise.all([
+          fetch(`http://127.0.0.1:5000/procesos/${id}`),
+          fetch(`http://127.0.0.1:5000/ti/${id}`),
+          fetch(`http://127.0.0.1:5000/stakeholders/${id}`),
+        ]);
+        if (resProcesos.ok) {
+          const data = await resProcesos.json();
+          setProcesos(data);
+        }
+        if (resTI.ok) {
+          const data = await resTI.json();
+          setEquipoTI(data);
+        }
+        if (resStakeholders.ok) {
+          const data = await resStakeholders.json();
+          setStakeholders(data);
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    cargar();
+  }, [id]);
 
   const onAgregarSubproceso = (idProceso, subproceso) => {
     setProcesos((prev) =>
@@ -18,8 +51,8 @@ export default function Procesos() {
           ? {
               ...p,
               subprocesos: [
-                ...p.subprocesos,
-                { ...subproceso, tecnicas: [] },
+                ...(p.subprocesos || []),
+                { ...subproceso, tecnicas: subproceso.tecnicas || [] },
               ],
             }
           : p
@@ -29,22 +62,29 @@ export default function Procesos() {
 
   const onAsignarTecnicas = (idProceso, idSubproceso, tecnicas) => {
     setProcesos((prev) =>
-        prev.map((p) =>
+      prev.map((p) =>
         p.id === idProceso
-            ? {
-                ...p,
-                subprocesos: p.subprocesos.map((sp) =>
+          ? {
+              ...p,
+              subprocesos: (p.subprocesos || []).map((sp) =>
                 sp.id === idSubproceso
-                    ? { ...sp, tecnicas }
-                    : sp
-                ),
+                  ? { ...sp, tecnicas }
+                  : sp
+              ),
             }
-            : p
-        )
+          : p
+      )
     );
-    };
+  };
 
-  
+  if (loading) {
+    return <div className="text-gray-500">Cargando procesos...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-500">{error}</div>;
+  }
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
 
@@ -68,18 +108,54 @@ export default function Procesos() {
       </div>
 
       {/* Lista */}
-      <ListaProcesos procesos={procesos} onAgregarSubproceso={onAgregarSubproceso} onAsignarTecnicas={onAsignarTecnicas}/>
+      <ListaProcesos
+        procesos={procesos}
+        stakeholders={stakeholders}
+        onAgregarSubproceso={onAgregarSubproceso}
+        onAsignarTecnicas={onAsignarTecnicas}
+      />
 
       {/* Modal */}
       {mostrarNuevoProceso && (
         <ModalNuevoProceso
+          listaTI={equipoTI}
+          idProyecto={id}
           onClose={() => setMostrarNuevoProceso(false)}
-          onGuardar={(nuevoProceso) => {
-            setProcesos([
-              ...procesos,
-              { ...nuevoProceso, subprocesos: [] }
-            ]);
-            setMostrarNuevoProceso(false);
+          onGuardar={async (nuevoProceso) => {
+            try {
+              const res = await fetch("http://127.0.0.1:5000/procesos/crear", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  id_proyecto: parseInt(id, 10),
+                  nombre: nuevoProceso.nombre,
+                  descripcion: nuevoProceso.descripcion,
+                  objetivo: nuevoProceso.objetivo || null,
+                  area: nuevoProceso.area || null,
+                  responsableId: nuevoProceso.responsableId ? parseInt(nuevoProceso.responsableId, 10) : null,
+                }),
+              });
+              if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || "Error al crear proceso");
+              }
+              const data = await res.json();
+              setProcesos([
+                ...procesos,
+                {
+                  id: data.id_proceso,
+                  nombre: data.nombre,
+                  descripcion: nuevoProceso.descripcion,
+                  area: nuevoProceso.area,
+                  responsableId: nuevoProceso.responsableId,
+                  subprocesos: [],
+                },
+              ]);
+              setMostrarNuevoProceso(false);
+            } catch (e) {
+              console.error(e);
+              alert(e.message || "Error al crear el proceso");
+            }
           }}
         />
       )}

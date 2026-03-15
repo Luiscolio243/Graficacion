@@ -2,7 +2,7 @@ import { useState } from "react";
 import ModalNuevoSubproceso from "../components/ModalNuevoSubproceso";
 import ModalAsignarTecnicas from "./ModalAsignarTecnicas";
 
-export default function TarjetaProceso({ proceso, onAgregarSubproceso, onAsignarTecnicas }) {
+export default function TarjetaProceso({ proceso, stakeholders = [], onAgregarSubproceso, onAsignarTecnicas }) {
   const [mostrarModal, setMostrarModal] = useState(false);
   const [mostrarSubproceso, setMostrarSubproceso] = useState(false);
   const [mostrarTecnicas, setMostrarTecnicas] = useState(false);
@@ -52,7 +52,7 @@ export default function TarjetaProceso({ proceso, onAgregarSubproceso, onAsignar
               )}
 
               <p className="text-xs text-gray-400 mt-2">
-                {sp.tecnicas.length} técnicas asignadas
+                {(sp.tecnicas || []).length} técnicas asignadas
               </p>
 
               <button
@@ -72,13 +72,13 @@ export default function TarjetaProceso({ proceso, onAgregarSubproceso, onAsignar
       {/*Modal que crear un nuevo subproceso*/}
       {mostrarModal && (
         <ModalNuevoSubproceso
-          onClose={() => setMostrarModal(false)} // Cierra el modal de subproceso
-          onGuardar={(subproceso) => { //se guarda el nuevo subproceso
-            // si onAgregarSubproceso no llega, aqui se notarioa
+          idProceso={proceso.id}
+          stakeholders={stakeholders}
+          onClose={() => setMostrarModal(false)}
+          onGuardar={(subproceso) => {
             if (!onAgregarSubproceso) return;
-            // Se agrega el subproceso al proceso correspondiente
             onAgregarSubproceso(proceso.id, subproceso);
-            setMostrarModal(false); //cierra modal
+            setMostrarModal(false);
           }}
         />
       )}
@@ -86,12 +86,12 @@ export default function TarjetaProceso({ proceso, onAgregarSubproceso, onAsignar
       {/* Modal asigna tecnicas a un subproceso */}
       {mostrarTecnicas && subprocesoActivo && (
         <ModalAsignarTecnicas
-          tecnicasIniciales={subprocesoActivo.tecnicas} //tecnicas que ya tiene asignadas
-          onClose={() => setMostrarTecnicas(false)} //cierra modal
-          onGuardar={(tecnicas) => { //guarda las tecnicas que se seleccionaron
-            //se ponen las tecnicas al subproceso dentro del proceso
-            onAsignarTecnicas(proceso.id, subprocesoActivo.id, tecnicas); 
-            setMostrarTecnicas(false); //cierra modal
+          tecnicasIniciales={(subprocesoActivo.tecnicas || []).map((t) => (typeof t === "string" ? t : (t?.nombre ?? t)))}
+          idSubproceso={subprocesoActivo.id}
+          onClose={() => setMostrarTecnicas(false)}
+          onGuardar={(tecnicas) => {
+            onAsignarTecnicas(proceso.id, subprocesoActivo.id, tecnicas);
+            setMostrarTecnicas(false);
           }}
         />
       )}

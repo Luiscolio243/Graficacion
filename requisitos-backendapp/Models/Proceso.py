@@ -1,10 +1,9 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
-from sqlalchemy.orm import relationship
 from datetime import datetime
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import relationship
+from db import Base
 
-class Base(DeclarativeBase):
-    pass
 
 class Proceso(Base):
     __tablename__ = 'procesos'
@@ -15,12 +14,9 @@ class Proceso(Base):
     descripcion = Column(Text)
     objetivo = Column(Text)
     area_responsable = Column(String(100))
-    id_responsable = Column(Integer, ForeignKey('usuarios.id_usuario'))
+    id_responsable = Column(Integer)
     estado = Column(String(20), default='activo')
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
 
-    # Relationships
-    proyecto = relationship("Proyecto", back_populates="procesos")
-    responsable = relationship("Usuario")
-    subprocesos = relationship("Subproceso", back_populates="proceso", cascade="all, delete-orphan")
-
+    #Relaciones
+    subprocesos = relationship("Subproceso", back_populates="proceso")

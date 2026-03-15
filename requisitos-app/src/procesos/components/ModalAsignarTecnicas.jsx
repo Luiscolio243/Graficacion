@@ -10,16 +10,15 @@ const TECNICAS_DISPONIBLES = [
 ];
 
 export default function ModalAsignarTecnicas({
+  idSubproceso,
   onClose,
   onGuardar,
   tecnicasIniciales = [],
 }) {
-  
-  //alamcena las tecnicas que se seleccionaron
-  // se inicialician las tecnicas marcadas
   const [seleccionadas, setSeleccionadas] = useState(tecnicasIniciales);
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState(null);
 
-  //esta funcion alterna entre agrega o quita una tectnica del arreglo
   const toggleTecnica = (tecnica) => {
     setSeleccionadas((prev) =>
       prev.includes(tecnica)  //si la tecnica ya esta seleccionada 
@@ -33,6 +32,7 @@ export default function ModalAsignarTecnicas({
       <div className="bg-white rounded-2xl p-8 w-full max-w-md space-y-6">
 
         <div>
+          {error && <p className="text-sm text-red-500 mb-2">{error}</p>}
           <h2 className="text-xl font-semibold text-gray-900">
             Asignar Técnicas
           </h2>
@@ -60,16 +60,43 @@ export default function ModalAsignarTecnicas({
         <div className="flex justify-end gap-3 pt-4 border-t">
           <button
             onClick={onClose}
+            disabled={guardando}
             className="px-4 py-2 border rounded-lg text-sm"
           >
             Cancelar
           </button>
 
           <button
-            onClick={() => onGuardar(seleccionadas)}
-            className="px-5 py-2 bg-indigo-600 text-white rounded-lg text-sm"
+            disabled={guardando || seleccionadas.length === 0}
+            onClick={async () => {
+              if (seleccionadas.length === 0) return;
+              setError(null);
+              setGuardando(true);
+              try {
+                const res = await fetch("http://127.0.0.1:5000/subprocesos/asignar-tecnicas", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    id_subproceso: idSubproceso,
+                    tecnicas: seleccionadas,
+                  }),
+                });
+                if (!res.ok) {
+                  const err = await res.json();
+                  throw new Error(err.error || "Error al asignar técnicas");
+                }
+                const data = await res.json();
+                onGuardar(data.tecnicas);
+                onClose();
+              } catch (e) {
+                setError(e.message);
+              } finally {
+                setGuardando(false);
+              }
+            }}
+            className="px-5 py-2 bg-indigo-600 text-white rounded-lg text-sm disabled:opacity-70"
           >
-            Guardar
+            {guardando ? "Guardando..." : "Guardar"}
           </button>
         </div>
       </div>

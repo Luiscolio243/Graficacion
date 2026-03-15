@@ -83,14 +83,12 @@ export default function ProyectoDashboard() {
         {proyecto.descripcion}
       </Card>
 
-      {/* Estos campos aún no vienen de la API, 
-          los dejaremos estáticos por ahora o mostrar "N/A" */}
       <Card titulo="Fecha de Inicio">
-        Por definir
+        {proyecto.fecha_inicio || "Por definir"}
       </Card>
 
       <Card titulo="Organización">
-        Por definir
+        {proyecto.organizacion || "Por definir"}
       </Card>
     </div>
 
@@ -101,7 +99,7 @@ export default function ProyectoDashboard() {
       titulo="Product Owner"
       nombre={productOwner.nombre}
       correo={productOwner.correo}
-      telefono="Teléfono no disponible"
+      telefono={productOwner.telefono}
     />
   ) : (
     <Card titulo="Product Owner">
@@ -114,7 +112,7 @@ export default function ProyectoDashboard() {
       titulo="Tech Leader"
       nombre={techLeader.nombre}
       correo={techLeader.correo}
-      telefono="Teléfono no disponible"
+      telefono={techLeader.telefono}
     />
   ) : (
     <Card titulo="Tech Leader">
