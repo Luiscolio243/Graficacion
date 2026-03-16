@@ -1,17 +1,11 @@
-
 from __future__ import annotations
-
 from datetime import datetime
-
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
-
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Integer, Text, Date, DateTime, ForeignKey
 from datetime import date, datetime
-
 
 class Base(DeclarativeBase):
     pass
@@ -51,6 +45,7 @@ class TechLeader(Base):
     id_tech_leader: Mapped[int] = mapped_column(
         Integer, primary_key=True
 
+    )
     id_proyecto: Mapped[int] = mapped_column(
         ForeignKey("proyectos.id_proyecto"),
         Integer, nullable=False
