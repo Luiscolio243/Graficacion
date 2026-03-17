@@ -1,10 +1,8 @@
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.orm import Mapped, mapped_column
+from __future__ import annotations
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy import String, Integer, Text, Date, DateTime, func, Boolean
 from datetime import date, datetime
-
-class Base(DeclarativeBase):
-    pass
+from Models.Base import Base
 
 class Entrevistas(Base):
     __tablename__ = "entrevistas"
@@ -67,4 +65,10 @@ class Entrevistas(Base):
 
     fecha_realizada: Mapped[datetime] = mapped_column(
         DateTime
+    )
+
+    preguntas: Mapped[list["EntrevistaPreguntas"]] = relationship(
+        "EntrevistaPreguntas",
+        back_populates="entrevista",
+        cascade="all, delete-orphan"
     )

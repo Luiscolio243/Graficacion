@@ -1,27 +1,27 @@
-from sqlalchemy.orm import DeclarativeBase
+from __future__ import annotations  #Evita el problema circular de forma que no se preocupa si se ha definido ya una clase
+from sqlalchemy.orm import DeclarativeBase, relationship
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import String, Integer, Text, Date, DateTime, func, Boolean, ForeignKey
 from datetime import date, datetime
-
-class Base(DeclarativeBase):
-    pass
+from Models.Base import Base
+from typing import Optional
 
 class EntrevistaPreguntas(Base):
-    __tablename__ = "entrevistas_preguntas"
+    __tablename__ = "entrevista_preguntas"
 
     id_ent_prg: Mapped[int] = mapped_column(
         Integer, primary_key=True
     )
 
     id_entrevista: Mapped[int] = mapped_column(
-        Integer, ForeignKey("entrevistas.id_entrevista")
+        Integer, ForeignKey("entrevistas.id_entrevista"), nullable=False
     )
 
     pregunta : Mapped[str] = mapped_column(
         Text
     )
 
-    respuesta: Mapped[str] = mapped_column(
+    respuesta: Mapped[Optional[str]] = mapped_column(
         Text
     )
 
@@ -33,6 +33,8 @@ class EntrevistaPreguntas(Base):
         Text
     )
 
-    timestamp_audio: Mapped[int] = mapped_column(
+    timestamp_audio: Mapped[Optional[int]] = mapped_column(
         Integer
     )
+
+    entrevista: Mapped["Entrevistas"] = relationship(back_populates="preguntas")
