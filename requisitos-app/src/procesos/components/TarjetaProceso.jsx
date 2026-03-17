@@ -2,11 +2,19 @@ import { useState } from "react";
 import ModalNuevoSubproceso from "../components/ModalNuevoSubproceso";
 import ModalAsignarTecnicas from "./ModalAsignarTecnicas";
 
-export default function TarjetaProceso({ proceso, stakeholders = [], onAgregarSubproceso, onAsignarTecnicas }) {
+export default function TarjetaProceso({
+  proceso,
+  stakeholders = [],
+  onAgregarSubproceso,
+  onAsignarTecnicas,
+  onEditarProceso,
+  onEditarSubproceso,
+}) {
   const [mostrarModal, setMostrarModal] = useState(false);
   const [mostrarSubproceso, setMostrarSubproceso] = useState(false);
   const [mostrarTecnicas, setMostrarTecnicas] = useState(false);
   const [subprocesoActivo, setSubprocesoActivo] = useState(null);
+  const [mostrarEditarSubproceso, setMostrarEditarSubproceso] = useState(false);
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -22,11 +30,21 @@ export default function TarjetaProceso({ proceso, stakeholders = [], onAgregarSu
           </p>
         </div>
 
-        <button 
-            onClick={() => setMostrarModal(true)}
-            className="px-3 py-1 text-sm bg-white/20 rounded-lg">
-            + Agregar Subproceso
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onEditarProceso?.(proceso)}
+            className="px-3 py-1 text-sm bg-white/20 rounded-lg"
+          >
+            Editar
+          </button>
+
+          <button 
+              onClick={() => setMostrarModal(true)}
+              className="px-3 py-1 text-sm bg-white/20 rounded-lg">
+              + Agregar Subproceso
+          </button>
+        </div>
       </div>
 
       {/* Subprocesos */}
@@ -55,15 +73,28 @@ export default function TarjetaProceso({ proceso, stakeholders = [], onAgregarSu
                 {(sp.tecnicas || []).length} técnicas asignadas
               </p>
 
-              <button
-                onClick={() => {
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
                     setSubprocesoActivo(sp);
-                    setMostrarTecnicas(true);
-                }}
-                className="text-sm text-indigo-600 hover:underline"
+                    setMostrarEditarSubproceso(true);
+                  }}
+                  className="text-sm text-indigo-600 hover:underline"
                 >
-                Asignar técnicas
+                  Editar
                 </button>
+
+                <button
+                  onClick={() => {
+                      setSubprocesoActivo(sp);
+                      setMostrarTecnicas(true);
+                  }}
+                  className="text-sm text-indigo-600 hover:underline"
+                  >
+                  Asignar técnicas
+                  </button>
+              </div>
             </div>
           ))}
         </div>
@@ -79,6 +110,25 @@ export default function TarjetaProceso({ proceso, stakeholders = [], onAgregarSu
             if (!onAgregarSubproceso) return;
             onAgregarSubproceso(proceso.id, subproceso);
             setMostrarModal(false);
+          }}
+        />
+      )}
+
+      {/* Modal editar subproceso */}
+      {mostrarEditarSubproceso && subprocesoActivo && (
+        <ModalNuevoSubproceso
+          modo="editar"
+          idProceso={proceso.id}
+          stakeholders={stakeholders}
+          subprocesoInicial={subprocesoActivo}
+          onClose={() => {
+            setMostrarEditarSubproceso(false);
+            setSubprocesoActivo(null);
+          }}
+          onGuardar={(subproceso) => {
+            onEditarSubproceso?.(proceso.id, subprocesoActivo.id, subproceso);
+            setMostrarEditarSubproceso(false);
+            setSubprocesoActivo(null);
           }}
         />
       )}

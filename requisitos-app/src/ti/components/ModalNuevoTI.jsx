@@ -2,12 +2,18 @@
 
 import { useState } from "react";
 
-export default function ModalNuevoTI({ onClose, onGuardar, roles = [] }) {
+export default function ModalNuevoTI({
+  onClose,
+  onGuardar,
+  roles = [],
+  modo = "crear",
+  tiInicial = null,
+}) {
   const [form, setForm] = useState({
-    nombre: "",
-    apellido: "",
-    email: "",
-    id_rol: "",
+    nombre: tiInicial?.usuario?.nombre || "",
+    apellido: tiInicial?.usuario?.apellido || "",
+    email: tiInicial?.usuario?.email || "",
+    id_rol: tiInicial?.rol?.id_rol || "",
   });
 
   const handleChange = (e) => {
@@ -22,7 +28,7 @@ export default function ModalNuevoTI({ onClose, onGuardar, roles = [] }) {
       <div className="bg-white rounded-xl p-6 w-full max-w-md space-y-4">
 
         <h2 className="text-lg font-semibold">
-          Nueva persona de TI
+          {modo === "editar" ? "Editar persona de TI" : "Nueva persona de TI"}
         </h2>
 
         {/* Campos */}
@@ -82,7 +88,7 @@ export default function ModalNuevoTI({ onClose, onGuardar, roles = [] }) {
             }
             className="px-4 py-2 bg-indigo-600 text-white rounded-lg"
           >
-            Guardar
+            {modo === "editar" ? "Guardar cambios" : "Guardar"}
           </button>
         </div>
       </div>

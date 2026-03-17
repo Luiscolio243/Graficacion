@@ -2,7 +2,7 @@
 
 import TarjetaTI from "./TarjetaTI";
 
-export default function ListaTI({ ti }) {
+export default function ListaTI({ ti, onEditar }) {
   if (ti.length === 0) {
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
@@ -19,7 +19,7 @@ export default function ListaTI({ ti }) {
   return (
     <div className="space-y-3">
       {ti.map((s, index) => (
-        <TarjetaTI key={index} ti={s} />
+        <TarjetaTI key={s.id_personal_ti ?? index} ti={s} onEditar={onEditar} />
       ))}
     </div>
   );

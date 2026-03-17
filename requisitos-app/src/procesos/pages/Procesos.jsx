@@ -8,6 +8,8 @@ import ModalNuevoProceso from "../components/ModalNuevoProceso";
 export default function Procesos() {
   const { id } = useParams();
   const [mostrarNuevoProceso, setMostrarNuevoProceso] = useState(false);
+  const [mostrarEditarProceso, setMostrarEditarProceso] = useState(false);
+  const [procesoActivo, setProcesoActivo] = useState(null);
   const [procesos, setProcesos] = useState([]);
   const [equipoTI, setEquipoTI] = useState([]);
   const [stakeholders, setStakeholders] = useState([]);
@@ -77,6 +79,21 @@ export default function Procesos() {
     );
   };
 
+  const onEditarSubproceso = (idProceso, idSubproceso, subprocesoActualizado) => {
+    setProcesos((prev) =>
+      prev.map((p) =>
+        p.id === idProceso
+          ? {
+              ...p,
+              subprocesos: (p.subprocesos || []).map((sp) =>
+                sp.id === idSubproceso ? { ...sp, ...subprocesoActualizado } : sp
+              ),
+            }
+          : p
+      )
+    );
+  };
+
   if (loading) {
     return <div className="text-gray-500">Cargando procesos...</div>;
   }
@@ -113,6 +130,11 @@ export default function Procesos() {
         stakeholders={stakeholders}
         onAgregarSubproceso={onAgregarSubproceso}
         onAsignarTecnicas={onAsignarTecnicas}
+        onEditarProceso={(p) => {
+          setProcesoActivo(p);
+          setMostrarEditarProceso(true);
+        }}
+        onEditarSubproceso={onEditarSubproceso}
       />
 
       {/* Modal */}
@@ -155,6 +177,49 @@ export default function Procesos() {
             } catch (e) {
               console.error(e);
               alert(e.message || "Error al crear el proceso");
+            }
+          }}
+        />
+      )}
+
+      {/* Modal editar proceso */}
+      {mostrarEditarProceso && procesoActivo && (
+        <ModalNuevoProceso
+          modo="editar"
+          procesoInicial={procesoActivo}
+          listaTI={equipoTI}
+          onClose={() => {
+            setMostrarEditarProceso(false);
+            setProcesoActivo(null);
+          }}
+          onGuardar={async (cambios) => {
+            try {
+              const res = await fetch(`http://127.0.0.1:5000/procesos/${procesoActivo.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  nombre: cambios.nombre,
+                  descripcion: cambios.descripcion,
+                  objetivo: cambios.objetivo || null,
+                  area: cambios.area || null,
+                  responsableId: cambios.responsableId ? parseInt(cambios.responsableId, 10) : null,
+                }),
+              });
+              if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || "Error al editar proceso");
+              }
+              const data = await res.json();
+              setProcesos((prev) =>
+                prev.map((p) =>
+                  p.id === procesoActivo.id ? { ...p, ...data.proceso } : p
+                )
+              );
+              setMostrarEditarProceso(false);
+              setProcesoActivo(null);
+            } catch (e) {
+              console.error(e);
+              alert(e.message || "Error al editar el proceso");
             }
           }}
         />

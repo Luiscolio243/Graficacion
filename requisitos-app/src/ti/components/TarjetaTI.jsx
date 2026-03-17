@@ -1,6 +1,6 @@
 // Tarjeta para cada integrante de TI
 
-export default function TarjetaTI({ ti }) {
+export default function TarjetaTI({ ti, onEditar }) {
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 flex justify-between items-start">
 
@@ -18,9 +18,15 @@ export default function TarjetaTI({ ti }) {
         </p>
       </div>
 
-      {/* Acciones futuras */}
+      {/* Acciones */}
       <div className="text-sm text-gray-400">
-        
+        <button
+          type="button"
+          onClick={() => onEditar?.(ti)}
+          className="text-sm text-indigo-600 hover:underline"
+        >
+          Editar
+        </button>
       </div>
     </div>
   );

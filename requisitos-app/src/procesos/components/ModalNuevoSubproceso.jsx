@@ -5,11 +5,13 @@ export default function ModalNuevoSubproceso({
   stakeholders = [],
   onClose,
   onGuardar,
+  modo = "crear",
+  subprocesoInicial = null,
 }) {
   const [subproceso, setSubproceso] = useState({
-    nombre: "",
-    descripcion: "",
-    id_stakeholder: "",
+    nombre: subprocesoInicial?.nombre || "",
+    descripcion: subprocesoInicial?.descripcion || "",
+    id_stakeholder: subprocesoInicial?.id_stakeholder || "",
   });
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(null);
@@ -28,7 +30,7 @@ export default function ModalNuevoSubproceso({
         {/* Header */}
         <div>
           <h2 className="text-xl font-semibold text-gray-900">
-            Nuevo Subproceso
+            {modo === "editar" ? "Editar Subproceso" : "Nuevo Subproceso"}
           </h2>
           <p className="text-sm text-gray-500 mt-1">
             Define una actividad específica dentro del proceso
@@ -109,27 +111,50 @@ export default function ModalNuevoSubproceso({
               setError(null);
               setGuardando(true);
               try {
-                const res = await fetch("http://127.0.0.1:5000/subprocesos/crear", {
-                  method: "POST",
+                const url =
+                  modo === "editar"
+                    ? `http://127.0.0.1:5000/subprocesos/${subprocesoInicial?.id}`
+                    : "http://127.0.0.1:5000/subprocesos/crear";
+                const res = await fetch(url, {
+                  method: modo === "editar" ? "PUT" : "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    id_proceso: parseInt(idProceso, 10),
-                    id_stakeholder: parseInt(subproceso.id_stakeholder, 10),
-                    nombre: subproceso.nombre.trim(),
-                    descripcion: subproceso.descripcion || null,
-                  }),
+                  body: JSON.stringify(
+                    modo === "editar"
+                      ? {
+                          id_stakeholder: parseInt(subproceso.id_stakeholder, 10),
+                          nombre: subproceso.nombre.trim(),
+                          descripcion: subproceso.descripcion || null,
+                        }
+                      : {
+                          id_proceso: parseInt(idProceso, 10),
+                          id_stakeholder: parseInt(subproceso.id_stakeholder, 10),
+                          nombre: subproceso.nombre.trim(),
+                          descripcion: subproceso.descripcion || null,
+                        }
+                  ),
                 });
                 if (!res.ok) {
                   const err = await res.json();
                   throw new Error(err.error || "Error al crear subproceso");
                 }
                 const data = await res.json();
-                onGuardar({
-                  id: data.id_subproceso,
-                  nombre: data.nombre,
-                  descripcion: subproceso.descripcion,
-                  tecnicas: [],
-                });
+                if (modo === "editar") {
+                  const sp = data.subproceso;
+                  onGuardar({
+                    id: sp.id,
+                    nombre: sp.nombre,
+                    descripcion: sp.descripcion,
+                    id_stakeholder: sp.id_stakeholder,
+                  });
+                } else {
+                  onGuardar({
+                    id: data.id_subproceso,
+                    nombre: data.nombre,
+                    descripcion: subproceso.descripcion,
+                    id_stakeholder: parseInt(subproceso.id_stakeholder, 10),
+                    tecnicas: [],
+                  });
+                }
               } catch (e) {
                 setError(e.message);
               } finally {
@@ -138,7 +163,7 @@ export default function ModalNuevoSubproceso({
             }}
             className="px-5 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium disabled:opacity-70"
           >
-            {guardando ? "Creando..." : "Crear subproceso"}
+            {guardando ? (modo === "editar" ? "Guardando..." : "Creando...") : modo === "editar" ? "Guardar cambios" : "Crear subproceso"}
           </button>
         </div>
       </div>

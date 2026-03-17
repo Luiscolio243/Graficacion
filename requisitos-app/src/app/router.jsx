@@ -3,6 +3,7 @@ import Login from "../auth/pages/Login"
 import Proyectos from "../proyectos/pages/Proyectos";
 import Layout from "./layout";
 import NuevoProyecto from "../proyectos/pages/NuevoProyecto";
+import EditarProyecto from "../proyectos/pages/EditarProyecto";
 import ProyectoDashboard from "../proyectos/pages/ProyectoDashboard"
 import Stakeholders from "../stakeholders/pages/Stakeholders";
 import TI from "../ti/pages/ti";
@@ -38,6 +39,11 @@ export const router = createBrowserRouter([
                 //Dashboard de cada proyecto
                 path: "proyectos/:id",
                 element: <ProyectoDashboard />
+            },
+            {
+                //Pantalla para editar un proyecto
+                path: "proyectos/:id/editar",
+                element: <EditarProyecto />
             },
             {
                 //Stakeholders de cada proyecto

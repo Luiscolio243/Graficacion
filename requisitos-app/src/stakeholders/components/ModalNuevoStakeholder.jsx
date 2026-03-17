@@ -2,16 +2,22 @@
 
 import { useState } from "react";
 
-export default function ModalNuevoStakeholder({ onClose, onGuardar, idProyecto }) {
+export default function ModalNuevoStakeholder({
+  onClose,
+  onGuardar,
+  idProyecto,
+  modo = "crear",
+  stakeholderInicial = null,
+}) {
   const [form, setForm] = useState({
-    nombre: "",
-    apellidos: "",
-    rol: "",
-    tipo: "Interno",
-    correo: "",
-    telefono: "",
-    organizacion: "",
-    notas: "",
+    nombre: stakeholderInicial?.nombre || "",
+    apellidos: stakeholderInicial?.apellidos || "",
+    rol: stakeholderInicial?.rol || "",
+    tipo: stakeholderInicial?.tipo || "Interno",
+    correo: stakeholderInicial?.correo || stakeholderInicial?.email || "",
+    telefono: stakeholderInicial?.telefono || "",
+    organizacion: stakeholderInicial?.organizacion || "",
+    notas: stakeholderInicial?.notas || "",
   });
 
   const [guardando, setGuardando] = useState(false);
@@ -31,7 +37,7 @@ export default function ModalNuevoStakeholder({ onClose, onGuardar, idProyecto }
       <div className="bg-white rounded-xl p-6 w-full max-w-md space-y-4">
 
         <h2 className="text-lg font-semibold">
-          Nuevo Stakeholder
+          {modo === "editar" ? "Editar Stakeholder" : "Nuevo Stakeholder"}
         </h2>
 
         {error && (
@@ -125,13 +131,19 @@ export default function ModalNuevoStakeholder({ onClose, onGuardar, idProyecto }
               setError(null);
               setGuardando(true);
               try {
-                const res = await fetch("http://127.0.0.1:5000/stakeholders/agregar", {
-                  method: "POST",
+                const url =
+                  modo === "editar"
+                    ? `http://127.0.0.1:5000/stakeholders/${stakeholderInicial?.id_stakeholder}`
+                    : "http://127.0.0.1:5000/stakeholders/agregar";
+
+                const res = await fetch(url, {
+                  method: modo === "editar" ? "PUT" : "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    id_proyecto: idProyecto,
-                    ...form,
-                  }),
+                  body: JSON.stringify(
+                    modo === "editar"
+                      ? { ...form }
+                      : { id_proyecto: idProyecto, ...form }
+                  ),
                 });
                 if (!res.ok) {
                   const err = await res.json();
@@ -146,6 +158,7 @@ export default function ModalNuevoStakeholder({ onClose, onGuardar, idProyecto }
                   rol: sh.rol,
                   tipo: sh.tipo,
                   correo: sh.email,
+                  telefono: sh.telefono,
                   organizacion: sh.organizacion || "",
                 });
               } catch (e) {
@@ -156,7 +169,7 @@ export default function ModalNuevoStakeholder({ onClose, onGuardar, idProyecto }
             }}
             className="px-4 py-2 bg-indigo-600 text-white rounded-lg disabled:opacity-70"
           >
-            {guardando ? "Guardando..." : "Guardar"}
+            {guardando ? "Guardando..." : modo === "editar" ? "Guardar cambios" : "Guardar"}
           </button>
         </div>
       </div>

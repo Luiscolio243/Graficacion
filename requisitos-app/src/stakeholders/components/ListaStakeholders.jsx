@@ -2,7 +2,7 @@
 
 import TarjetaStakeholder from "./TarjetaStakeholder";
 
-export default function ListaStakeholders({ stakeholders }) {
+export default function ListaStakeholders({ stakeholders, onEditar }) {
   if (stakeholders.length === 0) {
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
@@ -19,7 +19,11 @@ export default function ListaStakeholders({ stakeholders }) {
   return (
     <div className="space-y-3">
       {stakeholders.map((s, index) => (
-        <TarjetaStakeholder key={s.id_stakeholder ?? `sh-${index}`} stakeholder={s} />
+        <TarjetaStakeholder
+          key={s.id_stakeholder ?? `sh-${index}`}
+          stakeholder={s}
+          onEditar={onEditar}
+        />
       ))}
     </div>
   );

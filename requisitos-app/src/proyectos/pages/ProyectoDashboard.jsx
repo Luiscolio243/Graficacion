@@ -72,9 +72,18 @@ export default function ProyectoDashboard() {
         </h1>
       </div>
 
-      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-        {proyecto.estado}
-      </span>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => navigate(`/app/proyectos/${id}/editar`)}
+          className="px-4 py-2 border border-gray-300 rounded-lg text-sm"
+        >
+          Editar proyecto
+        </button>
+
+        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+          {proyecto.estado}
+        </span>
+      </div>
     </div>
 
     {/* Información general del proyecto */}

@@ -1,6 +1,6 @@
 // Tarjeta para cada de un stakeholder
 
-export default function TarjetaStakeholder({ stakeholder }) {
+export default function TarjetaStakeholder({ stakeholder, onEditar }) {
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 flex justify-between items-start">
 
@@ -24,9 +24,17 @@ export default function TarjetaStakeholder({ stakeholder }) {
         )}
       </div>
 
-      {/* Acciones futuras */}
+      {/* Acciones */}
       <div className="text-sm text-gray-400">
-        
+        {stakeholder?.id_stakeholder && (
+          <button
+            type="button"
+            onClick={() => onEditar?.(stakeholder)}
+            className="text-sm text-indigo-600 hover:underline"
+          >
+            Editar
+          </button>
+        )}
       </div>
     </div>
   );

@@ -12,6 +12,8 @@ export default function Stakeholders() {
 
   // controla el modal de nuevo stakeholder
   const [mostrarNuevoStakeholder, setMostrarNuevoStakeholder] = useState(false);
+  const [mostrarEditarStakeholder, setMostrarEditarStakeholder] = useState(false);
+  const [stakeholderActivo, setStakeholderActivo] = useState(null);
 
   // controla el modal de nuevo rol
   const [mostrarNuevoRol, setMostrarNuevoRol] = useState(false);
@@ -123,7 +125,13 @@ export default function Stakeholders() {
       </div>
 
       {/* Lista o estado vacío */}
-      <ListaStakeholders stakeholders={stakeholders} />
+      <ListaStakeholders
+        stakeholders={stakeholders}
+        onEditar={(s) => {
+          setStakeholderActivo(s);
+          setMostrarEditarStakeholder(true);
+        }}
+      />
 
       {/* modal del stakeholder */}
       {mostrarNuevoStakeholder && (
@@ -133,6 +141,28 @@ export default function Stakeholders() {
           onGuardar={(nuevo) => {
             setStakeholders([...stakeholders, nuevo]);
             setMostrarNuevoStakeholder(false);
+          }}
+        />
+      )}
+
+      {/* modal editar stakeholder */}
+      {mostrarEditarStakeholder && stakeholderActivo && (
+        <ModalNuevoStakeholder
+          idProyecto={id}
+          modo="editar"
+          stakeholderInicial={stakeholderActivo}
+          onClose={() => {
+            setMostrarEditarStakeholder(false);
+            setStakeholderActivo(null);
+          }}
+          onGuardar={(actualizado) => {
+            setStakeholders((prev) =>
+              prev.map((s) =>
+                s.id_stakeholder === actualizado.id_stakeholder ? actualizado : s
+              )
+            );
+            setMostrarEditarStakeholder(false);
+            setStakeholderActivo(null);
           }}
         />
       )}

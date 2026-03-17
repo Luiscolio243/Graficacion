@@ -12,6 +12,8 @@ export default function TI() {
 
   // controla el modal de nuevo stakeholder
   const [mostrarNuevoTI, setMostrarNuevoTI] = useState(false);
+  const [mostrarEditarTI, setMostrarEditarTI] = useState(false);
+  const [tiActivo, setTiActivo] = useState(null);
 
   // controla el modal de nuevo rol
   const [mostrarNuevoRol, setMostrarNuevoRol] = useState(false);
@@ -112,7 +114,13 @@ export default function TI() {
       </div>
 
       {/* Lista o estado vacío */}
-      <ListaTI ti={ti} />
+      <ListaTI
+        ti={ti}
+        onEditar={(persona) => {
+          setTiActivo(persona);
+          setMostrarEditarTI(true);
+        }}
+      />
 
       {/* modal del stakeholder */}
       {mostrarNuevoTI && (
@@ -130,6 +138,47 @@ export default function TI() {
                   `Usuario creado para ${data.personal_ti.usuario.email}\n\nPassword temporal: ${data.password_temporal}\n\nGuárdalo ahora.`
                 );
               }
+            } catch (err) {
+              alert(err.message);
+            }
+          }}
+        />
+      )}
+
+      {/* modal editar ti */}
+      {mostrarEditarTI && tiActivo && (
+        <ModalNuevoTI
+          modo="editar"
+          tiInicial={tiActivo}
+          onClose={() => {
+            setMostrarEditarTI(false);
+            setTiActivo(null);
+          }}
+          roles={roles}
+          onGuardar={async (cambios) => {
+            try {
+              const res = await fetch(`http://127.0.0.1:5000/ti/editar/${tiActivo.id_personal_ti}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  nombre: cambios.nombre,
+                  apellido: cambios.apellido,
+                  email: cambios.email,
+                  id_rol: cambios.id_rol,
+                }),
+              });
+              if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || "Error al editar integrante TI");
+              }
+              const data = await res.json();
+              setTI((prev) =>
+                prev.map((x) =>
+                  x.id_personal_ti === data.personal_ti.id_personal_ti ? data.personal_ti : x
+                )
+              );
+              setMostrarEditarTI(false);
+              setTiActivo(null);
             } catch (err) {
               alert(err.message);
             }

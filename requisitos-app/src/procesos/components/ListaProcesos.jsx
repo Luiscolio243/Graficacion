@@ -1,6 +1,13 @@
 import TarjetaProceso from "./TarjetaProceso";
 
-export default function ListaProcesos({ procesos, stakeholders = [], onAgregarSubproceso, onAsignarTecnicas }) {
+export default function ListaProcesos({
+  procesos,
+  stakeholders = [],
+  onAgregarSubproceso,
+  onAsignarTecnicas,
+  onEditarProceso,
+  onEditarSubproceso,
+}) {
 
   if (procesos.length === 0) {
     return (
@@ -24,6 +31,8 @@ export default function ListaProcesos({ procesos, stakeholders = [], onAgregarSu
           stakeholders={stakeholders}
           onAgregarSubproceso={onAgregarSubproceso}
           onAsignarTecnicas={onAsignarTecnicas}
+          onEditarProceso={onEditarProceso}
+          onEditarSubproceso={onEditarSubproceso}
         />
       ))}
     </div>

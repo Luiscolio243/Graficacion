@@ -2,14 +2,20 @@
 
 import { useState } from "react";
 
-export default function ModalNuevoProceso({ onClose, onGuardar, listaTI = [] }) {
+export default function ModalNuevoProceso({
+  onClose,
+  onGuardar,
+  listaTI = [],
+  modo = "crear",
+  procesoInicial = null,
+}) {
 
   const [proceso, setProceso] = useState({
-    nombre: "",
-    descripcion: "",
-    objetivo: "",
-    area: "",
-    responsableId: "",
+    nombre: procesoInicial?.nombre || "",
+    descripcion: procesoInicial?.descripcion || "",
+    objetivo: procesoInicial?.objetivo || "",
+    area: procesoInicial?.area || "",
+    responsableId: procesoInicial?.responsableId || "",
   });
 
   //cambios de cualquier input del formularios
@@ -27,7 +33,7 @@ export default function ModalNuevoProceso({ onClose, onGuardar, listaTI = [] }) 
         {/* Título */}
         <div>
           <h2 className="text-xl font-semibold text-gray-900">
-            Nuevo Proceso
+            {modo === "editar" ? "Editar Proceso" : "Nuevo Proceso"}
           </h2>
           <p className="text-sm text-gray-500 mt-1">
             Define la información principal del proceso de negocio
@@ -118,7 +124,7 @@ export default function ModalNuevoProceso({ onClose, onGuardar, listaTI = [] }) 
           <button
             onClick={() => onGuardar(proceso)}
             className="px-5 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium">
-            Agregar proceso
+            {modo === "editar" ? "Guardar cambios" : "Agregar proceso"}
           </button>
         </div>
       </div>
