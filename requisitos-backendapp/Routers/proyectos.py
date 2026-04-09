@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 import secrets
 import string
+from Models.ProyectoUsuarios import ProyectoUsuarios
 
 from db import engine
 from Models.Proyectos import Proyecto
@@ -68,7 +69,7 @@ def crear_proyecto():
         data = request.get_json()
 
         if not data:
-            return jsonify({"error": "JSON inválido"}), 400
+            return jsonify({"error": "BAD REQUEST", "message": "El revise el JSON de la solicitud"}), 400
 
         nombre = data.get("nombre")
         descripcion = data.get("descripcion")
@@ -110,6 +111,31 @@ def crear_proyecto():
                 },
             ).fetchone()
             id_proyecto = proyecto[0]
+
+            #--------------------------Esto es nuevo--------------
+
+            participantes = [
+                {"id": id_creador, "rol": "Creador"},
+                {"id": id_usuario_po, "rol": "Product_Owner"},
+                {"id": id_usuario_tl, "rol": "Tech Leader"}
+            ]
+
+            for p in participantes:
+                conn.execute(
+                    text("""
+                        INSERT INTO proyecto_usuarios (id_proyecto, id_usuario, rol_en_proyecto, fecha_asignacion)
+                        VALUES (:id_proyecto, :id_usuario, :rol, :fecha_asignacion)
+                    """),
+                    {
+                        "id_proyecto": id_proyecto,
+                        "id_usuario": p["id"],
+                        "rol": p["rol"],
+                        "fecha_asignacion": datetime.utcnow()
+                    }
+                )
+            #-----------------------------------------------------
+
+
 
             nombre_completo_po = " ".join(filter(None, [nombre_po, apellidos_po])) or None
             conn.execute(
@@ -163,6 +189,29 @@ def obtener_proyetos():
         }
         for p in proyectos
     ], 200
+
+#Este es el de prueba
+@proyectos_bp.route('/proyectos/obtener/<int:id_usuario>', methods=['GET'])
+def obtener_proyectos(id_usuario):
+    with Session(engine) as session:
+        # Realizamos un JOIN entre Proyecto y ProyectoUsuario
+        stmt = (
+            select(Proyecto)
+            .join(ProyectoUsuarios, Proyecto.id_proyecto == ProyectoUsuarios.id_proyecto)
+            .where(ProyectoUsuarios.id_usuario == id_usuario)
+        )
+
+        proyectos = session.scalars(stmt).all()
+
+        return [
+            {
+                "id_proyecto": p.id_proyecto,
+                "nombre": p.nombre,
+                "estado": p.estado,
+                "descripcion": p.descripcion
+            }
+            for p in proyectos
+        ], 200
 
 
 @proyectos_bp.route('/proyectos/<int:id_proyecto>', methods=['GET'])
