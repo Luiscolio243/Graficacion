@@ -2,9 +2,8 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import String, Integer, Text, Date, DateTime
 from datetime import date, datetime
+from Models.Base import Base
 
-class Base(DeclarativeBase):
-    pass
 
 class ProductOwner(Base):
     __tablename__ = "product_owners"
