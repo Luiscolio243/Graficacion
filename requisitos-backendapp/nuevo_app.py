@@ -11,6 +11,7 @@ from Routers.entrevistas import entrevistas_bp
 from Routers.entrevistaPreguntas import entrevista_preguntas_bp
 from Routers.Encuestas import encuestas_bp
 from Routers.Equipo_ti_router import equipo_ti_bp
+from Routers.Seguimiento import seguimiento_bp
 
 Config.validate()
 
@@ -27,6 +28,7 @@ app.register_blueprint(entrevistas_bp)
 app.register_blueprint(entrevista_preguntas_bp)
 app.register_blueprint(encuestas_bp)
 app.register_blueprint(equipo_ti_bp)
+app.register_blueprint(seguimiento_bp)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=Config.FLASK_PORT, debug=Config.FLASK_ENV == 'development')

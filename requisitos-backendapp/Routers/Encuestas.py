@@ -1,11 +1,13 @@
 from flask import Blueprint, request, jsonify
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 from Models.Encuestas import Encuestas
 from app import engine
 from datetime import datetime
 from Models.EncuestaOpciones import EncuestaOpciones
 from sqlalchemy.exc import SQLAlchemyError
 from Models.EncuestaPreguntas import EncuestaPreguntas
+from Models.Proyectos import Proyecto
 
 encuestas_bp = Blueprint('encuestas', __name__)
 
@@ -79,6 +81,37 @@ def crear_encuesta():
                 "message": "Encuesta creada exitosamente",
                 "encuesta": serializar_encuesta(encuesta)
             }), 201
+
+    except SQLAlchemyError as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
+@encuestas_bp.route('/encuestas/obtener/<int:id_proyecto>', methods=['GET'])
+def obtener_todas_encuestas(id_proyecto):
+    try:
+        with Session(engine) as session:
+            stmt = (
+                select(Encuestas)
+                .join(Proyecto, Encuestas.id_proyecto == Proyecto.id_proyecto)
+                .where(Proyecto.id_proyecto == id_proyecto)
+            )
+
+        encuestas = session.scalars(stmt).all()
+
+        for e in encuestas:
+            print(vars(e))
+
+        return jsonify([
+            {
+                "id_encuesta": e.id_encuesta,
+                "id_proyecto": e.id_proyecto,
+                "titulo": e.titulo,
+                "descripcion": e.descripcion
+            }
+            for e in encuestas
+        ]), 200
+
 
     except SQLAlchemyError as e:
         return jsonify({"error": str(e)}), 500
