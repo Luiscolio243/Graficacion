@@ -136,7 +136,7 @@ export default function ProyectoDashboard() {
           Módulos del Proyecto
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Modulo
             titulo="Stakeholders"
             descripcion="Gestión de personas relacionadas con el Product Owner"
@@ -156,6 +156,13 @@ export default function ProyectoDashboard() {
             descripcion="Definición de procesos y subprocesos del negocio"
             color="emerald"
             onClick={() => navigate(`/app/proyectos/${id}/procesos`)}
+          />
+
+          <Modulo
+            titulo="Requerimientos"
+            descripcion="Documentación de requerimientos del proyecto"
+            color="rose"
+            onClick={() => navigate(`/app/proyectos/${id}/requerimientos`)}
           />
         </div>
       </div>
@@ -222,6 +229,12 @@ function Modulo({ titulo, descripcion, color = "indigo", onClick }) {
       borde: "border-emerald-200",
       textoTitulo: "text-emerald-700",
       punto: "bg-emerald-500",
+    },
+    rose: {
+      fondo: "bg-rose-50",
+      borde: "border-rose-200",
+      textoTitulo: "text-rose-700",
+      punto: "bg-rose-500",
     },
   };
 

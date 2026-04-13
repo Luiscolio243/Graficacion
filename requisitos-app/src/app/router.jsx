@@ -8,6 +8,19 @@ import ProyectoDashboard from "../proyectos/pages/ProyectoDashboard"
 import Stakeholders from "../stakeholders/pages/Stakeholders";
 import TI from "../ti/pages/ti";
 import Procesos from "../procesos/pages/Procesos";
+import Requerimientos from "../requerimientos/pages/Requerimientos";
+import Entrevistas from "../entrevistas/pages/Entrevistas";
+import CrearEntrevista from "../entrevistas/pages/CrearEntrevista";
+import Cuestionarios from "../cuestionarios/pages/Cuestionarios";
+import CrearCuestionario from "../cuestionarios/pages/CrearCuestionario";
+import Observaciones from "../observaciones/pages/Observaciones";
+import CrearObservacion from "../observaciones/pages/CrearObservacion";
+import HistoriasDeUsuario from "../historiasUsuario/pages/HistoriasDeUsuario";
+import CrearHistoriaDeUsuario from "../historiasUsuario/pages/CrearHistoriaDeUsuario";
+import FocusGroups from "../focusGroups/pages/FocusGroups";
+import CrearFocusGroup from "../focusGroups/pages/CrearFocusGroup";
+import SeguimientoTransaccional from "../seguimientoTransaccional/pages/SeguimientoTransaccional";
+import CrearSeguimientoTransaccional from "../seguimientoTransaccional/pages/CrearSeguimientoTransaccional";
 
 export const router = createBrowserRouter([
     {
@@ -59,6 +72,71 @@ export const router = createBrowserRouter([
                 //Procesos de cada proyecto
                 path: "proyectos/:id/procesos",
                 element: <Procesos />
+            },
+            {
+                //Requerimientos de cada proyecto
+                path: "proyectos/:id/requerimientos",
+                element: <Requerimientos />
+            },
+            {
+                //Entrevistas de cada proyecto
+                path: "proyectos/:id/entrevistas",
+                element: <Entrevistas />
+            },
+            {
+                //Crear nueva entrevista
+                path: "proyectos/:id/entrevistas/crear",
+                element: <CrearEntrevista />
+            },
+            {
+                //Cuestionarios de cada proyecto
+                path: "proyectos/:id/requerimientos/cuestionarios",
+                element: <Cuestionarios />
+            },
+            {
+                //Crear nuevo cuestionario
+                path: "proyectos/:id/requerimientos/cuestionarios/crear",
+                element: <CrearCuestionario />
+            },
+            {
+                //Observaciones de cada proyecto
+                path: "proyectos/:id/requerimientos/observaciones",
+                element: <Observaciones />
+            },
+            {
+                //Crear nueva observación
+                path: "proyectos/:id/requerimientos/observaciones/crear",
+                element: <CrearObservacion />
+            },
+            {
+                //Historias de usuario de cada proyecto
+                path: "proyectos/:id/requerimientos/historias-usuario",
+                element: <HistoriasDeUsuario />
+            },
+            {
+                //Crear nueva historia de usuario
+                path: "proyectos/:id/requerimientos/historias-usuario/crear",
+                element: <CrearHistoriaDeUsuario />
+            },
+            {
+                //Focus Groups de cada proyecto
+                path: "proyectos/:id/requerimientos/focus-groups",
+                element: <FocusGroups />
+            },
+            {
+                //Crear nuevo focus group
+                path: "proyectos/:id/requerimientos/focus-groups/crear",
+                element: <CrearFocusGroup />
+            },
+            {
+                //Seguimiento Transaccional de cada proyecto
+                path: "proyectos/:id/requerimientos/seguimiento-transaccional",
+                element: <SeguimientoTransaccional />
+            },
+            {
+                //Crear nuevo seguimiento transaccional
+                path: "proyectos/:id/requerimientos/seguimiento-transaccional/crear",
+                element: <CrearSeguimientoTransaccional />
             }
         ]
     }
