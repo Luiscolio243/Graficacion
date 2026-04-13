@@ -1,8 +1,9 @@
 from Models import Base
-from sqlalchemy.orm import Mapped, MappedColumn
+from sqlalchemy.orm import Mapped, MappedColumn, relationship
 from sqlalchemy import Integer, ForeignKey, String, DateTime
 from typing import Optional
 from datetime import datetime
+
 
 class Seguimiento(Base):
     __tablename__ = 'seguimiento'
@@ -31,4 +32,8 @@ class Seguimiento(Base):
     fecha_creacion: Mapped[Optional[datetime]] = MappedColumn(
         DateTime
     )
+
+    pasos = relationship("SeguimientoPaso", back_populates="seguimiento", cascade="all, delete")
+    problemas = relationship("SeguimientoProblema", back_populates="seguimiento", cascade="all, delete")
+    metricas = relationship("SeguimientoMetrica", back_populates="seguimiento", cascade="all, delete")
 
