@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from db import Base
+from Models.Base import Base
 
 class SubprocesoTecnica(Base):
     # Tabla intermedia para relación muchos a muchos

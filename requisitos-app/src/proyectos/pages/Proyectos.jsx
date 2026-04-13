@@ -12,7 +12,31 @@ export default function Proyectos() {
   useEffect(() => {
     const obtenerProyectos = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:5000/proyectos/obtener");
+
+        const userStorage = localStorage.getItem("user");
+
+        if(!userStorage) {
+          setError("No se encontró información de usuario. Por favor, inicia sesión nuevamente.");
+
+        }
+
+        const user = JSON.parse(userStorage);
+
+        const idUsuario = user.id;
+
+        if (!idUsuario) {
+          setError("No se encontró el ID de usuario comprueba iniciar sesión nuevamente");
+          return;
+        }
+
+        //const response = await fetch("http://127.0.0.1:5000/proyectos/obtener");
+
+        const response = await fetch(`http://127.0.0.1:5000/proyectos/obtener/${idUsuario}` ,{
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
 
         if (!response.ok) {
           throw new Error("Error al obtener proyectos");

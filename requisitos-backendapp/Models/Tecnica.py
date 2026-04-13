@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Text, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from sqlalchemy.orm import DeclarativeBase
-from db import Base
+from Models import Base
 
 class Tecnica(Base):
     __tablename__ = 'tecnicas'

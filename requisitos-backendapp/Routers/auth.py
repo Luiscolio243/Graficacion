@@ -32,12 +32,14 @@ def verify_token(func):
 def login():
     try:
         data = request.get_json()
+        #Esta validacion es para comprobar que no se envien de campos con valores de vacios al menos debe de haber una clave con un valor
         if not data:
-            return jsonify({"error": "JSON inválido"}), 400
+            return jsonify({"error": "JSON inválido BAD REQUEST, el JSON que se envio no es valido o no contiene datos, revise la solicitud enviada"}), 400
 
         email = data.get("email")
         password = data.get("password")
 
+        #Como estos campos son requeridos si o si tienen que tener de un valor asi que de no haber nada sera de un bad request error 400 ya que no habria datos para procesar
         if not email or not password:
             return jsonify({"error": "Email y password requeridos"}), 400
 
@@ -50,7 +52,7 @@ def login():
             result = conn.execute(query, {"email": email, "password": password}).fetchone()
 
             if result is None:
-                return jsonify({"error": "Email o password incorrectos"}), 401
+                return jsonify({"error": "El email o contraseña proporcionados son incorrectos, favor de escribir correctamente las credenciales"}), 401
 
             token = jwt.encode({'username': result.nombre}, secret_key, algorithm='HS256')
 
