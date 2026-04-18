@@ -1,25 +1,44 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 export default function Cuestionarios() {
   const { id } = useParams();
   const navegar = useNavigate();
   const [cuestionarios, setCuestionarios] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const obtenerEncuestas = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/encuestas/obtener/${id}`);
+        if (!response.ok) throw new Error("Error al obtener las encuestas");
+        const data = await response.json();
+        setCuestionarios(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setCargando(false);
+      }
+    };
+
+    obtenerEncuestas();
+  }, [id]);
 
   const estadisticas = {
     total: cuestionarios.length,
-    borradores: cuestionarios.filter((c) => c.estado === "borrador").length,
+    borradores: cuestionarios.filter((c) => (c.estado ?? "borrador") === "borrador").length,
     activas: cuestionarios.filter((c) => c.estado === "activa").length,
     cerradas: cuestionarios.filter((c) => c.estado === "cerrada").length,
   };
 
-  const eliminarCuestionario = (id) => {
-    setCuestionarios(cuestionarios.filter((c) => c.id !== id));
+  const eliminarCuestionario = (id_encuesta) => {
+    setCuestionarios(cuestionarios.filter((c) => c.id_encuesta !== id_encuesta));
   };
 
   return (
     <div className="space-y-6">
-      {/* Encabezado con botón atrás */}
+      {/* Encabezado */}
       <div className="flex items-center gap-4">
         <button
           onClick={() => navegar(`/app/proyectos/${id}`)}
@@ -39,107 +58,79 @@ export default function Cuestionarios() {
         </button>
       </div>
 
-      {/* Estadísticas */}
+      {/* Estadísticas de la encuesta */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <TarjetaEstadistica
-          titulo="Total"
-          cantidad={estadisticas.total}
-          color="blue"
-        />
-        <TarjetaEstadistica
-          titulo="Borradores"
-          cantidad={estadisticas.borradores}
-          color="gray"
-        />
-        <TarjetaEstadistica
-          titulo="Activas"
-          cantidad={estadisticas.activas}
-          color="blue"
-        />
-        <TarjetaEstadistica
-          titulo="Cerradas"
-          cantidad={estadisticas.cerradas}
-          color="emerald"
-        />
+        <TarjetaEstadistica titulo="Total"      cantidad={estadisticas.total}     color="blue"    />
+        <TarjetaEstadistica titulo="Borradores" cantidad={estadisticas.borradores} color="gray"    />
+        <TarjetaEstadistica titulo="Activas"    cantidad={estadisticas.activas}   color="blue"    />
+        <TarjetaEstadistica titulo="Cerradas"   cantidad={estadisticas.cerradas}  color="emerald" />
       </div>
 
-      {/* Cuestionarios cerrados */}
-      {cuestionarios.filter((c) => c.estado === "cerrada").length > 0 && (
-        <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            Cerradas ({estadisticas.cerradas})
-          </h2>
-          <div className="grid gap-4">
-            {cuestionarios
-              .filter((c) => c.estado === "cerrada")
-              .map((cuestionario) => (
-                <TarjetaCuestionario
-                  key={cuestionario.id}
-                  cuestionario={cuestionario}
-                  onEliminar={eliminarCuestionario}
-                />
-              ))}
-          </div>
-        </div>
-      )}
-
-      {/* Cuestionarios activos */}
-      {cuestionarios.filter((c) => c.estado === "activa").length > 0 && (
-        <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            Activas ({estadisticas.activas})
-          </h2>
-          <div className="grid gap-4">
-            {cuestionarios
-              .filter((c) => c.estado === "activa")
-              .map((cuestionario) => (
-                <TarjetaCuestionario
-                  key={cuestionario.id}
-                  cuestionario={cuestionario}
-                  onEliminar={eliminarCuestionario}
-                />
-              ))}
-          </div>
-        </div>
-      )}
-
-      {/* Cuestionarios borradores */}
-      {cuestionarios.filter((c) => c.estado === "borrador").length > 0 && (
-        <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            Borradores ({estadisticas.borradores})
-          </h2>
-          <div className="grid gap-4">
-            {cuestionarios
-              .filter((c) => c.estado === "borrador")
-              .map((cuestionario) => (
-                <TarjetaCuestionario
-                  key={cuestionario.id}
-                  cuestionario={cuestionario}
-                  onEliminar={eliminarCuestionario}
-                />
-              ))}
-          </div>
-        </div>
-      )}
-
-      {cuestionarios.length === 0 && (
+      {/* Estado de carga para mostrar al usuario que se estan cargando los usuarios */}
+      {cargando && (
         <div className="bg-white rounded-xl p-12 text-center border border-gray-200">
-          <p className="text-gray-500 text-lg">
-            No hay cuestionarios aún. Crea uno para comenzar.
-          </p>
+          <p className="text-gray-500 text-lg">Cargando cuestionarios...</p>
         </div>
+      )}
+
+      {/* Error en caso de que ocurra alguno  en la carga de cuestionarios */}
+      {error && (
+        <div className="bg-red-50 rounded-xl p-6 text-center border border-red-200">
+          <p className="text-red-600">{error}</p>
+        </div>
+      )}
+
+      {/* Listas agrupadas por estado de la encuesta */}
+      {!cargando && !error && (
+        <>
+          {["cerrada", "activa", "borrador"].map((estado) => {
+            const filtradas = cuestionarios.filter(
+              (c) => (c.estado ?? "borrador") === estado
+            );
+            if (filtradas.length === 0) return null;
+
+            const etiquetas = {
+              cerrada: "Cerradas",
+              activa: "Activas",
+              borrador: "Borradores",
+            };
+
+            return (
+              <div key={estado}>
+                <h2 className="text-lg font-bold text-gray-900 mb-4">
+                  {etiquetas[estado]} ({filtradas.length})
+                </h2>
+                <div className="grid gap-4">
+                  {filtradas.map((cuestionario) => (
+                    <TarjetaCuestionario
+                      key={cuestionario.id_encuesta}
+                      cuestionario={cuestionario}
+                      onEliminar={eliminarCuestionario}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+
+          {cuestionarios.length === 0 && (
+            <div className="bg-white rounded-xl p-12 text-center border border-gray-200">
+              <p className="text-gray-500 text-lg">
+                No hay cuestionarios aún. Crea uno para comenzar.
+              </p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
 }
-
-/* COMPONENTES */
+//Otros componentes que se usan en el principal de cuestionarios 
 
 function TarjetaEstadistica({ titulo, cantidad, color }) {
   const colores = {
-    blue: "bg-blue-50 border-blue-200",
-    gray: "bg-gray-50 border-gray-200",
+    blue:    "bg-blue-50 border-blue-200",
+    gray:    "bg-gray-50 border-gray-200",
     emerald: "bg-emerald-50 border-emerald-200",
   };
 
@@ -152,44 +143,51 @@ function TarjetaEstadistica({ titulo, cantidad, color }) {
 }
 
 function TarjetaCuestionario({ cuestionario, onEliminar }) {
+  const estado = cuestionario.estado ?? "borrador";
+
   const esEstado = {
-    cerrada: "border-emerald-200 bg-emerald-50",
-    activa: "border-blue-200 bg-blue-50",
+    cerrada:  "border-emerald-200 bg-emerald-50",
+    activa:   "border-blue-200 bg-blue-50",
     borrador: "border-gray-200 bg-gray-50",
   };
 
   const etiquetaColor = {
-    cerrada: "bg-emerald-100 text-emerald-800",
-    activa: "bg-blue-100 text-blue-800",
+    cerrada:  "bg-emerald-100 text-emerald-800",
+    activa:   "bg-blue-100 text-blue-800",
     borrador: "bg-gray-100 text-gray-800",
   };
 
   return (
-    <div
-      className={`rounded-xl border ${esEstado[cuestionario.estado]} p-6 space-y-4`}
-    >
+    <div className={`rounded-xl border ${esEstado[estado]} p-6 space-y-4`}>
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <h3 className="text-lg font-bold text-gray-900 mb-2">
             {cuestionario.titulo}
           </h3>
           <p className="text-gray-700 text-sm mb-3">
-            {cuestionario.descripcion}
+            {cuestionario.descripcion ?? "Sin descripción"}
           </p>
-          <div className="flex gap-4 text-sm text-gray-600 mb-3">
-            <span>{cuestionario.fecha}</span>
-            <span>{cuestionario.participantes} participantes</span>
-          </div>
-          <p className="text-sm text-gray-600">
-            Preguntas: {cuestionario.preguntas}
-          </p>
+          {/* Estos campos aparecerán cuando el backend los retorne */}
+          {cuestionario.fecha_creacion && (
+            <div className="flex gap-4 text-sm text-gray-600 mb-3">
+              <span>{cuestionario.fecha_creacion}</span>
+              {cuestionario.num_participantes !== undefined && (
+                <span>{cuestionario.num_participantes} participantes</span>
+              )}
+            </div>
+          )}
+          {cuestionario.num_preguntas !== undefined && (
+            <p className="text-sm text-gray-600">
+              Preguntas: {cuestionario.num_preguntas}
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
           <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-white rounded-lg transition text-sm font-medium">
             Ver
           </button>
           <button
-            onClick={() => onEliminar(cuestionario.id)}
+            onClick={() => onEliminar(cuestionario.id_encuesta)}
             className="p-2 text-red-500 hover:text-red-700 hover:bg-white rounded-lg transition text-sm font-medium"
           >
             Eliminar
@@ -201,8 +199,8 @@ function TarjetaCuestionario({ cuestionario, onEliminar }) {
         <button className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition">
           Ver Resultados
         </button>
-        <span className={`px-4 py-2 rounded-lg font-medium text-sm ${etiquetaColor[cuestionario.estado]}`}>
-          {cuestionario.estado.charAt(0).toUpperCase() + cuestionario.estado.slice(1)}
+        <span className={`px-4 py-2 rounded-lg font-medium text-sm ${etiquetaColor[estado]}`}>
+          {estado.charAt(0).toUpperCase() + estado.slice(1)}
         </span>
       </div>
     </div>
