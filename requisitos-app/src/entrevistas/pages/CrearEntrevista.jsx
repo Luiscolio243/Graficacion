@@ -15,14 +15,33 @@ export default function CrearEntrevista() {
     preguntas: [""],
   });
 
-  const handleAgregarEntrevista = () => {
+  const handleAgregarEntrevista = async() => {
+    /*
     if (
       nuevoFormulario.titulo.trim() &&
       nuevoFormulario.preguntas.some((p) => p.trim())
     ) {
+      try {
+        const response = await fetch(`http://localhost:5000/entrevistas/crear`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(nuevoFormulario),
+        });
+
+        if (response.ok) {
+          console.log("Entrevista creada exitosamente");
+          navegar(`/app/proyectos/${id}/entrevistas`);
+        } else {
+          console.error("Error al crear la entrevista");
+        }
+      } catch (error) {
+        console.error("Error al crear la entrevista:", error);
+      }
+
+      */
       console.log("Crear entrevista:", nuevoFormulario);
       navegar(`/app/proyectos/${id}/entrevistas`);
-    }
+    
   };
 
   const agregarPregunta = () => {

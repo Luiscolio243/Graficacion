@@ -49,8 +49,7 @@ def obtener_seguimientos(id_proyecto):
         return jsonify({"error": str(e)}), 500
 
 
-# ── GET /seguimientos/<id_proyecto>/<id_seguimiento>
-# Ver el detalle completo de un seguimiento (pasos, problemas, métricas)
+
 @seguimiento_bp.route('/seguimientos/<int:id_proyecto>/<int:id_seguimiento>', methods=['GET'])
 def obtener_seguimiento(id_proyecto, id_seguimiento):
     try:
