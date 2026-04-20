@@ -20,6 +20,29 @@ def serializar_seguimiento_lista(s):
     }
 
 
+def serializar_paso(paso):
+    return {
+        "id": paso.id,
+        "nombre": paso.nombre,
+        "duracion_min": paso.duracion_min,
+        "orden": paso.orden,
+    }
+
+
+def serializar_problema(problema):
+    return {
+        "id": problema.id,
+        "descripcion": problema.descripcion,
+    }
+
+
+def serializar_metrica(metrica):
+    return {
+        "id": metrica.id,
+        "nombre": metrica.nombre,
+        "valor": metrica.valor,
+    }
+
 def serializar_seguimiento_detalle(s):
     return {
         "id":             s.id,
