@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+
+const BASE_URL = "http://127.0.0.1:5000";
 
 export default function CrearEntrevista() {
   const { id } = useParams();
@@ -15,32 +17,83 @@ export default function CrearEntrevista() {
     preguntas: [""],
   });
 
+  //datos para los selects
+  const [entrevistadores, setEntrevistadores] = useState([]);
+  const [stakeholders, setStakeholders] = useState([]);
+  const [procesos, setProcesos] = useState([]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const headers = { Authorization: `Bearer ${token}` };
+
+    //cargar equipo de ti del proyecto
+    fetch(`${BASE_URL}/ti/${id}`, { headers })
+      .then((r) => r.ok ? r.json() : [])
+      .then(setEntrevistadores)
+      .catch(() => {});
+
+    // Cargar stakeholders del proyecto
+    fetch(`${BASE_URL}/stakeholders/${id}`, { headers })
+      .then((r) => r.ok ? r.json() : [])
+      .then(setStakeholders)
+      .catch(() => {});
+ 
+    // Cargar procesos del proyecto (vienen con subprocesos anidados)
+    fetch(`${BASE_URL}/procesos/${id}`, { headers })
+      .then((r) => r.ok ? r.json() : [])
+      .then(setProcesos)
+      .catch(() => {});
+  }, [id]);
+
+  // Subprocesos del proceso seleccionado
+  const subprocesosFiltrados =
+    procesos.find((p) => String(p.id_proceso) === String(nuevoFormulario.proceso))
+      ?.subprocesos || [];
+
   const handleAgregarEntrevista = async() => {
-    /*
-    if (
-      nuevoFormulario.titulo.trim() &&
-      nuevoFormulario.preguntas.some((p) => p.trim())
-    ) {
-      try {
-        const response = await fetch(`http://localhost:5000/entrevistas/crear`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(nuevoFormulario),
-        });
-
-        if (response.ok) {
-          console.log("Entrevista creada exitosamente");
-          navegar(`/app/proyectos/${id}/entrevistas`);
-        } else {
-          console.error("Error al crear la entrevista");
-        }
-      } catch (error) {
-        console.error("Error al crear la entrevista:", error);
+    if (!nuevoFormulario.titulo.trim()) return alert("El título es obligatorio.");
+    if (!nuevoFormulario.entrevistador) return alert("Selecciona un entrevistador.");
+    if (!nuevoFormulario.entrevistado) return alert("Selecciona un entrevistado.");
+ 
+    try {
+      const token = localStorage.getItem("token");
+      const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
+ 
+      // 1. Crear la entrevista
+      const res = await fetch(`${BASE_URL}/entrevistas/crear`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          id_proyecto: parseInt(id),
+          titulo: nuevoFormulario.titulo,
+          id_entrevistador: parseInt(nuevoFormulario.entrevistador),
+          id_stakeholder: parseInt(nuevoFormulario.entrevistado),
+          objetivo: nuevoFormulario.notas || null,
+          id_subproceso: nuevoFormulario.subproceso ? parseInt(nuevoFormulario.subproceso) : null,
+        }),
+      });
+ 
+      if (!res.ok) {
+        const err = await res.json();
+        return alert(err.error || "Error al crear la entrevista.");
       }
-
-      */
-      console.log("Crear entrevista:", nuevoFormulario);
+ 
+      const { entrevista } = await res.json();
+ 
+      // 2. Agregar preguntas válidas
+      for (const pregunta of nuevoFormulario.preguntas.filter((p) => p.trim())) {
+        await fetch(`${BASE_URL}/preguntas/agregar`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ id_entrevista: entrevista.id_entrevista, pregunta, origen: "manual" }),
+        });
+      }
+ 
       navegar(`/app/proyectos/${id}/entrevistas`);
+    } catch (e) {
+      alert("Error de conexión con el servidor.");
+      console.error(e);
+    }
     
   };
 
@@ -103,36 +156,40 @@ export default function CrearEntrevista() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Entrevistador <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
+            <select
               value={nuevoFormulario.entrevistador}
               onChange={(e) =>
-                setNuevoFormulario({
-                  ...nuevoFormulario,
-                  entrevistador: e.target.value,
-                })
+                setNuevoFormulario({ ...nuevoFormulario, entrevistador: e.target.value })
               }
-              placeholder="Tu nombre"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              <option value="">Tu nombre</option>
+              {entrevistadores.map((e) => (
+                <option key={e.usuario.id_usuario} value={e.usuario.id_usuario}>
+                  {e.usuario.nombre} {e.usuario.apellido}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Entrevistado <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
+            <select
               value={nuevoFormulario.entrevistado}
               onChange={(e) =>
-                setNuevoFormulario({
-                  ...nuevoFormulario,
-                  entrevistado: e.target.value,
-                })
+                setNuevoFormulario({ ...nuevoFormulario, entrevistado: e.target.value })
               }
-              placeholder="Nombre del entrevistado"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              <option value="">Nombre del entrevistado</option>
+              {stakeholders.map((s) => (
+                <option key={s.id_stakeholder} value={s.id_stakeholder}>
+                  {s.nombre}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -159,35 +216,44 @@ export default function CrearEntrevista() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Proceso
             </label>
-            <input
-              type="text"
+            <select
               value={nuevoFormulario.proceso}
               onChange={(e) =>
-                setNuevoFormulario({
-                  ...nuevoFormulario,
-                  proceso: e.target.value,
-                })
+                // Al cambiar proceso se limpia el subproceso
+                setNuevoFormulario({ ...nuevoFormulario, proceso: e.target.value, subproceso: "" })
               }
-              placeholder="Selecciona un proceso"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              <option value="">Selecciona un proceso</option>
+              {procesos.map((p) => (
+                <option key={p.id_proceso} value={p.id_proceso}>
+                  {p.nombre}
+                </option>
+              ))}
+            </select>
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Subproceso
             </label>
-            <input
-              type="text"
+            <select
               value={nuevoFormulario.subproceso}
               onChange={(e) =>
-                setNuevoFormulario({
-                  ...nuevoFormulario,
-                  subproceso: e.target.value,
-                })
+                setNuevoFormulario({ ...nuevoFormulario, subproceso: e.target.value })
               }
-              placeholder="Selecciona un subproceso"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+              disabled={!nuevoFormulario.proceso}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white disabled:bg-gray-50 disabled:text-gray-400"
+            >
+              <option value="">
+                {nuevoFormulario.proceso ? "Selecciona un subproceso" : "Primero elige un proceso"}
+              </option>
+              {subprocesosFiltrados.map((sp) => (
+                <option key={sp.id_subproceso} value={sp.id_subproceso}>
+                  {sp.nombre}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
