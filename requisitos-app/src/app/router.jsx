@@ -21,6 +21,8 @@ import FocusGroups from "../focusGroups/pages/FocusGroups";
 import CrearFocusGroup from "../focusGroups/pages/CrearFocusGroup";
 import SeguimientoTransaccional from "../seguimientoTransaccional/pages/SeguimientoTransaccional";
 import CrearSeguimientoTransaccional from "../seguimientoTransaccional/pages/CrearSeguimientoTransaccional";
+import SubirAudio from "../entrevistas/pages/SubirAudio";
+import DetalleEntrevista from "../entrevistas/pages/DetalleEntrevista";
 
 export const router = createBrowserRouter([
     {
@@ -87,6 +89,14 @@ export const router = createBrowserRouter([
                 //Crear nueva entrevista
                 path: "proyectos/:id/entrevistas/crear",
                 element: <CrearEntrevista />
+            },
+            {
+                path: "proyectos/:id/entrevistas/:id_entrevista/audio",
+                element: <SubirAudio />
+            },
+            {
+                path: "proyectos/:id/entrevistas/:id_entrevista",
+                element: <DetalleEntrevista />
             },
             {
                 //Cuestionarios de cada proyecto

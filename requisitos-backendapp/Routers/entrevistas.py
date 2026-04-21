@@ -15,7 +15,7 @@ entrevistas_bp = Blueprint('entrevistas', __name__)
 #Esta funcion es para configurar la IA de Gemini
 def configurar_gemini():
     genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-    return genai.GenerativeModel("gemini-1.5-flash")
+    return genai.GenerativeModel("gemini-2.5-flash")
 
 
 #Esta funcion es para convertir el formato de fecha en sql a un objeto que sea de tipo date
