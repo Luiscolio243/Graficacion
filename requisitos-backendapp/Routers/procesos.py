@@ -150,14 +150,14 @@ def obtener_procesos(id_proyecto):
                             })
 
                     subprocesos_data.append({
-                        "id": subproceso.id_subproceso,
+                        "id_subproceso": subproceso.id_subproceso,
                         "nombre": subproceso.nombre,
                         "descripcion": subproceso.descripcion,
                         "tecnicas": tecnicas_data
                     })
 
                 procesos_data.append({
-                    "id": proceso.id_proceso,
+                    "id_proceso": proceso.id_proceso,
                     "nombre": proceso.nombre,
                     "descripcion": proceso.descripcion,
                     "area": proceso.area_responsable,
