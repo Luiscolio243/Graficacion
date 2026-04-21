@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from sqlalchemy.orm import DeclarativeBase
-from db import Base
+from Models.Base import Base
 
 class Subproceso(Base):
     __tablename__ = 'subprocesos'

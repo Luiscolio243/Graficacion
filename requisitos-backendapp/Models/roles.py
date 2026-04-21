@@ -1,10 +1,6 @@
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import String, Integer, Text, Date, DateTime
-from datetime import date, datetime
-
-class Base(DeclarativeBase):
-    pass
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import String, Integer
+from Models import Base
 
 class Roles(Base):
     __tablename__ = "roles"
@@ -14,9 +10,11 @@ class Roles(Base):
     )
 
     nombre: Mapped[str] = mapped_column(
-        Text
+        String(50)
     )
 
     descripcion: Mapped[str] = mapped_column(
-        Text
+        String(50)
     )
+
+    usuarios: Mapped[list["Usuario"]] = relationship("Usuario", back_populates="rol")

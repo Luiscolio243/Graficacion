@@ -6,9 +6,10 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Integer, Text, Date, DateTime, ForeignKey
 from datetime import date, datetime
+from Models.Base import Base
 
-class Base(DeclarativeBase):
-    pass
+#class Base(DeclarativeBase):
+#    pass
 
 class PersonalTI(Base):
     """
@@ -47,13 +48,11 @@ class TechLeader(Base):
 
     )
     id_proyecto: Mapped[int] = mapped_column(
-        ForeignKey("proyectos.id_proyecto"),
-        Integer, nullable=False
+        ForeignKey("proyectos.id_proyecto"),nullable=False
     )
 
     id_usuario: Mapped[int] = mapped_column(
-        ForeignKey("usuarios.id_usuarios"),
-        Integer,nullable=False
+        ForeignKey("usuarios.id_usuario"),nullable=False
     )
 
     nombre: Mapped[str] = mapped_column(

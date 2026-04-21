@@ -2,9 +2,10 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import String, Integer, Text, Date, DateTime
 from datetime import date, datetime
+from Models.Base import Base
 
-class Base(DeclarativeBase):
-    pass
+#class Base(DeclarativeBase):
+#   pass
 
 class Proyecto(Base):
     __tablename__ = "proyectos"

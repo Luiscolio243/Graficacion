@@ -19,13 +19,48 @@ export default function CrearCuestionario() {
     ],
   });
 
-  const handleAgregarCuestionario = () => {
+  const handleAgregarCuestionario = async () => {
     if (
       nuevoFormulario.titulo.trim() &&
       nuevoFormulario.preguntas.some((p) => p.texto.trim())
     ) {
       console.log("Crear cuestionario:", nuevoFormulario);
+      //NUevo
+
+      try{
+        const response = await fetch(`http://localhost:5000/encuestas/crear`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id_proyecto: Number(id),
+            titulo: nuevoFormulario.titulo,
+            descripcion: nuevoFormulario.descripcion,
+            num_participantes: Number(nuevoFormulario.participantesEsperados) || 0,
+            id_subproceso: nuevoFormulario.id_subproceso || null, // necesitas un selector real
+            preguntas: nuevoFormulario.preguntas.map((p, i) => ({
+              pregunta: p.texto,
+              tipo: p.tipo === "opcionMultiple" ? "opcion_multiple" : p.tipo,
+              orden: i + 1,
+              ...(p.tipo === "opcionMultiple" && { opciones: p.opciones || [] }),
+          })),
+        }),
+      });
+
+        if (response.ok) {
+          console.log("Cuestionario creado exitosamente");
+        } else {
+          console.error("Error al crear el cuestionario");
+        }
+      } catch(error){
+        console.error("Error al crear el cuestionario:", error);
+      }
+
+      //nuevo
+
       navegar(`/app/proyectos/${id}/requerimientos/cuestionarios`);
+    }
+    else{
+      alert("Por favor, completa el título y al menos una pregunta para crear el cuestionario.");
     }
   };
 

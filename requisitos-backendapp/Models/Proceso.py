@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
 from datetime import datetime
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import relationship
-from db import Base
+from Models.Base import Base
 
 
 class Proceso(Base):
