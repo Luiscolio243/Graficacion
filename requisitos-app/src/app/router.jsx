@@ -11,8 +11,10 @@ import Procesos from "../procesos/pages/Procesos";
 import Requerimientos from "../requerimientos/pages/Requerimientos";
 import Entrevistas from "../entrevistas/pages/Entrevistas";
 import CrearEntrevista from "../entrevistas/pages/CrearEntrevista";
+import AnotarRespuestas from "../entrevistas/pages/AnotarRespuestas";
 import Cuestionarios from "../cuestionarios/pages/Cuestionarios";
 import CrearCuestionario from "../cuestionarios/pages/CrearCuestionario";
+import VerResultados from "../cuestionarios/pages/VerResultados";
 import Observaciones from "../observaciones/pages/Observaciones";
 import CrearObservacion from "../observaciones/pages/CrearObservacion";
 import HistoriasDeUsuario from "../historiasUsuario/pages/HistoriasDeUsuario";
@@ -99,6 +101,10 @@ export const router = createBrowserRouter([
                 element: <DetalleEntrevista />
             },
             {
+                path: "proyectos/:id/entrevistas/:id_entrevista/respuestas",
+                element: <AnotarRespuestas />
+            },
+            {
                 //Cuestionarios de cada proyecto
                 path: "proyectos/:id/requerimientos/cuestionarios",
                 element: <Cuestionarios />
@@ -107,6 +113,11 @@ export const router = createBrowserRouter([
                 //Crear nuevo cuestionario
                 path: "proyectos/:id/requerimientos/cuestionarios/crear",
                 element: <CrearCuestionario />
+            },
+            {
+                //Ver resultados de cuestionario
+                path: "proyectos/:id/requerimientos/cuestionarios/:idEncuesta/resultados",
+                element: <VerResultados />
             },
             {
                 //Observaciones de cada proyecto
