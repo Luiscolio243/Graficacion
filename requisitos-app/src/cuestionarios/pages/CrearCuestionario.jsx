@@ -15,6 +15,7 @@ export default function CrearCuestionario() {
       {
         texto: "",
         tipo: "abierta",
+        opciones: [],
       },
     ],
   });
@@ -67,7 +68,7 @@ export default function CrearCuestionario() {
   const agregarPregunta = () => {
     setNuevoFormulario({
       ...nuevoFormulario,
-      preguntas: [...nuevoFormulario.preguntas, { texto: "", tipo: "abierta" }],
+      preguntas: [...nuevoFormulario.preguntas, { texto: "", tipo: "abierta", opciones: [] }],
     });
   };
 
@@ -93,6 +94,38 @@ export default function CrearCuestionario() {
         preguntas: nuevasPreguntas,
       });
     }
+  };
+
+  const agregarOpcion = (indexPregunta) => {
+    const nuevasPreguntas = [...nuevoFormulario.preguntas];
+    if (!nuevasPreguntas[indexPregunta].opciones) {
+      nuevasPreguntas[indexPregunta].opciones = [];
+    }
+    nuevasPreguntas[indexPregunta].opciones.push("");
+    setNuevoFormulario({
+      ...nuevoFormulario,
+      preguntas: nuevasPreguntas,
+    });
+  };
+
+  const actualizarOpcion = (indexPregunta, indexOpcion, valor) => {
+    const nuevasPreguntas = [...nuevoFormulario.preguntas];
+    nuevasPreguntas[indexPregunta].opciones[indexOpcion] = valor;
+    setNuevoFormulario({
+      ...nuevoFormulario,
+      preguntas: nuevasPreguntas,
+    });
+  };
+
+  const eliminarOpcion = (indexPregunta, indexOpcion) => {
+    const nuevasPreguntas = [...nuevoFormulario.preguntas];
+    nuevasPreguntas[indexPregunta].opciones = nuevasPreguntas[
+      indexPregunta
+    ].opciones.filter((_, i) => i !== indexOpcion);
+    setNuevoFormulario({
+      ...nuevoFormulario,
+      preguntas: nuevasPreguntas,
+    });
   };
 
   return (
@@ -264,6 +297,47 @@ export default function CrearCuestionario() {
                     <option value="siNo">Sí / No</option>
                   </select>
                 </div>
+
+                {pregunta.tipo === "opcionMultiple" && (
+                  <div className="border-t border-gray-200 pt-3">
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="text-sm font-medium text-gray-700">
+                        Opciones de Respuesta
+                      </label>
+                      <button
+                        onClick={() => agregarOpcion(index)}
+                        className="text-green-600 hover:text-green-700 font-medium text-sm"
+                      >
+                        + Agregar Opción
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {pregunta.opciones && pregunta.opciones.length > 0 ? (
+                        pregunta.opciones.map((opcion, indexOpcion) => (
+                          <div key={indexOpcion} className="flex gap-2">
+                            <input
+                              type="text"
+                              value={opcion}
+                              onChange={(e) =>
+                                actualizarOpcion(index, indexOpcion, e.target.value)
+                              }
+                              placeholder={`Opción ${indexOpcion + 1}`}
+                              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                            />
+                            <button
+                              onClick={() => eliminarOpcion(index, indexOpcion)}
+                              className="text-red-500 hover:text-red-700 font-medium text-sm px-2"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500">No hay opciones aún. Añade una para empezar.</p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

@@ -143,6 +143,8 @@ function TarjetaEstadistica({ titulo, cantidad, color }) {
 }
 
 function TarjetaCuestionario({ cuestionario, onEliminar }) {
+  const navegar = useNavigate();
+  const { id } = useParams();
   const estado = cuestionario.estado ?? "borrador";
 
   const esEstado = {
@@ -183,7 +185,10 @@ function TarjetaCuestionario({ cuestionario, onEliminar }) {
           )}
         </div>
         <div className="flex gap-2">
-          <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-white rounded-lg transition text-sm font-medium">
+          <button
+            onClick={() => navegar(`/app/proyectos/${id}/requerimientos/cuestionarios/${cuestionario.id_encuesta}/resultados`)}
+            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-white rounded-lg transition text-sm font-medium"
+          >
             Ver
           </button>
           <button
@@ -196,7 +201,10 @@ function TarjetaCuestionario({ cuestionario, onEliminar }) {
       </div>
 
       <div className="flex gap-3 items-center">
-        <button className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition">
+        <button
+          onClick={() => navegar(`/app/proyectos/${id}/requerimientos/cuestionarios/${cuestionario.id_encuesta}/resultados`)}
+          className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition"
+        >
           Ver Resultados
         </button>
         <span className={`px-4 py-2 rounded-lg font-medium text-sm ${etiquetaColor[estado]}`}>

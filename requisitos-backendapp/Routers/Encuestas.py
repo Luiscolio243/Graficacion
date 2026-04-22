@@ -8,6 +8,7 @@ from Models.EncuestaOpciones import EncuestaOpciones
 from sqlalchemy.exc import SQLAlchemyError
 from Models.EncuestaPreguntas import EncuestaPreguntas
 from Models.Proyectos import Proyecto
+from Models.EncuestaRespuestas import EncuestaRespuestas
 
 encuestas_bp = Blueprint('encuestas', __name__)
 
@@ -97,21 +98,87 @@ def obtener_todas_encuestas(id_proyecto):
                 .where(Proyecto.id_proyecto == id_proyecto)
             )
 
-        encuestas = session.scalars(stmt).all()
+            encuestas = session.scalars(stmt).all()
 
-        for e in encuestas:
-            print(vars(e))
+            for e in encuestas:
+                print(vars(e))
 
-        return jsonify([
-            {
-                "id_encuesta": e.id_encuesta,
-                "id_proyecto": e.id_proyecto,
-                "titulo": e.titulo,
-                "descripcion": e.descripcion
+            return jsonify([
+                {
+                    "id_encuesta": e.id_encuesta,
+                    "id_proyecto": e.id_proyecto,
+                    "titulo": e.titulo,
+                    "descripcion": e.descripcion,
+                    "estado": e.estado,
+                    "num_participantes": e.num_participantes
+                }
+                for e in encuestas
+            ]), 200
+
+    except SQLAlchemyError as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@encuestas_bp.route('/encuestas/<int:id_encuesta>', methods=['GET'])
+def obtener_encuesta(id_encuesta):
+    try:
+        with Session(engine) as session:
+            stmt = select(Encuestas).where(Encuestas.id_encuesta == id_encuesta)
+            encuesta = session.scalar(stmt)
+
+            if not encuesta:
+                return jsonify({"error": "No encontrado", "message": "La encuesta no existe"}), 404
+
+            # Serializar preguntas con opciones
+            preguntas_data = []
+            for pregunta in encuesta.preguntas:
+                opciones = [op.opcion for op in pregunta.opciones] if pregunta.opciones else []
+                preguntas_data.append({
+                    "id_pregunta": pregunta.id_pregunta,
+                    "pregunta": pregunta.pregunta,
+                    "tipo": pregunta.tipo,
+                    "orden": pregunta.orden,
+                    "opciones": opciones
+                })
+
+            encuesta_dict = {
+                "id_encuesta": encuesta.id_encuesta,
+                "id_proyecto": encuesta.id_proyecto,
+                "id_subproceso": encuesta.id_subproceso,
+                "titulo": encuesta.titulo,
+                "descripcion": encuesta.descripcion,
+                "num_participantes": encuesta.num_participantes,
+                "estado": encuesta.estado,
+                "fecha_creacion": encuesta.fecha_creacion.isoformat() if encuesta.fecha_creacion else None,
+                "preguntas": preguntas_data
             }
-            for e in encuestas
-        ]), 200
 
+            return jsonify(encuesta_dict), 200
+
+    except SQLAlchemyError as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@encuestas_bp.route('/respuestas/obtener/<int:id_encuesta>', methods=['GET'])
+def obtener_respuestas_encuesta(id_encuesta):
+    try:
+        with Session(engine) as session:
+            stmt = select(EncuestaRespuestas).where(EncuestaRespuestas.id_encuesta == id_encuesta)
+            respuestas = session.scalars(stmt).all()
+
+            respuestas_data = [
+                {
+                    "id_respuesta": r.id_respuesta,
+                    "id_encuesta": r.id_encuesta,
+                    "id_pregunta": r.id_pregunta,
+                    "id_stakeholder": r.id_stakeholder,
+                    "respuesta": r.respuesta,
+                    "fecha_respuesta": r.fecha_respuesta.isoformat() if r.fecha_respuesta else None
+                }
+                for r in respuestas
+            ]
+
+            return jsonify(respuestas_data), 200
 
     except SQLAlchemyError as e:
         return jsonify({"error": str(e)}), 500
