@@ -1,26 +1,28 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-
+ 
+const BASE_URL = "http://127.0.0.1:5000";
+ 
 export default function AnotarRespuestas() {
   const { id, id_entrevista } = useParams();
   const navegar = useNavigate();
-
+ 
   const [entrevista, setEntrevista] = useState(null);
   const [respuestas, setRespuestas] = useState({});
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(null);
-
+ 
   useEffect(() => {
     const cargarEntrevista = async () => {
       try {
         const response = await fetch(
-          `http://localhost:5000/entrevistas/detalle/${id_entrevista}`
+          `${BASE_URL}/entrevistas/detalle/${id_entrevista}`
         );
         if (!response.ok) throw new Error("Error al cargar la entrevista");
         const data = await response.json();
         setEntrevista(data);
-
+ 
         // Inicializar respuestas con las existentes
         const respuestasIniciales = {};
         if (data.preguntas && data.preguntas.length > 0) {
@@ -35,39 +37,49 @@ export default function AnotarRespuestas() {
         setCargando(false);
       }
     };
-
+ 
     cargarEntrevista();
   }, [id_entrevista]);
-
+ 
   const actualizarRespuesta = (idPregunta, valor) => {
     setRespuestas({
       ...respuestas,
       [idPregunta]: valor,
     });
   };
-
+ 
   const guardarRespuestas = async () => {
     setGuardando(true);
     try {
-      // Actualizar cada pregunta con su respuesta
+      // 1. Guardar cada pregunta con su respuesta
       for (const pregunta of entrevista.preguntas) {
         const idPregunta = pregunta.id_ent_prg;
         const respuesta = respuestas[idPregunta] || "";
-
+ 
         const response = await fetch(
-          `http://localhost:5000/preguntas/actualizar/${idPregunta}`,
+          `${BASE_URL}/preguntas/actualizar/${idPregunta}`,
           {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              respuesta: respuesta,
-            }),
+            body: JSON.stringify({ respuesta }),
           }
         );
-
+ 
         if (!response.ok) throw new Error(`Error al guardar la pregunta ${idPregunta}`);
       }
-
+ 
+      // 2. Marcar la entrevista como realizada
+      const resActualizar = await fetch(
+        `${BASE_URL}/entrevistas/actualizar/${id_entrevista}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ estado: "realizada" }),
+        }
+      );
+ 
+      if (!resActualizar.ok) throw new Error("Error al actualizar el estado de la entrevista");
+ 
       navegar(`/app/proyectos/${id}/entrevistas/${id_entrevista}`);
     } catch (err) {
       setError(err.message);
@@ -75,15 +87,13 @@ export default function AnotarRespuestas() {
       setGuardando(false);
     }
   };
-
+ 
   if (cargando) {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           <button
-            onClick={() =>
-              navegar(`/app/proyectos/${id}/entrevistas/${id_entrevista}`)
-            }
+            onClick={() => navegar(`/app/proyectos/${id}/entrevistas/${id_entrevista}`)}
             className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
           >
             ← Atrás
@@ -95,15 +105,13 @@ export default function AnotarRespuestas() {
       </div>
     );
   }
-
+ 
   if (error) {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           <button
-            onClick={() =>
-              navegar(`/app/proyectos/${id}/entrevistas/${id_entrevista}`)
-            }
+            onClick={() => navegar(`/app/proyectos/${id}/entrevistas/${id_entrevista}`)}
             className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
           >
             ← Atrás
@@ -115,54 +123,46 @@ export default function AnotarRespuestas() {
       </div>
     );
   }
-
+ 
   if (!entrevista) {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           <button
-            onClick={() =>
-              navegar(`/app/proyectos/${id}/entrevistas/${id_entrevista}`)
-            }
+            onClick={() => navegar(`/app/proyectos/${id}/entrevistas/${id_entrevista}`)}
             className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
           >
             ← Atrás
           </button>
         </div>
         <div className="bg-white rounded-xl p-12 text-center border border-gray-200">
-          <p className="text-gray-500 text-lg">
-            No se encontró la entrevista
-          </p>
+          <p className="text-gray-500 text-lg">No se encontró la entrevista</p>
         </div>
       </div>
     );
   }
-
+ 
   const totalPreguntas = entrevista.preguntas?.length ?? 0;
   const respuestasCompletadas = Object.values(respuestas).filter(
     (r) => r && r.trim()
   ).length;
-
+ 
   return (
     <div className="space-y-6">
       {/* Encabezado */}
       <div className="flex items-center gap-4">
         <button
-          onClick={() =>
-            navegar(`/app/proyectos/${id}/entrevistas/${id_entrevista}`)
-          }
+          onClick={() => navegar(`/app/proyectos/${id}/entrevistas/${id_entrevista}`)}
           className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
         >
           ← Atrás
         </button>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Anotar Respuestas
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900">Anotar Respuestas</h1>
           <p className="text-gray-600 mt-1">{entrevista.titulo}</p>
         </div>
       </div>
-
+ 
       {/* Progreso */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <div className="flex justify-between items-center mb-3">
@@ -183,7 +183,7 @@ export default function AnotarRespuestas() {
           />
         </div>
       </div>
-
+ 
       {/* Formulario de respuestas */}
       <div className="bg-white rounded-xl border border-gray-200 p-8 space-y-6">
         {totalPreguntas === 0 ? (
@@ -201,15 +201,13 @@ export default function AnotarRespuestas() {
                   {index + 1}
                 </span>
                 <div className="flex-1">
-                  <p className="font-medium text-gray-900">
-                    {pregunta.pregunta}
-                  </p>
+                  <p className="font-medium text-gray-900">{pregunta.pregunta}</p>
                   <p className="text-xs text-gray-500 mt-1">
                     {pregunta.origen === "ia" ? "Generada por IA" : "Manual"}
                   </p>
                 </div>
               </div>
-
+ 
               <textarea
                 value={respuestas[pregunta.id_ent_prg] || ""}
                 onChange={(e) =>
@@ -223,13 +221,11 @@ export default function AnotarRespuestas() {
           ))
         )}
       </div>
-
+ 
       {/* Botones de acción */}
       <div className="flex gap-3">
         <button
-          onClick={() =>
-            navegar(`/app/proyectos/${id}/entrevistas/${id_entrevista}`)
-          }
+          onClick={() => navegar(`/app/proyectos/${id}/entrevistas/${id_entrevista}`)}
           className="flex-1 border border-gray-300 text-gray-700 px-4 py-3 rounded-lg font-medium hover:bg-gray-50 transition"
         >
           Cancelar
@@ -245,3 +241,4 @@ export default function AnotarRespuestas() {
     </div>
   );
 }
+ 
