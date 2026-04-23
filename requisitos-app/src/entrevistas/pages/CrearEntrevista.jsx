@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-
+ 
 const BASE_URL = "http://127.0.0.1:5000";
-
+ 
 export default function CrearEntrevista() {
   const { id } = useParams();
   const navegar = useNavigate();
-
+ 
   const [nuevoFormulario, setNuevoFormulario] = useState({
     titulo: "",
     entrevistador: "",
@@ -14,24 +14,25 @@ export default function CrearEntrevista() {
     notas: "",
     proceso: "",
     subproceso: "",
+    fecha_programada: "",   // ← NUEVO campo opcional
     preguntas: [""],
   });
-
+ 
   //datos para los selects
   const [entrevistadores, setEntrevistadores] = useState([]);
   const [stakeholders, setStakeholders] = useState([]);
   const [procesos, setProcesos] = useState([]);
-
+ 
   useEffect(() => {
     const token = localStorage.getItem("token");
     const headers = { Authorization: `Bearer ${token}` };
-
+ 
     //cargar equipo de ti del proyecto
     fetch(`${BASE_URL}/ti/${id}`, { headers })
       .then((r) => r.ok ? r.json() : [])
       .then(setEntrevistadores)
       .catch(() => {});
-
+ 
     // Cargar stakeholders del proyecto
     fetch(`${BASE_URL}/stakeholders/${id}`, { headers })
       .then((r) => r.ok ? r.json() : [])
@@ -44,13 +45,13 @@ export default function CrearEntrevista() {
       .then(setProcesos)
       .catch(() => {});
   }, [id]);
-
+ 
   // Subprocesos del proceso seleccionado
   const subprocesosFiltrados =
     procesos.find((p) => String(p.id_proceso) === String(nuevoFormulario.proceso))
       ?.subprocesos || [];
-
-  const handleAgregarEntrevista = async() => {
+ 
+  const handleAgregarEntrevista = async () => {
     if (!nuevoFormulario.titulo.trim()) return alert("El título es obligatorio.");
     if (!nuevoFormulario.entrevistador) return alert("Selecciona un entrevistador.");
     if (!nuevoFormulario.entrevistado) return alert("Selecciona un entrevistado.");
@@ -70,6 +71,8 @@ export default function CrearEntrevista() {
           id_stakeholder: parseInt(nuevoFormulario.entrevistado),
           objetivo: nuevoFormulario.notas || null,
           id_subproceso: nuevoFormulario.subproceso ? parseInt(nuevoFormulario.subproceso) : null,
+          // ← NUEVO: solo se manda si el usuario llenó el campo
+          fecha_programada: nuevoFormulario.fecha_programada || null,
         }),
       });
  
@@ -94,16 +97,15 @@ export default function CrearEntrevista() {
       alert("Error de conexión con el servidor.");
       console.error(e);
     }
-    
   };
-
+ 
   const agregarPregunta = () => {
     setNuevoFormulario({
       ...nuevoFormulario,
       preguntas: [...nuevoFormulario.preguntas, ""],
     });
   };
-
+ 
   const actualizarPregunta = (index, valor) => {
     const nuevasPreguntas = [...nuevoFormulario.preguntas];
     nuevasPreguntas[index] = valor;
@@ -112,7 +114,7 @@ export default function CrearEntrevista() {
       preguntas: nuevasPreguntas,
     });
   };
-
+ 
   return (
     <div className="space-y-6">
       {/* Encabezado con botón atrás */}
@@ -130,9 +132,11 @@ export default function CrearEntrevista() {
           </p>
         </div>
       </div>
-
+ 
       {/* Formulario */}
       <div className="bg-white rounded-xl border border-gray-200 p-8 space-y-6">
+ 
+        {/* Fila 1: Título · Entrevistador · Entrevistado */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -142,16 +146,13 @@ export default function CrearEntrevista() {
               type="text"
               value={nuevoFormulario.titulo}
               onChange={(e) =>
-                setNuevoFormulario({
-                  ...nuevoFormulario,
-                  titulo: e.target.value,
-                })
+                setNuevoFormulario({ ...nuevoFormulario, titulo: e.target.value })
               }
               placeholder="Ej: Entrevista con usuario final"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-
+ 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Entrevistador <span className="text-red-500">*</span>
@@ -171,7 +172,7 @@ export default function CrearEntrevista() {
               ))}
             </select>
           </div>
-
+ 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Entrevistado <span className="text-red-500">*</span>
@@ -192,7 +193,26 @@ export default function CrearEntrevista() {
             </select>
           </div>
         </div>
-
+ 
+        {/* Fila 2: Fecha y hora (NUEVO, opcional) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Fecha y hora programada
+              <span className="ml-1 text-xs text-gray-400 font-normal">(opcional)</span>
+            </label>
+            <input
+              type="datetime-local"
+              value={nuevoFormulario.fecha_programada}
+              onChange={(e) =>
+                setNuevoFormulario({ ...nuevoFormulario, fecha_programada: e.target.value })
+              }
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+ 
+        {/* Notas / Contexto */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Notas / Contexto
@@ -200,17 +220,15 @@ export default function CrearEntrevista() {
           <textarea
             value={nuevoFormulario.notas}
             onChange={(e) =>
-              setNuevoFormulario({
-                ...nuevoFormulario,
-                notas: e.target.value,
-              })
+              setNuevoFormulario({ ...nuevoFormulario, notas: e.target.value })
             }
             placeholder="Contexto o notas adicionales sobre la entrevista"
             rows="3"
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-
+ 
+        {/* Proceso / Subproceso */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -219,7 +237,6 @@ export default function CrearEntrevista() {
             <select
               value={nuevoFormulario.proceso}
               onChange={(e) =>
-                // Al cambiar proceso se limpia el subproceso
                 setNuevoFormulario({ ...nuevoFormulario, proceso: e.target.value, subproceso: "" })
               }
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
@@ -232,7 +249,7 @@ export default function CrearEntrevista() {
               ))}
             </select>
           </div>
-
+ 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Subproceso
@@ -256,11 +273,12 @@ export default function CrearEntrevista() {
             </select>
           </div>
         </div>
-
+ 
+        {/* Preguntas */}
         <div>
           <div className="flex justify-between items-center mb-3">
             <label className="block text-sm font-medium text-gray-700">
-              Preguntas de la Entrevista <span className="text-red-500">*</span>
+              Preguntas de la Entrevista
             </label>
             <button
               onClick={agregarPregunta}
@@ -282,7 +300,8 @@ export default function CrearEntrevista() {
             ))}
           </div>
         </div>
-
+ 
+        {/* Botones */}
         <div className="flex gap-3 pt-4">
           <button
             onClick={handleAgregarEntrevista}
