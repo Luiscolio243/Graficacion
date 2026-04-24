@@ -25,6 +25,8 @@ import SeguimientoTransaccional from "../seguimientoTransaccional/pages/Seguimie
 import CrearSeguimientoTransaccional from "../seguimientoTransaccional/pages/CrearSeguimientoTransaccional";
 import SubirAudio from "../entrevistas/pages/SubirAudio";
 import DetalleEntrevista from "../entrevistas/pages/DetalleEntrevista";
+import DetalleObservacion from "../observaciones/pages/DetalleObservacion";
+import EditarObservacion from "../observaciones/pages/EditarObservacion";
 
 export const router = createBrowserRouter([
     {
@@ -128,6 +130,14 @@ export const router = createBrowserRouter([
                 //Crear nueva observación
                 path: "proyectos/:id/requerimientos/observaciones/crear",
                 element: <CrearObservacion />
+            },
+            {
+                path: "proyectos/:id/requerimientos/observaciones/:id_observacion",
+                element: <DetalleObservacion />
+            },
+            {
+                path: "proyectos/:id/requerimientos/observaciones/:id_observacion/editar",
+                element: <EditarObservacion />
             },
             {
                 //Historias de usuario de cada proyecto
