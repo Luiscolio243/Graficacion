@@ -1,8 +1,7 @@
 from __future__ import annotations
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import Integer
+from sqlalchemy import Integer, ForeignKey
 from Models.Base import Base
-
 
 class FocusGroupParticipante(Base):
     __tablename__ = "focus_group_participantes"
@@ -11,10 +10,10 @@ class FocusGroupParticipante(Base):
         Integer, primary_key=True
     )
     id_focus_group: Mapped[int] = mapped_column(
-        Integer, nullable=False
+        Integer, ForeignKey("focus_groups.id_focus_group"), nullable=False
     )
     id_stakeholder: Mapped[int] = mapped_column(
-        Integer, nullable=False
+        Integer, ForeignKey("stakeholders.id_stakeholder"), nullable=False
     )
 
     focus_group: Mapped["FocusGroup"] = relationship(

@@ -1,7 +1,8 @@
 from __future__ import annotations
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import Integer, Text
+from sqlalchemy import Integer, Text, ForeignKey
 from Models.Base import Base
+
 
 class FocusGroupTema(Base):
     __tablename__ = "focus_group_temas"
@@ -10,7 +11,7 @@ class FocusGroupTema(Base):
         Integer, primary_key=True
     )
     id_focus_group: Mapped[int] = mapped_column(
-        Integer, nullable=False
+        Integer, ForeignKey("focus_groups.id_focus_group"), nullable=False
     )
     tema: Mapped[str] = mapped_column(
         Text, nullable=False

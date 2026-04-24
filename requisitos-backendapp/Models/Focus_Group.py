@@ -1,9 +1,8 @@
 from __future__ import annotations
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import Integer, Text, Date, DateTime, String, func
+from sqlalchemy import Integer, Text, Date, DateTime, String, ForeignKey
 from datetime import date, datetime
 from Models.Base import Base
-
 
 class FocusGroup(Base):
     __tablename__ = "focus_groups"
@@ -12,13 +11,13 @@ class FocusGroup(Base):
         Integer, primary_key=True
     )
     id_proyecto: Mapped[int] = mapped_column(
-        Integer, nullable=False
+        Integer, ForeignKey("proyectos.id_proyecto"), nullable=False
     )
     id_subproceso: Mapped[int | None] = mapped_column(
-        Integer, nullable=True
+        Integer, ForeignKey("subprocesos.id_subproceso"), nullable=True
     )
     id_moderador: Mapped[int] = mapped_column(
-        Integer, nullable=False
+        Integer, ForeignKey("usuarios.id_usuario"), nullable=False
     )
     titulo: Mapped[str] = mapped_column(
         String(200), nullable=False
@@ -39,8 +38,6 @@ class FocusGroup(Base):
         DateTime, default=datetime.now
     )
 
-    # Relaciones — cascade para que al borrar el focus group
-    # se borren sus participantes y temas automáticamente
     participantes: Mapped[list["FocusGroupParticipante"]] = relationship(
         "FocusGroupParticipante",
         back_populates="focus_group",
