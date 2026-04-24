@@ -3,59 +3,71 @@ import { useParams, useNavigate } from "react-router-dom";
  
 const BASE_URL = "http://127.0.0.1:5000";
  
-export default function CrearObservacion() {
-  const { id } = useParams();
+export default function EditarObservacion() {
+  const { id, id_observacion } = useParams();
   const navegar = useNavigate();
  
-  const [formulario, setFormulario] = useState({
-    lugar: "",
-    descripcion: "",
-    problema_detectado: "",
-    contexto: "",
-    fecha_observacion: "",
-    duracion_minutos: "",
-    proceso: "",
-    subproceso: "",
-  });
- 
+  const [formulario, setFormulario] = useState(null);
   const [procesos, setProcesos] = useState([]);
+  const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState(null);
  
-  // Cargar procesos y subprocesos del proyecto
+  // Cargar observación existente y procesos en paralelo
   useEffect(() => {
     const token = localStorage.getItem("token");
     const headers = { Authorization: `Bearer ${token}` };
  
-    fetch(`${BASE_URL}/procesos/${id}`, { headers })
-      .then((r) => r.ok ? r.json() : [])
-      .then(setProcesos)
-      .catch(() => {});
-  }, [id]);
+    Promise.all([
+      fetch(`${BASE_URL}/observaciones/detalle/${id_observacion}`).then((r) => r.json()),
+      fetch(`${BASE_URL}/procesos/${id}`, { headers }).then((r) => r.ok ? r.json() : []),
+    ])
+      .then(([obs, procs]) => {
+        setProcesos(procs);
+        setFormulario({
+          lugar:              obs.lugar || "",
+          descripcion:        obs.descripcion || "",
+          problema_detectado: obs.problema_detectado || "",
+          contexto:           obs.contexto || "",
+          // fecha viene como "YYYY-MM-DD" desde el backend, el input date lo acepta directo
+          fecha_observacion:  obs.fecha_observacion || "",
+          duracion_minutos:   obs.duracion_minutos ?? "",
+          subproceso:         obs.id_subproceso ? String(obs.id_subproceso) : "",
+          // Para preseleccionar el proceso correcto buscamos en la lista
+          proceso:            "",
+        });
+        // Buscar a qué proceso pertenece el subproceso para preseleccionarlo
+        if (obs.id_subproceso) {
+          const procesoEncontrado = procs.find((p) =>
+            p.subprocesos?.some((sp) => sp.id_subproceso === obs.id_subproceso)
+          );
+          if (procesoEncontrado) {
+            setFormulario((prev) => ({
+              ...prev,
+              proceso: String(procesoEncontrado.id_proceso),
+            }));
+          }
+        }
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setCargando(false));
+  }, [id, id_observacion]);
  
   const subprocesosFiltrados =
-    procesos.find((p) => String(p.id_proceso) === String(formulario.proceso))
+    procesos.find((p) => String(p.id_proceso) === String(formulario?.proceso))
       ?.subprocesos || [];
+ 
+  const set = (campo, valor) =>
+    setFormulario((prev) => ({ ...prev, [campo]: valor }));
  
   const handleGuardar = async () => {
     if (!formulario.lugar.trim())       return alert("El lugar es obligatorio.");
     if (!formulario.descripcion.trim()) return alert("La descripción es obligatoria.");
  
-    // id_observador: usamos el usuario logueado guardado en localStorage
-    const usuario = JSON.parse(localStorage.getItem("user") || "{}");
-    const id_observador = usuario.id;
-    if (!id_observador) return alert("No se pudo identificar al observador. Inicia sesión nuevamente.");
- 
     setGuardando(true);
     try {
       const token = localStorage.getItem("token");
-      const headers = {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      };
- 
       const body = {
-        id_proyecto:        parseInt(id),
-        id_observador:      id_observador,
         lugar:              formulario.lugar.trim(),
         descripcion:        formulario.descripcion.trim(),
         problema_detectado: formulario.problema_detectado.trim() || null,
@@ -65,18 +77,21 @@ export default function CrearObservacion() {
         id_subproceso:      formulario.subproceso ? parseInt(formulario.subproceso) : null,
       };
  
-      const res = await fetch(`${BASE_URL}/observaciones/crear`, {
-        method: "POST",
-        headers,
+      const res = await fetch(`${BASE_URL}/observaciones/actualizar/${id_observacion}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(body),
       });
  
       if (!res.ok) {
         const err = await res.json();
-        return alert(err.error || "Error al crear la observación.");
+        return alert(err.error || "Error al actualizar la observación.");
       }
  
-      navegar(`/app/proyectos/${id}/requerimientos/observaciones`);
+      navegar(`/app/proyectos/${id}/requerimientos/observaciones/${id_observacion}`);
     } catch (e) {
       alert("Error de conexión con el servidor.");
       console.error(e);
@@ -85,22 +100,25 @@ export default function CrearObservacion() {
     }
   };
  
-  const set = (campo, valor) =>
-    setFormulario((prev) => ({ ...prev, [campo]: valor }));
+  if (cargando) return <p className="text-center text-gray-500 mt-10">Cargando observación...</p>;
+  if (error)    return <p className="text-center text-red-500 mt-10">{error}</p>;
+  if (!formulario) return null;
  
   return (
     <div className="space-y-6">
       {/* Encabezado */}
       <div className="flex items-center gap-4">
         <button
-          onClick={() => navegar(`/app/proyectos/${id}/requerimientos/observaciones`)}
+          onClick={() =>
+            navegar(`/app/proyectos/${id}/requerimientos/observaciones/${id_observacion}`)
+          }
           className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
         >
           ← Atrás
         </button>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Nueva Observación</h1>
-          <p className="text-gray-600 mt-1">Registra observaciones y hallazgos de campo</p>
+          <h1 className="text-3xl font-bold text-gray-900">Editar Observación</h1>
+          <p className="text-gray-600 mt-1">Modifica los campos que necesites</p>
         </div>
       </div>
  
@@ -117,7 +135,6 @@ export default function CrearObservacion() {
               type="text"
               value={formulario.lugar}
               onChange={(e) => set("lugar", e.target.value)}
-              placeholder="Ej: Recepción del hospital"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
@@ -145,7 +162,6 @@ export default function CrearObservacion() {
               min="1"
               value={formulario.duracion_minutos}
               onChange={(e) => set("duracion_minutos", e.target.value)}
-              placeholder="Ej: 45"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
@@ -159,7 +175,6 @@ export default function CrearObservacion() {
           <textarea
             value={formulario.descripcion}
             onChange={(e) => set("descripcion", e.target.value)}
-            placeholder="Describe lo que observaste..."
             rows="5"
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
@@ -174,7 +189,6 @@ export default function CrearObservacion() {
           <textarea
             value={formulario.problema_detectado}
             onChange={(e) => set("problema_detectado", e.target.value)}
-            placeholder="¿Identificaste algún problema o área de mejora?"
             rows="3"
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
@@ -189,7 +203,6 @@ export default function CrearObservacion() {
           <textarea
             value={formulario.contexto}
             onChange={(e) => set("contexto", e.target.value)}
-            placeholder="Información adicional sobre el contexto de la observación..."
             rows="3"
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
@@ -204,8 +217,9 @@ export default function CrearObservacion() {
             </label>
             <select
               value={formulario.proceso}
-              onChange={(e) => set("proceso", e.target.value) || set("subproceso", "")}
-              onChange={(e) => setFormulario((prev) => ({ ...prev, proceso: e.target.value, subproceso: "" }))}
+              onChange={(e) =>
+                setFormulario((prev) => ({ ...prev, proceso: e.target.value, subproceso: "" }))
+              }
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
             >
               <option value="">Selecciona un proceso</option>
@@ -247,10 +261,12 @@ export default function CrearObservacion() {
             disabled={guardando}
             className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white px-4 py-3 rounded-lg font-medium transition"
           >
-            {guardando ? "Guardando..." : "Guardar Observación"}
+            {guardando ? "Guardando..." : "Guardar Cambios"}
           </button>
           <button
-            onClick={() => navegar(`/app/proyectos/${id}/requerimientos/observaciones`)}
+            onClick={() =>
+              navegar(`/app/proyectos/${id}/requerimientos/observaciones/${id_observacion}`)
+            }
             className="flex-1 border border-gray-300 text-gray-700 px-4 py-3 rounded-lg font-medium hover:bg-gray-50 transition"
           >
             Cancelar
