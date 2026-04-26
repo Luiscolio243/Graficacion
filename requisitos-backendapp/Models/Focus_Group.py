@@ -1,6 +1,6 @@
 from __future__ import annotations
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import Integer, Text, Date, DateTime, String, ForeignKey
+from sqlalchemy import Integer, Text, Date, DateTime, String, ForeignKey, ARRAY
 from datetime import date, datetime
 from Models.Base import Base
 
@@ -36,6 +36,18 @@ class FocusGroup(Base):
     )
     fecha_creacion: Mapped[datetime | None] = mapped_column(
         DateTime, default=datetime.now
+    )
+
+    transcripcion: Mapped[str | None] = mapped_column(
+        Text, nullable=True
+    )
+
+    tipo_media: Mapped[str | None] = mapped_column(
+        String(50), nullable=True
+    )
+
+    conclusiones: Mapped[list | None] = mapped_column(
+        ARRAY(Text), nullable=True
     )
 
     participantes: Mapped[list["FocusGroupParticipante"]] = relationship(

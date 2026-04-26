@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from Models.Encuestas import Encuestas
-from app import engine
+from db import engine
 from datetime import datetime
 from Models.EncuestaOpciones import EncuestaOpciones
 from sqlalchemy.exc import SQLAlchemyError
@@ -43,7 +43,7 @@ def crear_encuesta():
         with Session(engine) as session:
             encuesta = Encuestas(
                 id_proyecto=data["id_proyecto"],
-                id_subproceso=data.get("id_subproceso"),
+                id_subproceso=int(data["id_subproceso"]) if data.get("id_subproceso") else None,
                 titulo=data["titulo"],
                 descripcion=data.get("descripcion"),
                 num_participantes=data.get("num_participantes", 0),
@@ -55,22 +55,33 @@ def crear_encuesta():
             #El flush lo utilizamos para que el mapeador convierta a instruccion sql mi objeto creado de encuesta, pero no lo guardara a la bd aun
             session.flush()
 
+            TIPO_MAP = {
+                "abierta": "abierta",
+                "opcionMultiple": "opcion_multiple",
+                "opcion_multiple": "opcion_multiple",
+                "escala": "escala",
+                "siNo": "si_no",
+                "si_no": "si_no",
+            }
+
             for i, preg_data in enumerate(data.get("preguntas", []), start=1):
+                tipo_normalizado = TIPO_MAP.get(preg_data.get("tipo", "abierta"), "abierta")
                 pregunta = EncuestaPreguntas(
                     id_encuesta=encuesta.id_encuesta,
                     pregunta=preg_data["pregunta"],
-                    tipo=preg_data.get("tipo", "abierta"),
+                    tipo=tipo_normalizado,
                     orden=preg_data.get("orden", i),
                 )
                 session.add(pregunta)
                 session.flush()
 
                 # Si es opcion_multiple agregar las opciones
-                if pregunta.tipo == "opcion_multiple":
-                    for j, op in enumerate(preg_data.get("opciones", []), start=1):
+                if tipo_normalizado == "opcion_multiple":
+                    opciones = [op for op in preg_data.get("opciones", []) if op and op.strip()]
+                    for j, op in enumerate(opciones, start=1):
                         opcion = EncuestaOpciones(
                             id_pregunta=pregunta.id_pregunta,
-                            opcion=op,
+                            opcion=op.strip(),
                             orden=j,
                         )
                         session.add(opcion)
@@ -84,6 +95,7 @@ def crear_encuesta():
             }), 201
 
     except SQLAlchemyError as e:
+        print("ERROR DETALLADO:", str(e))
         return jsonify({"error": str(e)}), 500
 
 

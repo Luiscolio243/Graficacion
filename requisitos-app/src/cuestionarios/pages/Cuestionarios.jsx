@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { Link2, ChevronUp, ChevronDown } from "lucide-react";
 
 export default function Cuestionarios() {
   const { id } = useParams();
@@ -147,6 +148,10 @@ function TarjetaCuestionario({ cuestionario, onEliminar }) {
   const { id } = useParams();
   const estado = cuestionario.estado ?? "borrador";
 
+  const [mostrarLinks, setMostrarLinks] = useState(false);
+  const [stakeholders, setStakeholders] = useState([]);
+  const [copiado, setCopiado] = useState(null); // id del stakeholder cuyo link se copió
+
   const esEstado = {
     cerrada:  "border-emerald-200 bg-emerald-50",
     activa:   "border-blue-200 bg-blue-50",
@@ -159,6 +164,33 @@ function TarjetaCuestionario({ cuestionario, onEliminar }) {
     borrador: "bg-gray-100 text-gray-800",
   };
 
+  const handleMostrarLinks = async () => {
+    // Solo carga stakeholders la primera vez
+    if (stakeholders.length === 0) {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`http://127.0.0.1:5000/stakeholders/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStakeholders(data);
+        }
+      } catch (e) {
+        console.error("Error al cargar stakeholders:", e);
+      }
+    }
+    setMostrarLinks(!mostrarLinks);
+  };
+
+  const copiarLink = (id_stakeholder) => {
+    const link = `${window.location.origin}/responder/encuesta/${cuestionario.id_encuesta}/stakeholder/${id_stakeholder}`;
+    navigator.clipboard.writeText(link).then(() => {
+      setCopiado(id_stakeholder);
+      setTimeout(() => setCopiado(null), 2000); // resetea después de 2 seg
+    });
+  };
+
   return (
     <div className={`rounded-xl border ${esEstado[estado]} p-6 space-y-4`}>
       <div className="flex justify-between items-start">
@@ -169,7 +201,6 @@ function TarjetaCuestionario({ cuestionario, onEliminar }) {
           <p className="text-gray-700 text-sm mb-3">
             {cuestionario.descripcion ?? "Sin descripción"}
           </p>
-          {/* Estos campos aparecerán cuando el backend los retorne */}
           {cuestionario.fecha_creacion && (
             <div className="flex gap-4 text-sm text-gray-600 mb-3">
               <span>{cuestionario.fecha_creacion}</span>
@@ -177,11 +208,6 @@ function TarjetaCuestionario({ cuestionario, onEliminar }) {
                 <span>{cuestionario.num_participantes} participantes</span>
               )}
             </div>
-          )}
-          {cuestionario.num_preguntas !== undefined && (
-            <p className="text-sm text-gray-600">
-              Preguntas: {cuestionario.num_preguntas}
-            </p>
           )}
         </div>
         <div className="flex gap-2">
@@ -207,10 +233,56 @@ function TarjetaCuestionario({ cuestionario, onEliminar }) {
         >
           Ver Resultados
         </button>
+        <button
+          onClick={handleMostrarLinks}
+          className="flex-1 border border-green-600 text-green-700 hover:bg-green-50 px-4 py-2 rounded-lg font-medium transition"
+        >
+          <span className="flex items-center gap-2 justify-center">
+            <Link2 size={15} />
+            {mostrarLinks ? "Ocultar Links" : "Compartir Links"}
+            {mostrarLinks ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+          </span>
+        </button>
         <span className={`px-4 py-2 rounded-lg font-medium text-sm ${etiquetaColor[estado]}`}>
           {estado.charAt(0).toUpperCase() + estado.slice(1)}
         </span>
       </div>
+
+      {/* Panel de links por stakeholder */}
+      {mostrarLinks && (
+        <div className="border-t border-gray-200 pt-4 space-y-2">
+          <p className="text-sm font-medium text-gray-700 mb-3">
+            Copia el link para cada stakeholder:
+          </p>
+          {stakeholders.length === 0 ? (
+            <p className="text-sm text-gray-400">No hay stakeholders en este proyecto.</p>
+          ) : (
+            stakeholders.map((s) => (
+              <div
+                key={s.id_stakeholder}
+                className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-4 py-3"
+              >
+                <div>
+                  <p className="text-sm font-medium text-gray-800">{s.nombre}</p>
+                  <p className="text-xs text-gray-400 truncate max-w-xs">
+                    {`${window.location.origin}/responder/encuesta/${cuestionario.id_encuesta}/stakeholder/${s.id_stakeholder}`}
+                  </p>
+                </div>
+                <button
+                  onClick={() => copiarLink(s.id_stakeholder)}
+                  className={`ml-4 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                    copiado === s.id_stakeholder
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                  }`}
+                >
+                  {copiado === s.id_stakeholder ? "¡Copiado!" : "Copiar"}
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }

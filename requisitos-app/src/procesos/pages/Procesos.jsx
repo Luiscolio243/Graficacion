@@ -27,7 +27,14 @@ export default function Procesos() {
         ]);
         if (resProcesos.ok) {
           const data = await resProcesos.json();
-          setProcesos(data);
+          setProcesos(data.map(p => ({
+            ...p,
+            id: p.id_proceso,
+            subprocesos: (p.subprocesos || []).map(sp => ({
+              ...sp,
+              id: sp.id_subproceso,
+            }))
+          })));
         }
         if (resTI.ok) {
           const data = await resTI.json();

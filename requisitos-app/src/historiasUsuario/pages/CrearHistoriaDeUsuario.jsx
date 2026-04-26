@@ -1,32 +1,74 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+
+const BASE_URL = "http://127.0.0.1:5000";
 
 export default function CrearHistoriaDeUsuario() {
   const { id } = useParams();
   const navegar = useNavigate();
+
+  const [procesos, setProcesos] = useState([]);
+  const [subprocesosFiltrados, setSubprocesosFiltrados] = useState([]);
+  const [guardando, setGuardando] = useState(false);
 
   const [nuevoFormulario, setNuevoFormulario] = useState({
     titulo: "",
     rol: "",
     accion: "",
     beneficio: "",
-    proceso: "",
-    subproceso: "",
+    id_proceso: "",
+    id_subproceso: "",
     prioridad: "media",
     estimacion: "",
     criterios: [""],
   });
 
-  const handleAgregarHistoria = () => {
-    if (
-      nuevoFormulario.titulo.trim() &&
-      nuevoFormulario.rol.trim() &&
-      nuevoFormulario.accion.trim() &&
-      nuevoFormulario.beneficio.trim() &&
-      nuevoFormulario.prioridad.trim()
-    ) {
-      console.log("Crear historia de usuario:", nuevoFormulario);
+  useEffect(() => {
+    fetch(`${BASE_URL}/procesos/${id}`)
+      .then(r => r.ok ? r.json() : [])
+      .then(setProcesos)
+      .catch(() => {});
+  }, [id]);
+
+  const handleCambiarProceso = (e) => {
+    const idProceso = e.target.value;
+    const proceso = procesos.find(p => String(p.id_proceso) === String(idProceso));
+    setSubprocesosFiltrados(proceso?.subprocesos || []);
+    setNuevoFormulario({ ...nuevoFormulario, id_proceso: idProceso, id_subproceso: "" });
+  };
+
+  const handleAgregarHistoria = async () => {
+    if (!nuevoFormulario.titulo.trim() || !nuevoFormulario.rol.trim() ||
+        !nuevoFormulario.accion.trim() || !nuevoFormulario.beneficio.trim()) {
+      alert("Completa los campos obligatorios.");
+      return;
+    }
+    setGuardando(true);
+    try {
+      const res = await fetch(`${BASE_URL}/historias-usuario/crear`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_proyecto: parseInt(id),
+          id_subproceso: nuevoFormulario.id_subproceso ? parseInt(nuevoFormulario.id_subproceso) : null,
+          titulo: nuevoFormulario.titulo,
+          rol: nuevoFormulario.rol,
+          accion: nuevoFormulario.accion,
+          beneficio: nuevoFormulario.beneficio,
+          prioridad: nuevoFormulario.prioridad,
+          estimacion: nuevoFormulario.estimacion || null,
+          criterios: nuevoFormulario.criterios.filter(c => c.trim()),
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Error al crear");
+      }
       navegar(`/app/proyectos/${id}/requerimientos/historias-usuario`);
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setGuardando(false);
     }
   };
 
@@ -47,15 +89,11 @@ export default function CrearHistoriaDeUsuario() {
   };
 
   const eliminarCriterio = (index) => {
-    if (nuevoFormulario.criterios.length > 1) {
-      const nuevosCriterios = nuevoFormulario.criterios.filter(
-        (_, i) => i !== index
-      );
+    if (nuevoFormulario.criterios.length > 1)
       setNuevoFormulario({
         ...nuevoFormulario,
-        criterios: nuevosCriterios,
+        criterios: nuevoFormulario.criterios.filter((_, i) => i !== index),
       });
-    }
   };
 
   return (
@@ -101,35 +139,34 @@ export default function CrearHistoriaDeUsuario() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Proceso
             </label>
-            <input
-              type="text"
-              value={nuevoFormulario.proceso}
-              onChange={(e) =>
-                setNuevoFormulario({
-                  ...nuevoFormulario,
-                  proceso: e.target.value,
-                })
-              }
-              placeholder="Selecciona un proceso"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
+            <select
+              value={nuevoFormulario.id_proceso}
+              onChange={handleCambiarProceso}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+            >
+              <option value="">Selecciona un proceso</option>
+              {procesos.map(p => (
+                <option key={p.id_proceso} value={p.id_proceso}>{p.nombre}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Subproceso
             </label>
-            <input
-              type="text"
-              value={nuevoFormulario.subproceso}
-              onChange={(e) =>
-                setNuevoFormulario({
-                  ...nuevoFormulario,
-                  subproceso: e.target.value,
-                })
-              }
-              placeholder="Selecciona un subproceso"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
+            <select
+              value={nuevoFormulario.id_subproceso}
+              onChange={e => setNuevoFormulario({ ...nuevoFormulario, id_subproceso: e.target.value })}
+              disabled={!nuevoFormulario.id_proceso}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white disabled:bg-gray-50 disabled:text-gray-400"
+            >
+              <option value="">
+                {nuevoFormulario.id_proceso ? "Selecciona un subproceso" : "Primero elige un proceso"}
+              </option>
+              {subprocesosFiltrados.map(sp => (
+                <option key={sp.id_subproceso} value={sp.id_subproceso}>{sp.nombre}</option>
+              ))}
+            </select>
           </div>
         </div>
 

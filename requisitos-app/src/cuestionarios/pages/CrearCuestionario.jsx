@@ -1,16 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 export default function CrearCuestionario() {
   const { id } = useParams();
   const navegar = useNavigate();
 
+  const [procesos, setProcesos] = useState([]);
+  const [subprocesosFiltrados, setSubprocesosFiltrados] = useState([]);
+
   const [nuevoFormulario, setNuevoFormulario] = useState({
     titulo: "",
     descripcion: "",
     participantesEsperados: "",
-    proceso: "",
-    subproceso: "",
+    id_proceso: "",
+    id_subproceso: "",
     preguntas: [
       {
         texto: "",
@@ -19,6 +22,24 @@ export default function CrearCuestionario() {
       },
     ],
   });
+
+  useEffect(() => {
+    fetch(`http://127.0.0.1:5000/procesos/${id}`)
+      .then(r => r.ok ? r.json() : [])
+      .then(data => setProcesos(data))
+      .catch(() => {});
+  }, [id]);
+
+  const handleCambiarProceso = (e) => {
+    const idProceso = e.target.value;
+    const proceso = procesos.find(p => String(p.id_proceso) === String(idProceso));
+    setSubprocesosFiltrados(proceso?.subprocesos || []);
+    setNuevoFormulario({
+      ...nuevoFormulario,
+      id_proceso: idProceso,
+      id_subproceso: "",  // limpiar subproceso al cambiar proceso
+    });
+  };
 
   const handleAgregarCuestionario = async () => {
     if (
@@ -211,35 +232,41 @@ export default function CrearCuestionario() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Proceso
             </label>
-            <input
-              type="text"
-              value={nuevoFormulario.proceso}
-              onChange={(e) =>
-                setNuevoFormulario({
-                  ...nuevoFormulario,
-                  proceso: e.target.value,
-                })
-              }
-              placeholder="Selecciona un proceso"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
+            <select
+              value={nuevoFormulario.id_proceso}
+              onChange={handleCambiarProceso}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+            >
+              <option value="">Selecciona un proceso</option>
+              {procesos.map((p) => (
+                <option key={p.id_proceso} value={p.id_proceso}>
+                  {p.nombre}
+                </option>
+              ))}
+            </select>
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Subproceso
             </label>
-            <input
-              type="text"
-              value={nuevoFormulario.subproceso}
+            <select
+              value={nuevoFormulario.id_subproceso}
               onChange={(e) =>
-                setNuevoFormulario({
-                  ...nuevoFormulario,
-                  subproceso: e.target.value,
-                })
+                setNuevoFormulario({ ...nuevoFormulario, id_subproceso: e.target.value })
               }
-              placeholder="Selecciona un subproceso"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
+              disabled={!nuevoFormulario.id_proceso}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white disabled:bg-gray-50 disabled:text-gray-400"
+            >
+              <option value="">
+                {nuevoFormulario.id_proceso ? "Selecciona un subproceso" : "Primero elige un proceso"}
+              </option>
+              {subprocesosFiltrados.map((sp) => (
+                <option key={sp.id_subproceso} value={sp.id_subproceso}>
+                  {sp.nombre}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 

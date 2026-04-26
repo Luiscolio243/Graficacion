@@ -27,6 +27,7 @@ import SubirAudio from "../entrevistas/pages/SubirAudio";
 import DetalleEntrevista from "../entrevistas/pages/DetalleEntrevista";
 import DetalleObservacion from "../observaciones/pages/DetalleObservacion";
 import EditarObservacion from "../observaciones/pages/EditarObservacion";
+import ResponderEncuesta from "../cuestionarios/pages/ResponderEncuesta";
 
 export const router = createBrowserRouter([
     {
@@ -38,6 +39,10 @@ export const router = createBrowserRouter([
         //Pantalla de inicio de seison
         path: "/login",
         element: <Login />
+    },
+    {
+        path: "/responder/encuesta/:id_encuesta/stakeholder/:id_stakeholder",
+        element: <ResponderEncuesta />
     },
     {
         //Rutas ya que inicio sesion el usuario
