@@ -178,6 +178,7 @@ def crear_subproceso():
     # Crea un subproceso asociado a un proceso principal
     try:
         data = request.get_json()
+        print("DATA RECIBIDA /subprocesos/crear:", data)
 
         if not data:
             return jsonify({"error": "JSON inválido"}), 400
@@ -268,6 +269,7 @@ def asignar_tecnicas():
     # Asigna técnicas a un subproceso (reemplaza las anteriores)
     try:
         data = request.get_json()
+        print("DATA RECIBIDA /asignar-tecnicas:", data)
 
         if not data:
             return jsonify({"error": "JSON inválido"}), 400

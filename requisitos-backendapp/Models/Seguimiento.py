@@ -20,6 +20,9 @@ class Seguimiento(Base):
     id_subproceso: Mapped[int] = MappedColumn(
         Integer, ForeignKey("subprocesos.id_subproceso")
     )
+    id_responsable: Mapped[Optional[int]] = MappedColumn(
+        Integer, ForeignKey("usuarios.id_usuario"), nullable=True
+    )
     titulo: Mapped[str] = MappedColumn(
         String(150)
     )

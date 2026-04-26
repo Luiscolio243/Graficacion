@@ -108,6 +108,12 @@ export default function ModalNuevoSubproceso({
             disabled={guardando || stakeholders.length === 0}
             onClick={async () => {
               if (!subproceso.nombre.trim() || !subproceso.id_stakeholder) return;
+
+              if (!idProceso) {
+                setError("Error: no se recibió el id del proceso. Cierra y vuelve a intentar.");
+                return;
+              }
+              
               setError(null);
               setGuardando(true);
               try {

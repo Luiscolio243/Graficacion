@@ -22,10 +22,12 @@ def configurar_gemini():
 def parsear_fecha(fecha_str: str | None) -> date | None:
     if not fecha_str:
         return None
-    try:
-        return datetime.strptime(fecha_str, "%Y-%m-%d").date()
-    except ValueError:
-        return None
+    for fmt in ("%Y-%m-%d", "%Y-%m-%dT%H:%M", "%Y-%m-%dT%H:%M:%S"):
+        try:
+            return datetime.strptime(fecha_str, fmt).date()
+        except ValueError:
+            continue
+    return None
 
 #Es para convertir una entrevista en un json, que al ser un objeto muy grande lo separe en una funcion para mayor orden
 def serializar_entrevista(e: Entrevistas, total_preguntas: int = 0) -> dict:
@@ -59,16 +61,22 @@ def obtener_entrevistas(id_proyecto):
 
             resultado = []
             for e in entrevistas:
-                total = session.scalar(
-                    select(func.count()).where(
-                        EntrevistaPreguntas.id_entrevista == e.id_entrevista
+                try:                         
+                    total = session.scalar(
+                        select(func.count()).where(
+                            EntrevistaPreguntas.id_entrevista == e.id_entrevista
+                        )
                     )
-                )
-                resultado.append(serializar_entrevista(e, total_preguntas=total))
+                    resultado.append(serializar_entrevista(e, total_preguntas=total))
+                except Exception as inner:
+                    print(f"ERROR serializando entrevista {e.id_entrevista}: {inner}")
+                    raise
 
             return jsonify(resultado), 200
 
     except SQLAlchemyError as e:
+        return jsonify({"error": str(e)}), 500
+    except Exception as e:                   
         return jsonify({"error": str(e)}), 500
 
 
@@ -223,6 +231,13 @@ def subir_audio(id_entrevista):
         os.makedirs(carpeta, exist_ok=True)
         ruta = os.path.join(carpeta, f"entrevista_{id_entrevista}_{archivo.filename}")
         archivo.save(ruta)
+
+        # Actualizar audio_url en la entrevista
+        with Session(engine) as session:
+            entrevista = session.get(Entrevistas, id_entrevista)
+            if entrevista:
+                entrevista.audio_url = ruta
+                session.commit()
 
         return jsonify({
             "mensaje": "Audio subido correctamente",

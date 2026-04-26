@@ -1,127 +1,144 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+
+const BASE_URL = "http://127.0.0.1:5000";
 
 export default function CrearSeguimientoTransaccional() {
   const { id } = useParams();
   const navegar = useNavigate();
 
-  const [nuevoFormulario, setNuevoFormulario] = useState({
+  const [procesos, setProcesos] = useState([]);
+  const [subprocesosFiltrados, setSubprocesosFiltrados] = useState([]);
+  const [equipoTI, setEquipoTI] = useState([]);
+  const [guardando, setGuardando] = useState(false);
+
+  const [formulario, setFormulario] = useState({
     titulo: "",
-    id_transaccion: "",
     nombre_proceso: "",
     id_proceso: "",
     id_subproceso: "",
+    id_responsable: "",
     pasos: [{ nombre: "", duracion_min: "" }],
     problemas: [""],
     metricas: [{ nombre: "", valor: "" }],
   });
 
-  const handleAgregarSeguimiento = async () => {
-    if (
-      nuevoFormulario.titulo.trim() &&
-      nuevoFormulario.id_transaccion.trim() &&
-      nuevoFormulario.nombre_proceso.trim() &&
-      nuevoFormulario.pasos.some((p) => p.nombre.trim())
-    ) {
-      try {
-        const body = {
-          titulo:         nuevoFormulario.titulo,
-          id_transaccion: nuevoFormulario.id_transaccion,
-          nombre_proceso: nuevoFormulario.nombre_proceso,
-          id_proceso:     nuevoFormulario.id_proceso     || null,
-          id_subproceso:  nuevoFormulario.id_subproceso  || null,
-          pasos: nuevoFormulario.pasos
-            .filter((p) => p.nombre.trim())
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const headers = { Authorization: `Bearer ${token}` };
+
+    fetch(`${BASE_URL}/procesos/${id}`, { headers })
+      .then(r => r.ok ? r.json() : []).then(setProcesos).catch(() => {});
+
+    fetch(`${BASE_URL}/ti/${id}`, { headers })
+      .then(r => r.ok ? r.json() : []).then(setEquipoTI).catch(() => {});
+  }, [id]);
+
+  const handleCambiarProceso = (e) => {
+    const idProceso = e.target.value;
+    const proceso = procesos.find(p => String(p.id_proceso) === String(idProceso));
+    setSubprocesosFiltrados(proceso?.subprocesos || []);
+    // Autocompletar nombre_proceso
+    setFormulario({
+      ...formulario,
+      id_proceso: idProceso,
+      id_subproceso: "",
+      nombre_proceso: proceso?.nombre || "",
+    });
+  };
+
+  // ── Pasos ──
+  const agregarPaso = () =>
+    setFormulario({ ...formulario, pasos: [...formulario.pasos, { nombre: "", duracion_min: "" }] });
+
+  const actualizarPaso = (index, campo, valor) => {
+    const nuevos = [...formulario.pasos];
+    nuevos[index] = { ...nuevos[index], [campo]: valor };
+    setFormulario({ ...formulario, pasos: nuevos });
+  };
+
+  const eliminarPaso = (index) => {
+    if (formulario.pasos.length > 1)
+      setFormulario({ ...formulario, pasos: formulario.pasos.filter((_, i) => i !== index) });
+  };
+
+  // ── Problemas ──
+  const agregarProblema = () =>
+    setFormulario({ ...formulario, problemas: [...formulario.problemas, ""] });
+
+  const actualizarProblema = (index, valor) => {
+    const nuevos = [...formulario.problemas];
+    nuevos[index] = valor;
+    setFormulario({ ...formulario, problemas: nuevos });
+  };
+
+  const eliminarProblema = (index) => {
+    if (formulario.problemas.length > 1)
+      setFormulario({ ...formulario, problemas: formulario.problemas.filter((_, i) => i !== index) });
+  };
+
+  // ── Métricas ──
+  const agregarMetrica = () =>
+    setFormulario({ ...formulario, metricas: [...formulario.metricas, { nombre: "", valor: "" }] });
+
+  const actualizarMetrica = (index, campo, valor) => {
+    const nuevas = [...formulario.metricas];
+    nuevas[index] = { ...nuevas[index], [campo]: valor };
+    setFormulario({ ...formulario, metricas: nuevas });
+  };
+
+  const eliminarMetrica = (index) => {
+    if (formulario.metricas.length > 1)
+      setFormulario({ ...formulario, metricas: formulario.metricas.filter((_, i) => i !== index) });
+  };
+
+  const handleGuardar = async () => {
+    if (!formulario.titulo.trim() || !formulario.id_proceso || !formulario.pasos.some(p => p.nombre.trim())) {
+      alert("Completa el título, proceso y al menos un paso.");
+      return;
+    }
+    setGuardando(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${BASE_URL}/seguimientos/crear/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          titulo:         formulario.titulo,
+          nombre_proceso: formulario.nombre_proceso,
+          id_proceso:     formulario.id_proceso ? parseInt(formulario.id_proceso) : null,
+          id_subproceso:  formulario.id_subproceso ? parseInt(formulario.id_subproceso) : null,
+          id_responsable: formulario.id_responsable ? parseInt(formulario.id_responsable) : null,
+          pasos: formulario.pasos
+            .filter(p => p.nombre.trim())
             .map((p, i) => ({
               nombre:      p.nombre,
               duracion_min: Number(p.duracion_min) || null,
               orden:        i + 1,
             })),
-          problemas: nuevoFormulario.problemas
-            .filter((p) => p.trim())
-            .map((p) => ({ descripcion: p })),  // ← convierte string a objeto
-          metricas: nuevoFormulario.metricas
-            .filter((m) => m.nombre.trim())
-            .map((m) => ({
-              nombre: m.nombre,
-              valor:  m.valor,
-            })),
-        };
+          problemas: formulario.problemas
+            .filter(p => p.trim())
+            .map(p => ({ descripcion: p })),
+          metricas: formulario.metricas
+            .filter(m => m.nombre.trim())
+            .map(m => ({ nombre: m.nombre, valor: m.valor })),
+        }),
+      });
 
-        const response = await fetch(
-          `http://localhost:5000/seguimientos/crear/${id}`,  // ← id_proyecto en la URL
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          }
-        );
-
-        if (response.ok) {
-          console.log("Seguimiento creado exitosamente");
-          navegar(`/app/proyectos/${id}/requerimientos/seguimiento-transaccional`);
-        } else {
-          const err = await response.json();
-          console.error("Error del servidor:", err);
-          alert("Error al crear el seguimiento. Revisa los datos.");
-        }
-      } catch (error) {
-        console.error("Error de red:", error);
-        alert("No se pudo conectar con el servidor.");
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Error al crear");
       }
-    } else {
-      alert("Por favor, completa el título, ID de transacción, nombre del proceso y al menos un paso.");
+      navegar(`/app/proyectos/${id}/requerimientos/seguimiento-transaccional`);
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setGuardando(false);
     }
-  };
-
-  // ── Pasos ──
-  const agregarPaso = () =>
-    setNuevoFormulario({ ...nuevoFormulario, pasos: [...nuevoFormulario.pasos, { nombre: "", duracion_min: "" }] });
-
-  const actualizarPaso = (index, campo, valor) => {
-    const nuevosPasos = [...nuevoFormulario.pasos];
-    nuevosPasos[index] = { ...nuevosPasos[index], [campo]: valor };
-    setNuevoFormulario({ ...nuevoFormulario, pasos: nuevosPasos });
-  };
-
-  const eliminarPaso = (index) => {
-    if (nuevoFormulario.pasos.length > 1)
-      setNuevoFormulario({ ...nuevoFormulario, pasos: nuevoFormulario.pasos.filter((_, i) => i !== index) });
-  };
-
-  // ── Problemas ──
-  const agregarProblema = () =>
-    setNuevoFormulario({ ...nuevoFormulario, problemas: [...nuevoFormulario.problemas, ""] });
-
-  const actualizarProblema = (index, valor) => {
-    const nuevosProblemas = [...nuevoFormulario.problemas];
-    nuevosProblemas[index] = valor;
-    setNuevoFormulario({ ...nuevoFormulario, problemas: nuevosProblemas });
-  };
-
-  const eliminarProblema = (index) => {
-    if (nuevoFormulario.problemas.length > 1)
-      setNuevoFormulario({ ...nuevoFormulario, problemas: nuevoFormulario.problemas.filter((_, i) => i !== index) });
-  };
-
-  // ── Métricas ──
-  const agregarMetrica = () =>
-    setNuevoFormulario({ ...nuevoFormulario, metricas: [...nuevoFormulario.metricas, { nombre: "", valor: "" }] });
-
-  const actualizarMetrica = (index, campo, valor) => {
-    const nuevasMetricas = [...nuevoFormulario.metricas];
-    nuevasMetricas[index] = { ...nuevasMetricas[index], [campo]: valor };
-    setNuevoFormulario({ ...nuevoFormulario, metricas: nuevasMetricas });
-  };
-
-  const eliminarMetrica = (index) => {
-    if (nuevoFormulario.metricas.length > 0)
-      setNuevoFormulario({ ...nuevoFormulario, metricas: nuevoFormulario.metricas.filter((_, i) => i !== index) });
   };
 
   return (
     <div className="space-y-6">
-      {/* Encabezado */}
       <div className="flex items-center gap-4">
         <button
           onClick={() => navegar(`/app/proyectos/${id}/requerimientos/seguimiento-transaccional`)}
@@ -135,7 +152,6 @@ export default function CrearSeguimientoTransaccional() {
         </div>
       </div>
 
-      {/* Formulario */}
       <div className="bg-white rounded-xl border border-gray-200 p-8 space-y-6">
 
         {/* Título */}
@@ -145,66 +161,70 @@ export default function CrearSeguimientoTransaccional() {
           </label>
           <input
             type="text"
-            value={nuevoFormulario.titulo}
-            onChange={(e) => setNuevoFormulario({ ...nuevoFormulario, titulo: e.target.value })}
-            placeholder="Ej: Seguimiento de Orden #12345"
+            value={formulario.titulo}
+            onChange={e => setFormulario({ ...formulario, titulo: e.target.value })}
+            placeholder="Ej: Seguimiento de salida de merma"
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
           />
         </div>
 
-        {/* ID Transacción + Nombre Proceso */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              ID de Transacción <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={nuevoFormulario.id_transaccion}
-              onChange={(e) => setNuevoFormulario({ ...nuevoFormulario, id_transaccion: e.target.value })}
-              placeholder="Ej: TXN-2025-001"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nombre del Proceso <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={nuevoFormulario.nombre_proceso}
-              onChange={(e) => setNuevoFormulario({ ...nuevoFormulario, nombre_proceso: e.target.value })}
-              placeholder="Ej: Procesamiento de Orden de Compra"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-            />
-          </div>
+        {/* ID Transacción — solo informativo */}
+        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+          <p className="text-xs font-medium text-red-700">ID de Transacción</p>
+          <p className="text-sm text-red-600 mt-0.5">
+            Se generará automáticamente al guardar — formato: <span className="font-mono font-bold">TXN-{new Date().getFullYear()}-XXX</span>
+          </p>
         </div>
 
-        {/* Proceso Vinculado + Subproceso */}
+        {/* Responsable */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Responsable</label>
+          <select
+            value={formulario.id_responsable}
+            onChange={e => setFormulario({ ...formulario, id_responsable: e.target.value })}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
+          >
+            <option value="">Selecciona un responsable</option>
+            {equipoTI.map(e => (
+              <option key={e.usuario.id_usuario} value={e.usuario.id_usuario}>
+                {e.usuario.nombre} {e.usuario.apellido}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Proceso / Subproceso */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              ID Proceso Vinculado
+              Proceso <span className="text-red-500">*</span>
             </label>
-            <input
-              type="number"
-              value={nuevoFormulario.id_proceso}
-              onChange={(e) => setNuevoFormulario({ ...nuevoFormulario, id_proceso: e.target.value })}
-              placeholder="ID numérico del proceso"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-            />
+            <select
+              value={formulario.id_proceso}
+              onChange={handleCambiarProceso}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
+            >
+              <option value="">Selecciona un proceso</option>
+              {procesos.map(p => (
+                <option key={p.id_proceso} value={p.id_proceso}>{p.nombre}</option>
+              ))}
+            </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              ID Subproceso
-            </label>
-            <input
-              type="number"
-              value={nuevoFormulario.id_subproceso}
-              onChange={(e) => setNuevoFormulario({ ...nuevoFormulario, id_subproceso: e.target.value })}
-              placeholder="ID numérico del subproceso"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Subproceso</label>
+            <select
+              value={formulario.id_subproceso}
+              onChange={e => setFormulario({ ...formulario, id_subproceso: e.target.value })}
+              disabled={!formulario.id_proceso}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-white disabled:bg-gray-50 disabled:text-gray-400"
+            >
+              <option value="">
+                {formulario.id_proceso ? "Selecciona un subproceso" : "Primero elige un proceso"}
+              </option>
+              {subprocesosFiltrados.map(sp => (
+                <option key={sp.id_subproceso} value={sp.id_subproceso}>{sp.nombre}</option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -219,11 +239,11 @@ export default function CrearSeguimientoTransaccional() {
             </button>
           </div>
           <div className="space-y-3">
-            {nuevoFormulario.pasos.map((paso, index) => (
-              <div key={index} className="border border-gray-300 rounded-lg p-4 space-y-2">
-                <div className="flex justify-between items-start">
+            {formulario.pasos.map((paso, index) => (
+              <div key={index} className="border border-gray-200 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between items-center">
                   <p className="text-sm font-bold text-gray-700">Paso {index + 1}</p>
-                  {nuevoFormulario.pasos.length > 1 && (
+                  {formulario.pasos.length > 1 && (
                     <button onClick={() => eliminarPaso(index)} className="text-red-500 hover:text-red-700 text-sm font-medium">
                       Eliminar
                     </button>
@@ -232,15 +252,15 @@ export default function CrearSeguimientoTransaccional() {
                 <input
                   type="text"
                   value={paso.nombre}
-                  onChange={(e) => actualizarPaso(index, "nombre", e.target.value)}
+                  onChange={e => actualizarPaso(index, "nombre", e.target.value)}
                   placeholder="Nombre del paso"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
                 <input
                   type="number"
                   value={paso.duracion_min}
-                  onChange={(e) => actualizarPaso(index, "duracion_min", e.target.value)}
-                  placeholder="Duración en minutos (ej: 30)"
+                  onChange={e => actualizarPaso(index, "duracion_min", e.target.value)}
+                  placeholder="Duración en minutos (opcional)"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
               </div>
@@ -252,23 +272,23 @@ export default function CrearSeguimientoTransaccional() {
         <div>
           <div className="flex justify-between items-center mb-3">
             <label className="block text-sm font-medium text-gray-700">
-              Problemas Identificados (opcional)
+              Problemas Identificados <span className="text-gray-400 font-normal text-xs">(opcional)</span>
             </label>
             <button onClick={agregarProblema} className="text-red-600 hover:text-red-700 font-medium text-sm">
               + Agregar problema
             </button>
           </div>
           <div className="space-y-2">
-            {nuevoFormulario.problemas.map((problema, index) => (
+            {formulario.problemas.map((problema, index) => (
               <div key={index} className="flex gap-2">
                 <input
                   type="text"
                   value={problema}
-                  onChange={(e) => actualizarProblema(index, e.target.value)}
+                  onChange={e => actualizarProblema(index, e.target.value)}
                   placeholder={`Problema ${index + 1}`}
                   className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
-                {nuevoFormulario.problemas.length > 1 && (
+                {formulario.problemas.length > 1 && (
                   <button onClick={() => eliminarProblema(index)} className="px-3 py-2 text-red-500 hover:text-red-700 text-sm font-medium">
                     Eliminar
                   </button>
@@ -282,30 +302,30 @@ export default function CrearSeguimientoTransaccional() {
         <div>
           <div className="flex justify-between items-center mb-3">
             <label className="block text-sm font-medium text-gray-700">
-              Métricas (opcional)
+              Métricas <span className="text-gray-400 font-normal text-xs">(opcional)</span>
             </label>
             <button onClick={agregarMetrica} className="text-red-600 hover:text-red-700 font-medium text-sm">
               + Agregar métrica
             </button>
           </div>
           <div className="space-y-3">
-            {nuevoFormulario.metricas.map((metrica, index) => (
+            {formulario.metricas.map((metrica, index) => (
               <div key={index} className="flex gap-2 items-end">
                 <input
                   type="text"
                   value={metrica.nombre}
-                  onChange={(e) => actualizarMetrica(index, "nombre", e.target.value)}
-                  placeholder="Nombre de la métrica"
+                  onChange={e => actualizarMetrica(index, "nombre", e.target.value)}
+                  placeholder="Nombre (ej: Tiempo real)"
                   className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
                 <input
                   type="text"
                   value={metrica.valor}
-                  onChange={(e) => actualizarMetrica(index, "valor", e.target.value)}
-                  placeholder="Valor"
+                  onChange={e => actualizarMetrica(index, "valor", e.target.value)}
+                  placeholder="Valor (ej: 4.5 horas)"
                   className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
-                {nuevoFormulario.metricas.length > 0 && (
+                {formulario.metricas.length > 1 && (
                   <button onClick={() => eliminarMetrica(index)} className="px-3 py-2 text-red-500 hover:text-red-700 text-sm font-medium">
                     Eliminar
                   </button>
@@ -318,10 +338,11 @@ export default function CrearSeguimientoTransaccional() {
         {/* Botones */}
         <div className="flex gap-3 pt-4">
           <button
-            onClick={handleAgregarSeguimiento}
-            className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-medium transition"
+            onClick={handleGuardar}
+            disabled={guardando}
+            className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-4 py-3 rounded-lg font-medium transition"
           >
-            Crear Seguimiento Transaccional
+            {guardando ? "Creando..." : "Crear Seguimiento Transaccional"}
           </button>
           <button
             onClick={() => navegar(`/app/proyectos/${id}/requerimientos/seguimiento-transaccional`)}
