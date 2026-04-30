@@ -28,6 +28,7 @@ import DetalleEntrevista from "../entrevistas/pages/DetalleEntrevista";
 import DetalleObservacion from "../observaciones/pages/DetalleObservacion";
 import EditarObservacion from "../observaciones/pages/EditarObservacion";
 import ResponderEncuesta from "../cuestionarios/pages/ResponderEncuesta";
+import Diseño from "../UML/Diseño";
 
 export const router = createBrowserRouter([
     {
@@ -43,6 +44,9 @@ export const router = createBrowserRouter([
     {
         path: "/responder/encuesta/:id_encuesta/stakeholder/:id_stakeholder",
         element: <ResponderEncuesta />
+    },
+    {  path: "/diseño",
+        element: <Diseño />
     },
     {
         //Rutas ya que inicio sesion el usuario
