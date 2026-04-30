@@ -29,6 +29,8 @@ import DetalleObservacion from "../observaciones/pages/DetalleObservacion";
 import EditarObservacion from "../observaciones/pages/EditarObservacion";
 import ResponderEncuesta from "../cuestionarios/pages/ResponderEncuesta";
 import Diseño from "../UML/Diseño";
+import MenuDiagramas from "../UML/MenuDiagramas";
+import ListaDiagramas from "../UML/ListaDiagramas";
 
 export const router = createBrowserRouter([
     {
@@ -177,6 +179,16 @@ export const router = createBrowserRouter([
                 //Crear nuevo seguimiento transaccional
                 path: "proyectos/:id/requerimientos/seguimiento-transaccional/crear",
                 element: <CrearSeguimientoTransaccional />
+            },
+            {
+                //Menú de diagramas UML
+                path: "diagramas",
+                element: <MenuDiagramas />
+            },
+            {
+                //Lista de diagramas por tipo
+                path: "diagramas/:tipo",
+                element: <ListaDiagramas />
             }
         ]
     }
