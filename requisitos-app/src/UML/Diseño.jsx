@@ -14,7 +14,8 @@ import {
   ReactFlowProvider,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
- 
+import { useSearchParams, useNavigate } from 'react-router-dom';
+
 // ─── ESTILOS ──────────────────────────────────────────────────────────────────
 const styles = `
   .class-node { background:#1e2030; border:1.5px solid #3a3f5c; border-radius:6px;
@@ -43,11 +44,17 @@ const styles = `
   .tb-btn { font-size:11px; padding:5px 12px; border-radius:5px;
     border:1px solid #3a3f5c; background:#1e2030; color:#e2e8f0; cursor:pointer; }
   .tb-btn:hover { background:#2d3148; }
+  .tb-btn.back-btn { background:#1e2030; border-color:#3a3f5c; color:#a0aec0; }
+  .tb-btn.back-btn:hover { background:#2d3148; color:#e2e8f0; }
   .tb-btn.export-btn { background:#0F6E56; border-color:#1D9E75; color:#9FE1CB; }
   .tb-btn.export-btn:hover { background:#1D9E75; }
   .tb-btn.export-btn:disabled { opacity:0.5; cursor:wait; }
   .tb-label { font-size:10px; color:#718096; letter-spacing:.5px; }
   .tb-sep { width:1px; height:18px; background:#3a3f5c; }
+  .tb-title { font-size:12px; padding:4px 8px; border-radius:5px;
+    border:1px solid #3a3f5c; background:#1e2030; color:#e2e8f0;
+    font-family:'Courier New',monospace; min-width:160px; }
+  .tb-title:focus { outline:none; border-color:#378ADD; }
   .side-panel { background:#161821; border:1px solid #3a3f5c; border-radius:8px;
     padding:12px; font-family:'Courier New',monospace; width:220px;
     display:flex; flex-direction:column; gap:8px; max-height:85vh; overflow-y:auto; }
@@ -70,26 +77,26 @@ const styles = `
     background:none; color:#fc8181; cursor:pointer; width:100%; font-family:inherit; font-size:10px; }
   .p-del:hover { background:rgba(252,129,129,0.1); }
 `;
- 
+
 // ─── NODO PERSONALIZADO ───────────────────────────────────────────────────────
 function ClassNode({ data, selected }) {
   const { type = 'class', name, attrs = [], methods = [] } = data;
   const stereo = type === 'interface' ? '«interface»' : type === 'abstract' ? '«abstract»' : '';
   const vc = (v) => v === '+' ? 'vis-pub' : v === '-' ? 'vis-pri' : 'vis-pro';
   const hStyle = { background: '#378ADD', width: 8, height: 8 };
- 
+
   return (
     <div className={`class-node node-${type}${selected ? ' selected' : ''}`}>
       <Handle type="target" position={Position.Top}    id="t" style={hStyle} />
       <Handle type="source" position={Position.Bottom} id="b" style={hStyle} />
       <Handle type="target" position={Position.Left}   id="l" style={hStyle} />
       <Handle type="source" position={Position.Right}  id="r" style={hStyle} />
- 
+
       <div className="node-head">
         {stereo && <div className="node-stereotype">{stereo}</div>}
         <div className="node-name">{name}</div>
       </div>
- 
+
       <div className="node-section">
         {attrs.length === 0
           ? <div style={{ color: '#4a5568', fontSize: 9, fontStyle: 'italic' }}>— sin atributos —</div>
@@ -101,7 +108,7 @@ function ClassNode({ data, selected }) {
             </div>
           ))}
       </div>
- 
+
       <div className="node-section">
         {methods.length === 0
           ? <div style={{ color: '#4a5568', fontSize: 9, fontStyle: 'italic' }}>— sin métodos —</div>
@@ -116,9 +123,9 @@ function ClassNode({ data, selected }) {
     </div>
   );
 }
- 
+
 const nodeTypes = { classNode: ClassNode };
- 
+
 // ─── ESTILOS DE ARISTAS ───────────────────────────────────────────────────────
 const edgeStyleMap = {
   inherit:   { style: { stroke: '#a78bfa', strokeWidth: 1.5 }, markerEnd: { type: 'arrowclosed', color: '#a78bfa' }, label: '' },
@@ -127,41 +134,7 @@ const edgeStyleMap = {
   aggregate: { style: { stroke: '#63b3ed', strokeWidth: 1.5 }, markerEnd: { type: 'arrowclosed', color: '#63b3ed' }, label: '◇' },
   assoc:     { style: { stroke: '#718096', strokeWidth: 1.5 }, markerEnd: { type: 'arrowclosed', color: '#718096' }, label: '' },
 };
- 
-// ─── DATOS INICIALES ──────────────────────────────────────────────────────────
-const initialNodes = [
-  {
-    id: 'n1', type: 'classNode', position: { x: 250, y: 30 },
-    data: { type: 'abstract', name: 'Animal',
-      attrs: [{ v: '#', n: 'nombre', t: 'String' }, { v: '#', n: 'edad', t: 'int' }],
-      methods: [{ v: '+', n: 'hacerSonido()', t: 'void', ab: true }, { v: '+', n: 'getNombre()', t: 'String', ab: false }] }
-  },
-  {
-    id: 'n2', type: 'classNode', position: { x: 530, y: 30 },
-    data: { type: 'interface', name: 'Serializable',
-      attrs: [],
-      methods: [{ v: '+', n: 'serialize()', t: 'String', ab: true }, { v: '+', n: 'deserialize(d)', t: 'void', ab: true }] }
-  },
-  {
-    id: 'n3', type: 'classNode', position: { x: 80, y: 270 },
-    data: { type: 'class', name: 'Perro',
-      attrs: [{ v: '-', n: 'raza', t: 'String' }, { v: '-', n: 'entrenado', t: 'boolean' }],
-      methods: [{ v: '+', n: 'hacerSonido()', t: 'void', ab: false }, { v: '+', n: 'traer(obj)', t: 'void', ab: false }] }
-  },
-  {
-    id: 'n4', type: 'classNode', position: { x: 340, y: 270 },
-    data: { type: 'class', name: 'Gato',
-      attrs: [{ v: '-', n: 'vidas', t: 'int' }],
-      methods: [{ v: '+', n: 'hacerSonido()', t: 'void', ab: false }, { v: '+', n: 'ronronear()', t: 'void', ab: false }] }
-  },
-];
- 
-const initialEdges = [
-  { id: 'e1', source: 'n3', target: 'n1', type: 'smoothstep', ...edgeStyleMap.inherit },
-  { id: 'e2', source: 'n4', target: 'n1', type: 'smoothstep', ...edgeStyleMap.inherit },
-  { id: 'e3', source: 'n3', target: 'n2', type: 'smoothstep', ...edgeStyleMap.implement },
-];
- 
+
 // ─── CARGAR SCRIPT EXTERNO ────────────────────────────────────────────────────
 function loadScript(src) {
   return new Promise((resolve, reject) => {
@@ -173,63 +146,74 @@ function loadScript(src) {
     document.head.appendChild(s);
   });
 }
- 
+
 // ─── COMPONENTE INTERNO ───────────────────────────────────────────────────────
-let nodeCount = 4;
- 
-function DiagramEditor() {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+function DiagramEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo }) {
+  const [nodes, setNodes, onNodesChange] = useNodesState(initNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initEdges);
   const [selectedId, setSelectedId]     = useState(null);
   const [edgeType, setEdgeType]         = useState('inherit');
   const [exporting, setExporting]       = useState(false);
+  const [nombre, setNombre]             = useState(nombreInicial || 'Nuevo diagrama');
   const { fitView }                     = useReactFlow();
   const flowRef                         = useRef(null);
- 
+  const navigate                        = useNavigate();
+
   useEffect(() => {
     const tag = document.createElement('style');
     tag.textContent = styles;
     document.head.appendChild(tag);
     return () => document.head.removeChild(tag);
   }, []);
- 
+
+  // ─── AUTOGUARDADO ────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!diagramaId) return;
+    const storageKey = `diagramas_${tipo || 'clases'}`;
+    const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    const idx = stored.findIndex((d) => d.id === diagramaId);
+    const entrada = {
+      id: diagramaId,
+      nombre,
+      tipo: tipo || 'clases',
+      nodes,
+      edges,
+      fechaCreacion: stored[idx]?.fechaCreacion || new Date().toISOString(),
+      ultimaModificacion: new Date().toISOString(),
+    };
+    if (idx >= 0) stored[idx] = entrada;
+    else stored.unshift(entrada);
+    localStorage.setItem(storageKey, JSON.stringify(stored));
+  }, [nodes, edges, nombre]);
+
   // ─── EXPORTAR A PDF ─────────────────────────────────────────────────────────
   async function exportPDF() {
     setExporting(true);
- 
-    // Deseleccionar para que no aparezca el borde azul en el PDF
     setSelectedId(null);
- 
     try {
       await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
       await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
- 
-      // Ajustar vista y esperar animación
       fitView({ padding: 0.12, duration: 0 });
       await new Promise((r) => setTimeout(r, 350));
- 
       const flowEl = flowRef.current;
       const canvas = await window.html2canvas(flowEl, {
         backgroundColor: '#0f1117',
         scale: 2,
         useCORS: true,
         logging: false,
-        // Ocultar controles, minimap y paneles del PDF
         ignoreElements: (el) =>
           el.classList?.contains('react-flow__panel') ||
           el.classList?.contains('react-flow__minimap') ||
           el.classList?.contains('react-flow__controls'),
       });
- 
       const { jsPDF } = window.jspdf;
       const imgData   = canvas.toDataURL('image/png');
       const imgW      = canvas.width  / 2;
       const imgH      = canvas.height / 2;
       const orientation = imgW > imgH ? 'landscape' : 'portrait';
- 
       const pdf = new jsPDF({ orientation, unit: 'px', format: [imgW, imgH] });
       pdf.addImage(imgData, 'PNG', 0, 0, imgW, imgH);
-      pdf.save('diagrama-clases.pdf');
+      pdf.save(`${nombre}.pdf`);
     } catch (err) {
       console.error('Error exportando PDF:', err);
       alert('Error al exportar. Revisa la consola.');
@@ -237,34 +221,34 @@ function DiagramEditor() {
       setExporting(false);
     }
   }
- 
+
   // ─── LÓGICA ──────────────────────────────────────────────────────────────────
   const onConnect = useCallback((params) => {
     const extra = edgeStyleMap[edgeType] || edgeStyleMap.assoc;
     setEdges((eds) => addEdge({ ...params, type: 'smoothstep', ...extra }, eds));
   }, [setEdges, edgeType]);
- 
+
   const onNodeClick = useCallback((_, node) => setSelectedId(node.id), []);
   const onPaneClick = useCallback(() => setSelectedId(null), []);
- 
+
   function addNode(type) {
-    nodeCount++;
+    const id = 'n' + Date.now();
     const names = { class: 'Clase', abstract: 'Base', interface: 'IServicio' };
     setNodes((nds) => [...nds, {
-      id: 'n' + nodeCount, type: 'classNode',
+      id, type: 'classNode',
       position: { x: 120 + Math.random() * 280, y: 80 + Math.random() * 200 },
-      data: { type, name: (names[type] || 'Clase') + nodeCount,
+      data: { type, name: (names[type] || 'Clase') + (nds.length + 1),
         attrs: [{ v: '-', n: 'id', t: 'int' }],
         methods: [{ v: '+', n: 'toString()', t: 'String', ab: false }] },
     }]);
   }
- 
+
   function upd(patch) {
     setNodes((nds) => nds.map((n) => n.id === selectedId ? { ...n, data: { ...n.data, ...patch } } : n));
   }
- 
+
   const sel = nodes.find((n) => n.id === selectedId);
- 
+
   function addAttr()           { if (!sel) return; upd({ attrs:   [...sel.data.attrs,   { v: '-', n: 'attr',     t: 'String' }] }); }
   function addMethod()         { if (!sel) return; upd({ methods: [...sel.data.methods, { v: '+', n: 'metodo()', t: 'void', ab: false }] }); }
   function editAttr(i, k, v)   { if (!sel) return; upd({ attrs:   sel.data.attrs.map((a, idx)   => idx === i ? { ...a, [k]: v } : a) }); }
@@ -276,7 +260,7 @@ function DiagramEditor() {
     setNodes((nds) => nds.filter((n) => n.id !== selectedId));
     setSelectedId(null);
   }
- 
+
   return (
     <div ref={flowRef} style={{ width: '100vw', height: '100vh', background: '#0f1117' }}>
       <ReactFlow
@@ -295,10 +279,28 @@ function DiagramEditor() {
         <Background color="#2d3148" gap={24} size={1} />
         <Controls style={{ background: '#1e2030', border: '1px solid #3a3f5c', borderRadius: 6 }} />
         <MiniMap style={{ background: '#1e2030', border: '1px solid #3a3f5c' }} nodeColor="#3a3f5c" />
- 
+
         {/* TOOLBAR */}
         <Panel position="top-left">
           <div className="toolbar">
+            {diagramaId && (
+              <>
+                <button
+                  className="tb-btn back-btn"
+                  onClick={() => navigate(`/app/diagramas/${tipo || 'clases'}`)}
+                >
+                  ← Volver
+                </button>
+                <div className="tb-sep" />
+                <input
+                  className="tb-title"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  placeholder="Nombre del diagrama"
+                />
+                <div className="tb-sep" />
+              </>
+            )}
             <span className="tb-label">AGREGAR</span>
             <button className="tb-btn" onClick={() => addNode('class')}>+ Clase</button>
             <button className="tb-btn" onClick={() => addNode('abstract')}>+ Abstracta</button>
@@ -318,7 +320,7 @@ function DiagramEditor() {
             </button>
           </div>
         </Panel>
- 
+
         {/* PANEL DE EDICIÓN */}
         {sel && (
           <Panel position="top-right">
@@ -376,13 +378,45 @@ function DiagramEditor() {
     </div>
   );
 }
- 
+
 // ─── EXPORT PRINCIPAL ─────────────────────────────────────────────────────────
-// ReactFlowProvider es necesario para usar useReactFlow() (fitView, etc.)
 export default function ClassDiagram() {
+  const [searchParams] = useSearchParams();
+  const id   = searchParams.get('id');
+  const tipo = searchParams.get('tipo') || 'clases';
+
+  const [listo, setListo]         = useState(false);
+  const [initNodes, setInitNodes] = useState([]);
+  const [initEdges, setInitEdges] = useState([]);
+  const [nombreInicial, setNombreInicial] = useState('Nuevo diagrama');
+  const [diagramaId, setDiagramaId]       = useState(null);
+
+  useEffect(() => {
+    if (id) {
+      const storageKey = `diagramas_${tipo}`;
+      const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      const diagrama = stored.find((d) => d.id === id);
+      if (diagrama) {
+        setInitNodes(diagrama.nodes || []);
+        setInitEdges(diagrama.edges || []);
+        setNombreInicial(diagrama.nombre);
+      }
+      setDiagramaId(id);
+    }
+    setListo(true);
+  }, []);
+
+  if (!listo) return null;
+
   return (
     <ReactFlowProvider>
-      <DiagramEditor />
+      <DiagramEditor
+        initNodes={initNodes}
+        initEdges={initEdges}
+        nombreInicial={nombreInicial}
+        diagramaId={diagramaId}
+        tipo={tipo}
+      />
     </ReactFlowProvider>
   );
 }

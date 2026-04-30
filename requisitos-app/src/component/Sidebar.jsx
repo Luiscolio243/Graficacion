@@ -47,11 +47,19 @@ export default function Sidebar() {
 
       {/* Navegación principal en los modulos*/}
       <nav className="space-y-1">
-        {/* Aqui van los modulos, despues pongo simbolo bonito de los modulos */}
-        <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lx bg-indigo-50 text-indigo-600 text-sm font-medium">
-            {/* Ícono placeholder */}
-            <span className="text-base"></span>
-            Proyectos
+        <button
+          onClick={() => navigate("/app/proyectos")}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-indigo-50 text-indigo-600 text-sm font-medium hover:bg-indigo-100 transition"
+        >
+          <span className="text-base">📁</span>
+          Proyectos
+        </button>
+        <button
+          onClick={() => navigate("/app/diagramas")}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 text-sm font-medium hover:bg-gray-100 transition"
+        >
+          <span className="text-base">📐</span>
+          Diagramas
         </button>
       </nav>
 
