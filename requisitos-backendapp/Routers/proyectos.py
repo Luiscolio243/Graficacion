@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from sqlalchemy import text, select
+from sqlalchemy import text, select, func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from datetime import datetime
@@ -11,6 +11,9 @@ from db import engine
 from Models.Proyectos import Proyecto
 from Models.ProductOwner import ProductOwner
 from Models.tech_leaders import TechLeader
+from Models.Stakeholders import Stakeholders
+from Models.Proceso import Proceso
+from Models.Entrevistas import Entrevistas
 
 proyectos_bp = Blueprint("proyectos", __name__)
 
@@ -203,15 +206,34 @@ def obtener_proyectos(id_usuario):
 
         proyectos = session.scalars(stmt).all()
 
-        return [
-            {
+        resultado = []
+        for p in proyectos:
+            # Contar stakeholders
+            count_stakeholders = session.query(func.count(Stakeholders.id_stakeholder)).filter(
+                Stakeholders.id_proyecto == p.id_proyecto
+            ).scalar() or 0
+
+            # Contar procesos
+            count_procesos = session.query(func.count(Proceso.id_proceso)).filter(
+                Proceso.id_proyecto == p.id_proyecto
+            ).scalar() or 0
+
+            # Contar entrevistas (requisitos)
+            count_requisitos = session.query(func.count(Entrevistas.id_entrevista)).filter(
+                Entrevistas.id_proyecto == p.id_proyecto
+            ).scalar() or 0
+
+            resultado.append({
                 "id_proyecto": p.id_proyecto,
                 "nombre": p.nombre,
                 "estado": p.estado,
-                "descripcion": p.descripcion
-            }
-            for p in proyectos
-        ], 200
+                "descripcion": p.descripcion,
+                "stakeholders": count_stakeholders,
+                "procesos": count_procesos,
+                "requisitos": count_requisitos
+            })
+
+        return resultado, 200
 
 
 @proyectos_bp.route('/proyectos/<int:id_proyecto>', methods=['GET'])
