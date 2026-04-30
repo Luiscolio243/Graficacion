@@ -85,7 +85,7 @@ export default function Proyectos() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {proyectos.map((proyecto) => (
             <TarjetaProyecto
-              key={proyecto.id}
+              key={proyecto.id_proyecto}
               proyecto={proyecto}
             />
           ))}
