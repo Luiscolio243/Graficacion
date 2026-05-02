@@ -16,6 +16,8 @@ from Routers.Observaciones import observaciones_bp
 from Routers.FocusGroup import focus_groups_bp
 from Routers.responderEncuesta import responder_encuesta_bp
 from Routers.historiasUsuario import historias_bp
+from Routers.ClasesUML import clases_uml_bp
+from Routers.Diagramas import diagramas_bp
 
 Config.validate()
 
@@ -36,6 +38,8 @@ app.register_blueprint(seguimiento_bp)
 app.register_blueprint(observaciones_bp)
 app.register_blueprint(focus_groups_bp)
 app.register_blueprint(historias_bp)
+app.register_blueprint(clases_uml_bp)
+app.register_blueprint(diagramas_bp)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=Config.FLASK_PORT, debug=Config.FLASK_ENV == 'development')

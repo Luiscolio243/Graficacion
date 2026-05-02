@@ -73,7 +73,7 @@ export default function MenuDiagramas() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
         {diagramas.map((diagrama, index) => {
           const estilos = estilosPorColor[diagrama.color];
-          const disponible = diagrama.ruta !== null;
+          //const disponible = diagrama.ruta !== null;
 
           return (
             <div
