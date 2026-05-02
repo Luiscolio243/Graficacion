@@ -1,22 +1,15 @@
 import React, { useCallback, useState, useEffect, useRef } from 'react';
 import {
-  ReactFlow,
-  useNodesState,
-  useEdgesState,
-  addEdge,
-  Handle,
-  Position,
-  MiniMap,
-  Controls,
-  Background,
-  Panel,
-  useReactFlow,
-  ReactFlowProvider,
+  ReactFlow, useNodesState, useEdgesState, addEdge,
+  Handle, Position, MiniMap, Controls, Background, Panel,
+  useReactFlow, ReactFlowProvider,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+ 
+const API = "http://localhost:5000";
+ 
 
-// ─── ESTILOS ──────────────────────────────────────────────────────────────────
 const styles = `
   .class-node { background:#1e2030; border:1.5px solid #3a3f5c; border-radius:6px;
     min-width:200px; font-family:'Courier New',monospace; font-size:11px; }
@@ -44,8 +37,11 @@ const styles = `
   .tb-btn { font-size:11px; padding:5px 12px; border-radius:5px;
     border:1px solid #3a3f5c; background:#1e2030; color:#e2e8f0; cursor:pointer; }
   .tb-btn:hover { background:#2d3148; }
-  .tb-btn.back-btn { background:#1e2030; border-color:#3a3f5c; color:#a0aec0; }
-  .tb-btn.back-btn:hover { background:#2d3148; color:#e2e8f0; }
+  .tb-btn.back-btn { color:#a0aec0; }
+  .tb-btn.back-btn:hover { color:#e2e8f0; }
+  .tb-btn.save-btn { background:#185FA5; border-color:#378ADD; color:#B5D4F4; }
+  .tb-btn.save-btn:hover { background:#378ADD; }
+  .tb-btn.save-btn:disabled { opacity:0.5; cursor:wait; }
   .tb-btn.export-btn { background:#0F6E56; border-color:#1D9E75; color:#9FE1CB; }
   .tb-btn.export-btn:hover { background:#1D9E75; }
   .tb-btn.export-btn:disabled { opacity:0.5; cursor:wait; }
@@ -55,6 +51,7 @@ const styles = `
     border:1px solid #3a3f5c; background:#1e2030; color:#e2e8f0;
     font-family:'Courier New',monospace; min-width:160px; }
   .tb-title:focus { outline:none; border-color:#378ADD; }
+  .tb-saved { font-size:10px; color:#68d391; }
   .side-panel { background:#161821; border:1px solid #3a3f5c; border-radius:8px;
     padding:12px; font-family:'Courier New',monospace; width:220px;
     display:flex; flex-direction:column; gap:8px; max-height:85vh; overflow-y:auto; }
@@ -77,26 +74,24 @@ const styles = `
     background:none; color:#fc8181; cursor:pointer; width:100%; font-family:inherit; font-size:10px; }
   .p-del:hover { background:rgba(252,129,129,0.1); }
 `;
+ 
 
-// ─── NODO PERSONALIZADO ───────────────────────────────────────────────────────
 function ClassNode({ data, selected }) {
   const { type = 'class', name, attrs = [], methods = [] } = data;
   const stereo = type === 'interface' ? '«interface»' : type === 'abstract' ? '«abstract»' : '';
   const vc = (v) => v === '+' ? 'vis-pub' : v === '-' ? 'vis-pri' : 'vis-pro';
   const hStyle = { background: '#378ADD', width: 8, height: 8 };
-
+ 
   return (
     <div className={`class-node node-${type}${selected ? ' selected' : ''}`}>
       <Handle type="target" position={Position.Top}    id="t" style={hStyle} />
       <Handle type="source" position={Position.Bottom} id="b" style={hStyle} />
       <Handle type="target" position={Position.Left}   id="l" style={hStyle} />
       <Handle type="source" position={Position.Right}  id="r" style={hStyle} />
-
       <div className="node-head">
         {stereo && <div className="node-stereotype">{stereo}</div>}
         <div className="node-name">{name}</div>
       </div>
-
       <div className="node-section">
         {attrs.length === 0
           ? <div style={{ color: '#4a5568', fontSize: 9, fontStyle: 'italic' }}>— sin atributos —</div>
@@ -108,7 +103,6 @@ function ClassNode({ data, selected }) {
             </div>
           ))}
       </div>
-
       <div className="node-section">
         {methods.length === 0
           ? <div style={{ color: '#4a5568', fontSize: 9, fontStyle: 'italic' }}>— sin métodos —</div>
@@ -123,10 +117,9 @@ function ClassNode({ data, selected }) {
     </div>
   );
 }
-
+ 
 const nodeTypes = { classNode: ClassNode };
-
-// ─── ESTILOS DE ARISTAS ───────────────────────────────────────────────────────
+ 
 const edgeStyleMap = {
   inherit:   { style: { stroke: '#a78bfa', strokeWidth: 1.5 }, markerEnd: { type: 'arrowclosed', color: '#a78bfa' }, label: '' },
   implement: { style: { stroke: '#63b3ed', strokeWidth: 1.5, strokeDasharray: '6,4' }, markerEnd: { type: 'arrowclosed', color: '#63b3ed' }, label: '«implements»' },
@@ -134,103 +127,95 @@ const edgeStyleMap = {
   aggregate: { style: { stroke: '#63b3ed', strokeWidth: 1.5 }, markerEnd: { type: 'arrowclosed', color: '#63b3ed' }, label: '◇' },
   assoc:     { style: { stroke: '#718096', strokeWidth: 1.5 }, markerEnd: { type: 'arrowclosed', color: '#718096' }, label: '' },
 };
-
-// ─── CARGAR SCRIPT EXTERNO ────────────────────────────────────────────────────
+ 
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     if (document.querySelector(`script[src="${src}"]`)) return resolve();
     const s = document.createElement('script');
-    s.src = src;
-    s.onload = resolve;
-    s.onerror = reject;
+    s.src = src; s.onload = resolve; s.onerror = reject;
     document.head.appendChild(s);
   });
 }
+ 
 
-// ─── COMPONENTE INTERNO ───────────────────────────────────────────────────────
 function DiagramEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo }) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initEdges);
-  const [selectedId, setSelectedId]     = useState(null);
-  const [edgeType, setEdgeType]         = useState('inherit');
-  const [exporting, setExporting]       = useState(false);
-  const [nombre, setNombre]             = useState(nombreInicial || 'Nuevo diagrama');
-  const { fitView }                     = useReactFlow();
-  const flowRef                         = useRef(null);
-  const navigate                        = useNavigate();
-
+  const [selectedId, setSelectedId] = useState(null);
+  const [edgeType, setEdgeType]     = useState('inherit');
+  const [exporting, setExporting]   = useState(false);
+  const [guardando, setGuardando]   = useState(false);
+  const [guardado, setGuardado]     = useState(false);
+  const [nombre, setNombre]         = useState(nombreInicial || 'Nuevo diagrama');
+  const { fitView }                 = useReactFlow();
+  const flowRef                     = useRef(null);
+  const navigate                    = useNavigate();
+ 
   useEffect(() => {
     const tag = document.createElement('style');
     tag.textContent = styles;
     document.head.appendChild(tag);
     return () => document.head.removeChild(tag);
   }, []);
-
-  // ─── AUTOGUARDADO ────────────────────────────────────────────────────────────
-  useEffect(() => {
+ 
+  async function guardar() {
     if (!diagramaId) return;
-    const storageKey = `diagramas_${tipo || 'clases'}`;
-    const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    const idx = stored.findIndex((d) => d.id === diagramaId);
-    const entrada = {
-      id: diagramaId,
-      nombre,
-      tipo: tipo || 'clases',
-      nodes,
-      edges,
-      fechaCreacion: stored[idx]?.fechaCreacion || new Date().toISOString(),
-      ultimaModificacion: new Date().toISOString(),
-    };
-    if (idx >= 0) stored[idx] = entrada;
-    else stored.unshift(entrada);
-    localStorage.setItem(storageKey, JSON.stringify(stored));
-  }, [nodes, edges, nombre]);
+    setGuardando(true);
+    try {
+      const res = await fetch(`${API}/diagramas/${diagramaId}/clases`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, nodos: nodes, aristas: edges }),
+      });
+      if (!res.ok) { alert('Error al guardar'); return; }
+      setGuardado(true);
+      setTimeout(() => setGuardado(false), 2500);
+    } catch {
+      alert('No se pudo conectar al servidor');
+    } finally {
+      setGuardando(false);
+    }
+  }
 
-  // ─── EXPORTAR A PDF ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    function onKey(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); guardar(); }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [nodes, edges, nombre]);
+ 
   async function exportPDF() {
-    setExporting(true);
-    setSelectedId(null);
+    setExporting(true); setSelectedId(null);
     try {
       await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
       await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
       fitView({ padding: 0.12, duration: 0 });
       await new Promise((r) => setTimeout(r, 350));
-      const flowEl = flowRef.current;
-      const canvas = await window.html2canvas(flowEl, {
-        backgroundColor: '#0f1117',
-        scale: 2,
-        useCORS: true,
-        logging: false,
+      const canvas = await window.html2canvas(flowRef.current, {
+        backgroundColor: '#0f1117', scale: 2, useCORS: true, logging: false,
         ignoreElements: (el) =>
           el.classList?.contains('react-flow__panel') ||
           el.classList?.contains('react-flow__minimap') ||
           el.classList?.contains('react-flow__controls'),
       });
       const { jsPDF } = window.jspdf;
-      const imgData   = canvas.toDataURL('image/png');
-      const imgW      = canvas.width  / 2;
-      const imgH      = canvas.height / 2;
-      const orientation = imgW > imgH ? 'landscape' : 'portrait';
-      const pdf = new jsPDF({ orientation, unit: 'px', format: [imgW, imgH] });
-      pdf.addImage(imgData, 'PNG', 0, 0, imgW, imgH);
+      const imgW = canvas.width / 2, imgH = canvas.height / 2;
+      const pdf = new jsPDF({ orientation: imgW > imgH ? 'landscape' : 'portrait', unit: 'px', format: [imgW, imgH] });
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgW, imgH);
       pdf.save(`${nombre}.pdf`);
-    } catch (err) {
-      console.error('Error exportando PDF:', err);
-      alert('Error al exportar. Revisa la consola.');
-    } finally {
-      setExporting(false);
-    }
+    } catch { alert('Error al exportar'); }
+    finally { setExporting(false); }
   }
+ 
 
-  // ─── LÓGICA ──────────────────────────────────────────────────────────────────
   const onConnect = useCallback((params) => {
-    const extra = edgeStyleMap[edgeType] || edgeStyleMap.assoc;
-    setEdges((eds) => addEdge({ ...params, type: 'smoothstep', ...extra }, eds));
+    setEdges((eds) => addEdge({ ...params, type: 'smoothstep', ...(edgeStyleMap[edgeType] || edgeStyleMap.assoc) }, eds));
   }, [setEdges, edgeType]);
-
+ 
   const onNodeClick = useCallback((_, node) => setSelectedId(node.id), []);
   const onPaneClick = useCallback(() => setSelectedId(null), []);
-
+ 
   function addNode(type) {
     const id = 'n' + Date.now();
     const names = { class: 'Clase', abstract: 'Base', interface: 'IServicio' };
@@ -242,13 +227,13 @@ function DiagramEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo }
         methods: [{ v: '+', n: 'toString()', t: 'String', ab: false }] },
     }]);
   }
-
+ 
   function upd(patch) {
     setNodes((nds) => nds.map((n) => n.id === selectedId ? { ...n, data: { ...n.data, ...patch } } : n));
   }
-
+ 
   const sel = nodes.find((n) => n.id === selectedId);
-
+ 
   function addAttr()           { if (!sel) return; upd({ attrs:   [...sel.data.attrs,   { v: '-', n: 'attr',     t: 'String' }] }); }
   function addMethod()         { if (!sel) return; upd({ methods: [...sel.data.methods, { v: '+', n: 'metodo()', t: 'void', ab: false }] }); }
   function editAttr(i, k, v)   { if (!sel) return; upd({ attrs:   sel.data.attrs.map((a, idx)   => idx === i ? { ...a, [k]: v } : a) }); }
@@ -260,47 +245,37 @@ function DiagramEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo }
     setNodes((nds) => nds.filter((n) => n.id !== selectedId));
     setSelectedId(null);
   }
-
+ 
   return (
     <div ref={flowRef} style={{ width: '100vw', height: '100vh', background: '#0f1117' }}>
       <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onNodeClick={onNodeClick}
-        onPaneClick={onPaneClick}
-        nodeTypes={nodeTypes}
-        fitView
-        deleteKeyCode="Delete"
+        nodes={nodes} edges={edges}
+        onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
+        onConnect={onConnect} onNodeClick={onNodeClick} onPaneClick={onPaneClick}
+        nodeTypes={nodeTypes} fitView deleteKeyCode="Delete"
         style={{ background: '#0f1117' }}
       >
         <Background color="#2d3148" gap={24} size={1} />
         <Controls style={{ background: '#1e2030', border: '1px solid #3a3f5c', borderRadius: 6 }} />
         <MiniMap style={{ background: '#1e2030', border: '1px solid #3a3f5c' }} nodeColor="#3a3f5c" />
-
-        {/* TOOLBAR */}
+ 
         <Panel position="top-left">
           <div className="toolbar">
-            {diagramaId && (
-              <>
-                <button
-                  className="tb-btn back-btn"
-                  onClick={() => navigate(`/app/diagramas/${tipo || 'clases'}`)}
-                >
-                  ← Volver
-                </button>
-                <div className="tb-sep" />
-                <input
-                  className="tb-title"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  placeholder="Nombre del diagrama"
-                />
-                <div className="tb-sep" />
-              </>
-            )}
+            <button className="tb-btn back-btn" onClick={() => navigate(`/app/diagramas/${tipo || 'clases'}`)}>
+              ← Volver
+            </button>
+            <div className="tb-sep" />
+            <input
+              className="tb-title"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              placeholder="Nombre del diagrama"
+            />
+            <button className="tb-btn save-btn" onClick={guardar} disabled={guardando}>
+              {guardando ? '...' : '💾 Guardar'}
+            </button>
+            {guardado && <span className="tb-saved">✓ Guardado</span>}
+            <div className="tb-sep" />
             <span className="tb-label">AGREGAR</span>
             <button className="tb-btn" onClick={() => addNode('class')}>+ Clase</button>
             <button className="tb-btn" onClick={() => addNode('abstract')}>+ Abstracta</button>
@@ -316,12 +291,11 @@ function DiagramEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo }
             </select>
             <div className="tb-sep" />
             <button className="tb-btn export-btn" onClick={exportPDF} disabled={exporting}>
-              {exporting ? '⏳ Exportando...' : '⬇ Exportar PDF'}
+              {exporting ? '⏳ Exportando...' : '⬇ PDF'}
             </button>
           </div>
         </Panel>
-
-        {/* PANEL DE EDICIÓN */}
+ 
         {sel && (
           <Panel position="top-right">
             <div className="side-panel">
@@ -378,45 +352,54 @@ function DiagramEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo }
     </div>
   );
 }
-
-// ─── EXPORT PRINCIPAL ─────────────────────────────────────────────────────────
+ 
 export default function ClassDiagram() {
   const [searchParams] = useSearchParams();
   const id   = searchParams.get('id');
   const tipo = searchParams.get('tipo') || 'clases';
-
-  const [listo, setListo]         = useState(false);
-  const [initNodes, setInitNodes] = useState([]);
-  const [initEdges, setInitEdges] = useState([]);
-  const [nombreInicial, setNombreInicial] = useState('Nuevo diagrama');
-  const [diagramaId, setDiagramaId]       = useState(null);
-
+ 
+  const [initData, setInitData] = useState(null);
+  const [error, setError]       = useState(null);
+ 
   useEffect(() => {
-    if (id) {
-      const storageKey = `diagramas_${tipo}`;
-      const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
-      const diagrama = stored.find((d) => d.id === id);
-      if (diagrama) {
-        setInitNodes(diagrama.nodes || []);
-        setInitEdges(diagrama.edges || []);
-        setNombreInicial(diagrama.nombre);
-      }
-      setDiagramaId(id);
-    }
-    setListo(true);
-  }, []);
-
-  if (!listo) return null;
-
+    if (!id) { setInitData({ nodes: [], edges: [], nombre: 'Nuevo diagrama' }); return; }
+ 
+    fetch(`${API}/diagramas/${id}/clases`)
+      .then((r) => r.json())
+      .then((data) => {
+        // Reaplicar estilos visuales a las aristas al cargar
+        const aristas = (data.aristas || []).map((a) => ({
+          ...a,
+          type: 'smoothstep',
+          ...(edgeStyleMap[a.data?.edgeType] || edgeStyleMap.assoc),
+        }));
+        setInitData({ nodes: data.nodos || [], edges: aristas, nombre: data.nombre || 'Nuevo diagrama' });
+      })
+      .catch(() => setError('No se pudo cargar el diagrama'));
+  }, [id]);
+ 
+  if (error) return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#0f1117', color:'#fc8181', fontFamily:'monospace' }}>
+      {error}
+    </div>
+  );
+ 
+  if (!initData) return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#0f1117', color:'#718096', fontFamily:'monospace' }}>
+      Cargando diagrama...
+    </div>
+  );
+ 
   return (
     <ReactFlowProvider>
       <DiagramEditor
-        initNodes={initNodes}
-        initEdges={initEdges}
-        nombreInicial={nombreInicial}
-        diagramaId={diagramaId}
+        initNodes={initData.nodes}
+        initEdges={initData.edges}
+        nombreInicial={initData.nombre}
+        diagramaId={id}
         tipo={tipo}
       />
     </ReactFlowProvider>
   );
 }
+ 

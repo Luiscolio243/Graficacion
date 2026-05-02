@@ -1,6 +1,8 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-
+ 
+const API = "http://localhost:5000";
+ 
 const TIPO_INFO = {
   clases: {
     titulo: "Diagrama de Clases",
@@ -28,52 +30,67 @@ const TIPO_INFO = {
     disponible: false,
   },
 };
-
-function generarId() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2);
-}
-
+ 
 export default function ListaDiagramas() {
   const { tipo } = useParams();
   const navegar = useNavigate();
   const info = TIPO_INFO[tipo] || TIPO_INFO.clases;
-  const storageKey = `diagramas_${tipo}`;
-
-  const [diagramas, setDiagramas] = useState([]);
+ 
+  const [diagramas, setDiagramas]   = useState([]);
+  const [cargando, setCargando]     = useState(true);
+  const [creando, setCreando]       = useState(false);
+  const [error, setError]           = useState(null);
+ 
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem(storageKey) || "[]");
-    setDiagramas(stored);
-  }, [storageKey]);
+    if (!info.disponible) { setCargando(false); return; }
+ 
+    setCargando(true);
+    fetch(`${API}/diagramas?tipo=${tipo === 'casos-uso' ? 'casos_uso' : tipo}`)
+      .then((r) => r.json())
+      .then((data) => { setDiagramas(data); setCargando(false); })
+      .catch(() => { setError("No se pudo conectar al servidor"); setCargando(false); });
+  }, [tipo]);
+ 
 
-  function crearNuevo() {
-    const id = generarId();
-    const nuevo = {
-      id,
-      nombre: "Nuevo diagrama",
-      tipo,
-      fechaCreacion: new Date().toISOString(),
-      ultimaModificacion: new Date().toISOString(),
-      nodes: [],
-      edges: [],
-    };
-    const updated = [nuevo, ...diagramas];
-    localStorage.setItem(storageKey, JSON.stringify(updated));
-    navegar(`${info.editorRuta}?id=${id}&tipo=${tipo}`);
+  async function crearNuevo() {
+    setCreando(true);
+    try {
+      const res = await fetch(`${API}/diagramas/crear`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: "Nuevo diagrama",
+          tipo: tipo === "casos-uso" ? "casos_uso" : tipo,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { alert(data.message || "Error al crear"); return; }
+      // Redirigir al editor con el id real de la BD
+      navegar(`${info.editorRuta}?id=${data.diagrama.id_diagrama}&tipo=${tipo}`);
+    } catch {
+      alert("No se pudo conectar al servidor");
+    } finally {
+      setCreando(false);
+    }
   }
-
-  function abrirDiagrama(id) {
-    navegar(`${info.editorRuta}?id=${id}&tipo=${tipo}`);
-  }
-
-  function eliminarDiagrama(e, id) {
+ 
+  async function eliminarDiagrama(e, id_diagrama) {
     e.stopPropagation();
     if (!confirm("¿Eliminar este diagrama?")) return;
-    const updated = diagramas.filter((d) => d.id !== id);
-    localStorage.setItem(storageKey, JSON.stringify(updated));
-    setDiagramas(updated);
+    try {
+      const res = await fetch(`${API}/diagramas/${id_diagrama}`, { method: "DELETE" });
+      if (res.ok) setDiagramas((prev) => prev.filter((d) => d.id_diagrama !== id_diagrama));
+      else alert("Error al eliminar");
+    } catch {
+      alert("No se pudo conectar al servidor");
+    }
   }
-
+ 
+  function abrirDiagrama(id_diagrama) {
+    navegar(`${info.editorRuta}?id=${id_diagrama}&tipo=${tipo}`);
+  }
+ 
   return (
     <div className="space-y-6">
       {/* Encabezado */}
@@ -89,14 +106,15 @@ export default function ListaDiagramas() {
           <p className="text-gray-500 mt-1">{info.descripcion}</p>
         </div>
       </div>
-
-      {/* Botón crear / aviso próximamente */}
+ 
+      {}
       {info.disponible ? (
         <button
           onClick={crearNuevo}
-          className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium"
+          disabled={creando}
+          className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium disabled:opacity-50"
         >
-          + Crear nuevo diagrama
+          {creando ? "Creando..." : "+ Crear nuevo diagrama"}
         </button>
       ) : (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center">
@@ -106,24 +124,36 @@ export default function ListaDiagramas() {
           </p>
         </div>
       )}
-
-      {/* Estado vacío */}
-      {info.disponible && diagramas.length === 0 && (
+ 
+      {}
+      {cargando && (
+        <div className="text-center py-20 text-gray-400">
+          <p className="text-sm">Cargando diagramas...</p>
+        </div>
+      )}
+      {error && (
+        <div className="text-center py-10 text-red-400">
+          <p className="text-sm">{error}</p>
+        </div>
+      )}
+ 
+      {}
+      {info.disponible && !cargando && !error && diagramas.length === 0 && (
         <div className="text-center py-20 text-gray-400">
           <p className="text-lg font-medium">No hay diagramas todavía</p>
           <p className="text-sm mt-1">Crea tu primer diagrama con el botón de arriba</p>
         </div>
       )}
-
-      {/* Grid de diagramas */}
-      {info.disponible && diagramas.length > 0 && (
+ 
+      {}
+      {info.disponible && !cargando && diagramas.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {diagramas.map((d) => (
             <TarjetaDiagrama
-              key={d.id}
+              key={d.id_diagrama}
               diagrama={d}
-              onClick={() => abrirDiagrama(d.id)}
-              onEliminar={(e) => eliminarDiagrama(e, d.id)}
+              onClick={() => abrirDiagrama(d.id_diagrama)}
+              onEliminar={(e) => eliminarDiagrama(e, d.id_diagrama)}
             />
           ))}
         </div>
@@ -131,51 +161,20 @@ export default function ListaDiagramas() {
     </div>
   );
 }
-
+ 
 function TarjetaDiagrama({ diagrama, onClick, onEliminar }) {
-  const fecha = new Date(diagrama.ultimaModificacion).toLocaleDateString("es-MX", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
+  const fecha = new Date(diagrama.editado_en).toLocaleDateString("es-MX", {
+    day: "numeric", month: "short", year: "numeric",
   });
-
-  const clases = diagrama.nodes || [];
-  const relaciones = diagrama.edges || [];
-
+ 
   return (
     <div
       onClick={onClick}
       className="border border-gray-200 rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition group"
     >
-      {/* Mini preview oscuro */}
-      <div className="bg-gray-900 h-36 p-3 relative overflow-hidden">
-        {clases.length === 0 ? (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-gray-600 text-xs font-mono">canvas vacío</span>
-          </div>
-        ) : (
-          <div className="flex flex-wrap gap-1.5 items-start content-start">
-            {clases.slice(0, 6).map((nodo, i) => (
-              <div
-                key={i}
-                className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-gray-300 font-mono truncate"
-                style={{ fontSize: 9, maxWidth: 100 }}
-              >
-                {nodo.data?.name || "Clase"}
-              </div>
-            ))}
-            {clases.length > 6 && (
-              <div
-                className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-gray-400 font-mono"
-                style={{ fontSize: 9 }}
-              >
-                +{clases.length - 6} más
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Botón eliminar */}
+      {}
+      <div className="bg-gray-900 h-36 p-3 relative overflow-hidden flex items-center justify-center">
+        <span className="text-gray-600 text-xs font-mono">{diagrama.nombre}</span>
         <button
           onClick={onEliminar}
           className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition bg-red-900 hover:bg-red-700 text-red-200 rounded px-1.5 py-0.5 text-xs"
@@ -183,20 +182,20 @@ function TarjetaDiagrama({ diagrama, onClick, onEliminar }) {
           ✕
         </button>
       </div>
-
-      {/* Info */}
+ 
+      {}
       <div className="p-4 bg-white">
         <h3 className="font-medium text-gray-900 group-hover:text-indigo-600 transition truncate">
           {diagrama.nombre}
         </h3>
         <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-400">
-          <span>{clases.length} {clases.length === 1 ? "clase" : "clases"}</span>
-          <span>·</span>
-          <span>{relaciones.length} {relaciones.length === 1 ? "relación" : "relaciones"}</span>
-          <span>·</span>
-          <span>{fecha}</span>
+          <span>Modificado: {fecha}</span>
         </div>
+        {diagrama.descripcion && (
+          <p className="text-xs text-gray-400 mt-1 truncate">{diagrama.descripcion}</p>
+        )}
       </div>
     </div>
   );
 }
+ 
