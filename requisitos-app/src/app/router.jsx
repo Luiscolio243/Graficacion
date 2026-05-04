@@ -32,6 +32,8 @@ import Diseño from "../UML/Diseño";
 import DiagramaPaquetes from "../UML/DiagramaPaquetes";
 import MenuDiagramas from "../UML/MenuDiagramas";
 import ListaDiagramas from "../UML/ListaDiagramas";
+import UML from "../UML/UML";
+import CasosUsoDiagram from '../UML/CasosUso';
 
 export const router = createBrowserRouter([
     {
@@ -54,6 +56,10 @@ export const router = createBrowserRouter([
     {
         path: "/diseño-paquetes",
         element: <DiagramaPaquetes />
+    },
+    {
+    path: "/casos-uso",
+        element: <CasosUsoDiagram />
     },
     {
         //Rutas ya que inicio sesion el usuario
