@@ -13,7 +13,8 @@ const TIPO_INFO = {
     titulo: "Diagrama de Paquetes",
     descripcion: "Organización de módulos del sistema",
     color: "violet",
-    disponible: false,
+    editorRuta: "/diseño-paquetes",
+    disponible: true,
   },
   secuencias: {
     titulo: "Diagrama de Secuencias",

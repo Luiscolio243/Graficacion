@@ -29,6 +29,7 @@ import DetalleObservacion from "../observaciones/pages/DetalleObservacion";
 import EditarObservacion from "../observaciones/pages/EditarObservacion";
 import ResponderEncuesta from "../cuestionarios/pages/ResponderEncuesta";
 import Diseño from "../UML/Diseño";
+import DiagramaPaquetes from "../UML/DiagramaPaquetes";
 import MenuDiagramas from "../UML/MenuDiagramas";
 import ListaDiagramas from "../UML/ListaDiagramas";
 
@@ -49,6 +50,10 @@ export const router = createBrowserRouter([
     },
     {  path: "/diseño",
         element: <Diseño />
+    },
+    {
+        path: "/diseño-paquetes",
+        element: <DiagramaPaquetes />
     },
     {
         //Rutas ya que inicio sesion el usuario
