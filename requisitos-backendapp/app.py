@@ -56,6 +56,7 @@ class LoginRequest(BaseModel):
     password: str
 
 @app.route('/login', methods=['POST'])
+@cross_origin()
 def login():
     try:
         data = request.get_json()
@@ -99,8 +100,8 @@ def login():
 
             }), 200
 
-    except SQLAlchemyError as e:
-        print(str(e))
+    except Exception as e:
+        print(f"Error en login: {type(e).__name__}: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 
