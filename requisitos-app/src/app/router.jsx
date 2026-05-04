@@ -28,10 +28,10 @@ import DetalleEntrevista from "../entrevistas/pages/DetalleEntrevista";
 import DetalleObservacion from "../observaciones/pages/DetalleObservacion";
 import EditarObservacion from "../observaciones/pages/EditarObservacion";
 import ResponderEncuesta from "../cuestionarios/pages/ResponderEncuesta";
-//import Diseño from "../UML/Diseño";
+import Diseño from "../UML/Diseño";
+import DiagramaPaquetes from "../UML/DiagramaPaquetes";
 import MenuDiagramas from "../UML/MenuDiagramas";
 import ListaDiagramas from "../UML/ListaDiagramas";
-import UML from "../UML/UML";
 
 export const router = createBrowserRouter([
     {
@@ -49,7 +49,11 @@ export const router = createBrowserRouter([
         element: <ResponderEncuesta />
     },
     {  path: "/diseño",
-        element: <UML />
+        element: <Diseño />
+    },
+    {
+        path: "/diseño-paquetes",
+        element: <DiagramaPaquetes />
     },
     {
         //Rutas ya que inicio sesion el usuario
