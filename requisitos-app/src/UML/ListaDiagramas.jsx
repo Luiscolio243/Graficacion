@@ -28,7 +28,8 @@ const TIPO_INFO = {
     titulo: "Diagrama de Casos de Uso",
     descripcion: "Funcionalidades desde la perspectiva del actor",
     color: "amber",
-    disponible: false,
+    editorRuta: "/casos-uso",
+    disponible: true,
   },
 };
  
