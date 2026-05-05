@@ -18,6 +18,7 @@ from Routers.responderEncuesta import responder_encuesta_bp
 from Routers.historiasUsuario import historias_bp
 from Routers.ClasesUML import clases_uml_bp
 from Routers.Diagramas import diagramas_bp
+from Routers.PaquetesUML import paquetes_uml_bp
 from Routers.CasosUML import casos_uml_bp
 
 Config.validate()
@@ -41,6 +42,7 @@ app.register_blueprint(focus_groups_bp)
 app.register_blueprint(historias_bp)
 app.register_blueprint(clases_uml_bp)
 app.register_blueprint(diagramas_bp)
+app.register_blueprint(paquetes_uml_bp)
 app.register_blueprint(casos_uml_bp)
 
 if __name__ == '__main__':
