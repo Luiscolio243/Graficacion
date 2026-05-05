@@ -19,6 +19,7 @@ from Routers.historiasUsuario import historias_bp
 from Routers.ClasesUML import clases_uml_bp
 from Routers.Diagramas import diagramas_bp
 from Routers.CasosUML import casos_uml_bp
+from Routers.Secuencia import secuencia_uml_bp
 
 Config.validate()
 
@@ -42,6 +43,9 @@ app.register_blueprint(historias_bp)
 app.register_blueprint(clases_uml_bp)
 app.register_blueprint(diagramas_bp)
 app.register_blueprint(casos_uml_bp)
+app.register_blueprint(secuencia_uml_bp)
+
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=Config.FLASK_PORT, debug=Config.FLASK_ENV == 'development')
