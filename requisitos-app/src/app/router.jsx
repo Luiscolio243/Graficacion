@@ -34,6 +34,7 @@ import MenuDiagramas from "../UML/MenuDiagramas";
 import ListaDiagramas from "../UML/ListaDiagramas";
 import UML from "../UML/UML";
 import CasosUsoDiagram from '../UML/CasosUso';
+import Secuencias from '../UML/DiagramaSecuencia';
 
 export const router = createBrowserRouter([
     {
@@ -60,6 +61,10 @@ export const router = createBrowserRouter([
     {
     path: "/casos-uso",
         element: <CasosUsoDiagram />
+    },
+    {
+        path: "/diseño-secuencia",
+        element: <Secuencias />
     },
     {
         //Rutas ya que inicio sesion el usuario

@@ -34,3 +34,8 @@ class Diagrama(Base):
     )
 
     clase_aristas: Mapped[ list["ClaseArista"] ] = relationship('ClaseArista', backref='diagrama', cascade='all, delete-orphan', lazy=True)
+
+    seq_participantes: Mapped[list["SeqParticipante"]] = relationship("SeqParticipante", back_populates="diagrama",
+                                                                      cascade="all, delete-orphan")
+    seq_mensajes: Mapped[list["SeqMensaje"]] = relationship("SeqMensaje", back_populates="diagrama",
+                                                            cascade="all, delete-orphan")
