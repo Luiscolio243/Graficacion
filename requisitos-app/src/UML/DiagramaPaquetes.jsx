@@ -148,6 +148,8 @@ function loadScript(src) {
   });
 }
 
+const API = 'http://localhost:5000';
+
 // ─── EDITOR INTERNO ───────────────────────────────────────────────────────────
 function PaquetesEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo }) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initNodes);
@@ -159,6 +161,7 @@ function PaquetesEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo 
   const { fitView }                 = useReactFlow();
   const flowRef                     = useRef(null);
   const navigate                    = useNavigate();
+  const saveTimer                   = useRef(null);
 
   useEffect(() => {
     const tag = document.createElement('style');
@@ -167,20 +170,32 @@ function PaquetesEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo 
     return () => document.head.removeChild(tag);
   }, []);
 
-  // ─── AUTOGUARDADO ────────────────────────────────────────────────────────────
+  // ─── AUTOGUARDADO EN POSTGRESQL ──────────────────────────────────────────────
   useEffect(() => {
     if (!diagramaId) return;
-    const storageKey = `diagramas_${tipo || 'paquetes'}`;
-    const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    const idx = stored.findIndex((d) => d.id === diagramaId);
-    const entrada = {
-      id: diagramaId, nombre, tipo: tipo || 'paquetes', nodes, edges,
-      fechaCreacion: stored[idx]?.fechaCreacion || new Date().toISOString(),
-      ultimaModificacion: new Date().toISOString(),
-    };
-    if (idx >= 0) stored[idx] = entrada;
-    else stored.unshift(entrada);
-    localStorage.setItem(storageKey, JSON.stringify(stored));
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      fetch(`${API}/diagramas/${diagramaId}/paquetes`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre,
+          nodos: nodes.map((n) => ({
+            id: n.id,
+            type: n.type,
+            position: n.position,
+            data: n.data,
+          })),
+          aristas: edges.map((e) => ({
+            id: e.id,
+            source: e.source,
+            target: e.target,
+            label: e.label || '',
+            data: e.data || {},
+          })),
+        }),
+      }).catch((err) => console.error('Error al guardar:', err));
+    }, 800);
   }, [nodes, edges, nombre]);
 
   // ─── EXPORTAR PDF (usa html-to-image para capturar el SVG de las flechas) ──
@@ -347,21 +362,24 @@ export default function DiagramaPaquetes() {
   const [diagramaId, setDiagramaId]       = useState(null);
 
   useEffect(() => {
-    if (id) {
-      const storageKey = `diagramas_${tipo}`;
-      const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
-      const diagrama = stored.find((d) => d.id === id);
-      if (diagrama) {
-        setInitNodes(diagrama.nodes || []);
-        setInitEdges(diagrama.edges || []);
-        setNombreInicial(diagrama.nombre);
-      }
-      setDiagramaId(id);
-    }
-    setListo(true);
+    if (!id) { setListo(true); return; }
+
+    fetch(`http://localhost:5000/diagramas/${id}/paquetes`)
+      .then((r) => r.json())
+      .then((data) => {
+        setInitNodes(data.nodos  || []);
+        setInitEdges(data.aristas || []);
+        setNombreInicial(data.nombre || 'Nuevo diagrama');
+        setDiagramaId(id);
+      })
+      .catch((err) => {
+        console.error('Error al cargar diagrama:', err);
+        setDiagramaId(id);
+      })
+      .finally(() => setListo(true));
   }, []);
 
-  if (!listo) return null;
+  if (!listo) return <div style={{ color: '#e2e8f0', padding: 20 }}>Cargando...</div>;
 
   return (
     <ReactFlowProvider>

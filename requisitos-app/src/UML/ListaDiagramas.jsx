@@ -22,7 +22,8 @@ const TIPO_INFO = {
     titulo: "Diagrama de Secuencias",
     descripcion: "Interacción entre objetos en el tiempo",
     color: "emerald",
-    disponible: false,
+    editorRuta: "/diseño-secuencia",  
+    disponible: true,                  
   },
   "casos-uso": {
     titulo: "Diagrama de Casos de Uso",
@@ -42,13 +43,15 @@ export default function ListaDiagramas() {
   const [cargando, setCargando]     = useState(true);
   const [creando, setCreando]       = useState(false);
   const [error, setError]           = useState(null);
+  const tipoMap = { 'casos-uso': 'casos_uso', 'secuencias': 'secuencia' };
+  const tipoBD = tipoMap[tipo] || tipo;
  
 
   useEffect(() => {
     if (!info.disponible) { setCargando(false); return; }
  
     setCargando(true);
-    fetch(`${API}/diagramas?tipo=${tipo === 'casos-uso' ? 'casos_uso' : tipo}`)
+    fetch(`${API}/diagramas?tipo=${tipoBD}`)
       .then((r) => r.json())
       .then((data) => { setDiagramas(data); setCargando(false); })
       .catch(() => { setError("No se pudo conectar al servidor"); setCargando(false); });
@@ -63,7 +66,7 @@ export default function ListaDiagramas() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           nombre: "Nuevo diagrama",
-          tipo: tipo === "casos-uso" ? "casos_uso" : tipo,
+          tipo: tipoBD,
         }),
       });
       const data = await res.json();

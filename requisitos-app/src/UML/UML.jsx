@@ -33,7 +33,8 @@ const styles = `
   .abs-method { font-style:italic; color:#a78bfa; }
   .toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center;
     background:#161821; border:1px solid #3a3f5c; border-radius:8px;
-    padding:8px 12px; font-family:'Courier New',monospace; }
+    padding:8px 12px; font-family:'Courier New',monospace;
+    overflow:visible; }
   .tb-btn { font-size:11px; padding:5px 12px; border-radius:5px;
     border:1px solid #3a3f5c; background:#1e2030; color:#e2e8f0; cursor:pointer; }
   .tb-btn:hover { background:#2d3148; }
@@ -49,7 +50,7 @@ const styles = `
   .tb-sep { width:1px; height:18px; background:#3a3f5c; }
   .tb-title { font-size:12px; padding:4px 8px; border-radius:5px;
     border:1px solid #3a3f5c; background:#1e2030; color:#e2e8f0;
-    font-family:'Courier New',monospace; min-width:160px; }
+    font-family:'Courier New',monospace; min-width:120px; max-width:200px; width:160px; }
   .tb-title:focus { outline:none; border-color:#378ADD; }
   .tb-saved { font-size:10px; color:#68d391; }
   .side-panel { background:#161821; border:1px solid #3a3f5c; border-radius:8px;
@@ -266,11 +267,13 @@ function DiagramEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo }
             </button>
             <div className="tb-sep" />
             <input
+              id="diagram-title"
               className="tb-title"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
               placeholder="Nombre del diagrama"
             />
+            {console.log("render boton guardar")}
             <button className="tb-btn save-btn" onClick={guardar} disabled={guardando}>
               {guardando ? '...' : '💾 Guardar'}
             </button>
@@ -362,21 +365,24 @@ export default function ClassDiagram() {
   const [error, setError]       = useState(null);
  
   useEffect(() => {
-    if (!id) { setInitData({ nodes: [], edges: [], nombre: 'Nuevo diagrama' }); return; }
- 
-    fetch(`${API}/diagramas/${id}/clases`)
-      .then((r) => r.json())
-      .then((data) => {
-        // Reaplicar estilos visuales a las aristas al cargar
-        const aristas = (data.aristas || []).map((a) => ({
-          ...a,
-          type: 'smoothstep',
-          ...(edgeStyleMap[a.data?.edgeType] || edgeStyleMap.assoc),
-        }));
-        setInitData({ nodes: data.nodos || [], edges: aristas, nombre: data.nombre || 'Nuevo diagrama' });
-      })
-      .catch(() => setError('No se pudo cargar el diagrama'));
-  }, [id]);
+  if (!id) {
+    // ← envuelve en setTimeout para que no sea síncrono
+    setTimeout(() => setInitData({ nodes: [], edges: [], nombre: 'Nuevo diagrama' }), 0);
+    return;
+  }
+
+  fetch(`${API}/diagramas/${id}/clases`)
+    .then((r) => r.json())
+    .then((data) => {
+      const aristas = (data.aristas || []).map((a) => ({
+        ...a,
+        type: 'smoothstep',
+        ...(edgeStyleMap[a.data?.edgeType] || edgeStyleMap.assoc),
+      }));
+      setInitData({ nodes: data.nodos || [], edges: aristas, nombre: data.nombre || 'Nuevo diagrama' });
+    })
+    .catch(() => setError('No se pudo cargar el diagrama'));
+}, [id]);
  
   if (error) return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#0f1117', color:'#fc8181', fontFamily:'monospace' }}>
@@ -402,4 +408,3 @@ export default function ClassDiagram() {
     </ReactFlowProvider>
   );
 }
- 
