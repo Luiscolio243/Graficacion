@@ -37,6 +37,12 @@ export default function Requerimientos() {
       ruta: `/app/proyectos/${id}/requerimientos/focus-groups`,
     },
     {
+      titulo: "Documentos",
+      descripcion: "Análisis de documentos existentes para identificar hallazgos y recomendaciones",
+      color: "violet",
+      ruta: `/app/proyectos/${id}/requerimientos/documentos`,
+    },
+    {
       titulo: "Seguimiento Transaccional",
       descripcion: "Monitoreo de transacciones y flujos de datos del sistema",
       color: "cyan",
@@ -117,6 +123,12 @@ function TarjetaModulo({ titulo, descripcion, color = "indigo", onClick }) {
       borde: "border-cyan-200",
       textoTitulo: "text-cyan-700",
       punto: "bg-cyan-500",
+    },
+    violet: {
+      fondo: "bg-violet-50",
+      borde: "border-violet-200",
+      textoTitulo: "text-violet-700",
+      punto: "bg-violet-500",
     },
   };
 
