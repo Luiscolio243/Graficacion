@@ -20,6 +20,7 @@ from Routers.ClasesUML import clases_uml_bp
 from Routers.Diagramas import diagramas_bp
 from Routers.PaquetesUML import paquetes_uml_bp
 from Routers.CasosUML import casos_uml_bp
+from Routers.documentos import documentos_router
 from Routers.Secuencia import secuencia_uml_bp
 
 Config.validate()
@@ -45,6 +46,7 @@ app.register_blueprint(clases_uml_bp)
 app.register_blueprint(diagramas_bp)
 app.register_blueprint(paquetes_uml_bp)
 app.register_blueprint(casos_uml_bp)
+app.register_blueprint(documentos_router)
 app.register_blueprint(secuencia_uml_bp)
 
 

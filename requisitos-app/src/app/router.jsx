@@ -34,6 +34,7 @@ import MenuDiagramas from "../UML/MenuDiagramas";
 import ListaDiagramas from "../UML/ListaDiagramas";
 import UML from "../UML/UML";
 import CasosUsoDiagram from '../UML/CasosUso';
+import Documentos from "../documentos/Documentos";
 import Secuencias from '../UML/DiagramaSecuencia';
 
 export const router = createBrowserRouter([
@@ -195,6 +196,11 @@ export const router = createBrowserRouter([
                 //Crear nuevo seguimiento transaccional
                 path: "proyectos/:id/requerimientos/seguimiento-transaccional/crear",
                 element: <CrearSeguimientoTransaccional />
+            },
+            {
+                //Documentos de cada proyecto
+                path: "proyectos/:id/requerimientos/documentos",
+                element: <Documentos />
             },
             {
                 //Menú de diagramas UML
