@@ -20,6 +20,11 @@ from Routers.ClasesUML import clases_uml_bp
 from Routers.Diagramas import diagramas_bp
 from Routers.PaquetesUML import paquetes_uml_bp
 from Routers.CasosUML import casos_uml_bp
+from Routers.documentos import documentos_router
+from Routers.Secuencia import secuencia_uml_bp
+from Routers.Specs import specs_bp
+from Routers.SpecsTecnicas import specs_tecnicas_bp
+from Routers.SpecsArchivos import specs_archivos_bp
 
 Config.validate()
 
@@ -44,6 +49,12 @@ app.register_blueprint(clases_uml_bp)
 app.register_blueprint(diagramas_bp)
 app.register_blueprint(paquetes_uml_bp)
 app.register_blueprint(casos_uml_bp)
+app.register_blueprint(documentos_router)
+app.register_blueprint(secuencia_uml_bp)
+app.register_blueprint(specs_bp)
+app.register_blueprint(specs_tecnicas_bp)
+app.register_blueprint(specs_archivos_bp)
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=Config.FLASK_PORT, debug=Config.FLASK_ENV == 'development')
