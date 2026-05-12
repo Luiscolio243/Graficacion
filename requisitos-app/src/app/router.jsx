@@ -36,6 +36,7 @@ import UML from "../UML/UML";
 import CasosUsoDiagram from '../UML/CasosUso';
 import Documentos from "../documentos/Documentos";
 import Secuencias from '../UML/DiagramaSecuencia';
+import SpecsTecnicas from "../specs/SpecsTecnicas";
 
 export const router = createBrowserRouter([
     {
@@ -106,6 +107,10 @@ export const router = createBrowserRouter([
                 //Procesos de cada proyecto
                 path: "proyectos/:id/procesos",
                 element: <Procesos />
+            },
+            {
+                path: "proyectos/:id/specs-tecnicas",
+                element: <SpecsTecnicas />
             },
             {
                 //Requerimientos de cada proyecto

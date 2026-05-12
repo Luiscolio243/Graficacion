@@ -60,6 +60,22 @@ export default function ProyectoDashboard() {
     return <div className="text-gray-500">No se encontró el proyecto</div>;
   }
 
+  async function descargarSpecs() {
+    try {
+      const res = await fetch(`http://127.0.0.1:5000/proyectos/${id}/specs-archivos`);
+      if (!res.ok) { alert('Error al generar specs'); return; }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `specs_${proyecto.nombre}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('No se pudo conectar al servidor');
+    }
+  }
+
 
   return (
   <div className="space-y-8 max-w-7xl mx-auto">
@@ -78,6 +94,13 @@ export default function ProyectoDashboard() {
           className="px-4 py-2 border border-gray-300 rounded-lg text-sm"
         >
           Editar proyecto
+        </button>
+
+        <button
+          onClick={descargarSpecs}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition"
+        >
+          Descargar Specs
         </button>
 
         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
