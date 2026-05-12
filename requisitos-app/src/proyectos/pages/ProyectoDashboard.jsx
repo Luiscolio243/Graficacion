@@ -42,6 +42,22 @@ export default function ProyectoDashboard() {
   const [productOwner, setProductOwner] = useState(null);
   const [techLeader,   setTechLeader]   = useState(null);
 
+  async function descargarSpecs() {
+    try {
+      const res = await fetch(`http://127.0.0.1:5000/proyectos/${id}/specs-archivos`);
+      if (!res.ok) { alert("Error al generar specs"); return; }
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = url;
+      a.download = `specs_${proyecto.nombre}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("No se pudo conectar al servidor");
+    }
+  }
+
   useEffect(() => {
     const obtenerProyecto = async () => {
       try {
@@ -108,6 +124,16 @@ export default function ProyectoDashboard() {
             >
               <IconEdit />
               Editar proyecto
+            </button>
+            <button
+              onClick={descargarSpecs}
+              className="inline-flex items-center gap-1.5 bg-white text-indigo-700 hover:bg-indigo-50
+                         text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors duration-150"
+            >
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                <path d="M8 1v9M4 7l4 4 4-4M2 13h12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Descargar Specs
             </button>
             <span className={`text-xs font-semibold px-3 py-1.5 rounded-lg ${statusStyle}`}>
               {proyecto.estado}
