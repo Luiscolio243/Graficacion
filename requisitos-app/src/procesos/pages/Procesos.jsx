@@ -1,12 +1,13 @@
 // Pantalla de Procesos
 
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import ListaProcesos from "../components/ListaProcesos";
 import ModalNuevoProceso from "../components/ModalNuevoProceso";
 
 export default function Procesos() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [mostrarNuevoProceso, setMostrarNuevoProceso] = useState(false);
   const [mostrarEditarProceso, setMostrarEditarProceso] = useState(false);
   const [procesoActivo, setProcesoActivo] = useState(null);
@@ -112,22 +113,32 @@ export default function Procesos() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
 
-      {/* Encabezado */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900">
-            Procesos
-          </h1>
-          <p className="text-sm text-gray-500">
-            Define los procesos, subprocesos y que tecnicas aplicaras
-          </p>
-        </div>
+      {/* Botón de regreso */}
+      <button
+        onClick={() => navigate(`/app/proyectos/${id}`)}
+        className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors duration-150"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        Volver al proyecto
+      </button>
 
+      {/* Encabezado */}
+      <div className="flex justify-between items-end pb-5 border-b border-gray-200">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Procesos</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Define los procesos, subprocesos y las técnicas a aplicar</p>
+        </div>
         <button
           onClick={() => setMostrarNuevoProceso(true)}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm"
+          className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700
+                     text-white rounded-md text-sm font-medium transition-colors"
         >
-          + Agregar Proceso
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+            <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+          </svg>
+          Agregar Proceso
         </button>
       </div>
 
