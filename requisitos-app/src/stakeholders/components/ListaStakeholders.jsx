@@ -23,6 +23,7 @@ export default function ListaStakeholders({ stakeholders, onEditar }) {
           key={s.id_stakeholder ?? `sh-${index}`}
           stakeholder={s}
           onEditar={onEditar}
+          index={index}
         />
       ))}
     </div>

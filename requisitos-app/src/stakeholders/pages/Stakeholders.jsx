@@ -2,13 +2,14 @@
 // Aqui se listan y se agregar nuevos stakeholders
 
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import ListaStakeholders from "../components/ListaStakeholders";
 import ModalNuevoStakeholder from "../components/ModalNuevoStakeholder";
 import ModalNuevoRol from "../components/ModalRol";
 
 export default function Stakeholders() {
-  const { id } = useParams(); // id del proyecto
+  const { id } = useParams();
+  const navigate = useNavigate();
 
   // controla el modal de nuevo stakeholder
   const [mostrarNuevoStakeholder, setMostrarNuevoStakeholder] = useState(false);
@@ -96,30 +97,41 @@ export default function Stakeholders() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
 
+      {/* Botón de regreso */}
+      <button
+        onClick={() => navigate(`/app/proyectos/${id}`)}
+        className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors duration-150"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        Volver al proyecto
+      </button>
+
       {/* Encabezado */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-end pb-5 border-b border-gray-200">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">
-            Stakeholders
-          </h1>
-          <p className="text-sm text-gray-500">
-            Personas involucradas en el proyecto
-          </p>
+          <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Stakeholders</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Personas involucradas en el proyecto</p>
         </div>
 
         <div className="flex gap-2">
           <button
             onClick={() => setMostrarNuevoRol(true)}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-sm"
+            className="inline-flex items-center gap-1.5 px-4 py-2 border border-gray-300
+                       rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
           >
-            + Nuevo Rol
+            Nuevo Rol
           </button>
-
           <button
             onClick={() => setMostrarNuevoStakeholder(true)}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700
+                       text-white rounded-md text-sm font-medium transition-colors"
           >
-            + Nuevo Stakeholder
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+              <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+            Nuevo Stakeholder
           </button>
         </div>
       </div>

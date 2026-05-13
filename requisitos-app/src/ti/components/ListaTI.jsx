@@ -19,7 +19,7 @@ export default function ListaTI({ ti, onEditar }) {
   return (
     <div className="space-y-3">
       {ti.map((s, index) => (
-        <TarjetaTI key={s.id_personal_ti ?? index} ti={s} onEditar={onEditar} />
+        <TarjetaTI key={s.id_personal_ti ?? index} ti={s} onEditar={onEditar} index={index} />
       ))}
     </div>
   );
