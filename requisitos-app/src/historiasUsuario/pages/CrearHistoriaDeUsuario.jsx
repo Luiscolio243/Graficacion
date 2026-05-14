@@ -3,61 +3,78 @@ import { useParams, useNavigate } from "react-router-dom";
 
 const BASE_URL = "http://127.0.0.1:5000";
 
+const inputCls = "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white";
+const labelCls = "block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5";
+
+const PRIORIDADES = [
+  { value: "alta",  label: "Alta"  },
+  { value: "media", label: "Media" },
+  { value: "baja",  label: "Baja"  },
+];
+
 export default function CrearHistoriaDeUsuario() {
   const { id } = useParams();
   const navegar = useNavigate();
 
-  const [procesos, setProcesos] = useState([]);
-  const [subprocesosFiltrados, setSubprocesosFiltrados] = useState([]);
+  const [procesos,  setProcesos]  = useState([]);
   const [guardando, setGuardando] = useState(false);
 
-  const [nuevoFormulario, setNuevoFormulario] = useState({
-    titulo: "",
-    rol: "",
-    accion: "",
-    beneficio: "",
-    id_proceso: "",
-    id_subproceso: "",
-    prioridad: "media",
-    estimacion: "",
-    criterios: [""],
+  const [form, setForm] = useState({
+    titulo:       "",
+    rol:          "",
+    accion:       "",
+    beneficio:    "",
+    id_proceso:   "",
+    id_subproceso:"",
+    prioridad:    "media",
+    estimacion:   "",
+    criterios:    [""],
   });
 
   useEffect(() => {
     fetch(`${BASE_URL}/procesos/${id}`)
-      .then(r => r.ok ? r.json() : [])
+      .then((r) => r.ok ? r.json() : [])
       .then(setProcesos)
       .catch(() => {});
   }, [id]);
 
-  const handleCambiarProceso = (e) => {
-    const idProceso = e.target.value;
-    const proceso = procesos.find(p => String(p.id_proceso) === String(idProceso));
-    setSubprocesosFiltrados(proceso?.subprocesos || []);
-    setNuevoFormulario({ ...nuevoFormulario, id_proceso: idProceso, id_subproceso: "" });
+  const subprocesosFiltrados =
+    procesos.find((p) => String(p.id_proceso) === String(form.id_proceso))?.subprocesos || [];
+
+  const set = (campo, valor) => setForm((prev) => ({ ...prev, [campo]: valor }));
+
+  const handleCambiarProceso = (e) =>
+    setForm((prev) => ({ ...prev, id_proceso: e.target.value, id_subproceso: "" }));
+
+  const agregarCriterio = () => set("criterios", [...form.criterios, ""]);
+
+  const actualizarCriterio = (idx, valor) =>
+    set("criterios", form.criterios.map((c, i) => i === idx ? valor : c));
+
+  const eliminarCriterio = (idx) => {
+    if (form.criterios.length > 1)
+      set("criterios", form.criterios.filter((_, i) => i !== idx));
   };
 
-  const handleAgregarHistoria = async () => {
-    if (!nuevoFormulario.titulo.trim() || !nuevoFormulario.rol.trim() ||
-        !nuevoFormulario.accion.trim() || !nuevoFormulario.beneficio.trim()) {
-      alert("Completa los campos obligatorios.");
-      return;
-    }
+  const handleGuardar = async () => {
+    if (!form.titulo.trim() || !form.rol.trim() || !form.accion.trim() || !form.beneficio.trim())
+      return alert("Completa los campos obligatorios: título, rol, acción y beneficio.");
+
     setGuardando(true);
     try {
       const res = await fetch(`${BASE_URL}/historias-usuario/crear`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id_proyecto: parseInt(id),
-          id_subproceso: nuevoFormulario.id_subproceso ? parseInt(nuevoFormulario.id_subproceso) : null,
-          titulo: nuevoFormulario.titulo,
-          rol: nuevoFormulario.rol,
-          accion: nuevoFormulario.accion,
-          beneficio: nuevoFormulario.beneficio,
-          prioridad: nuevoFormulario.prioridad,
-          estimacion: nuevoFormulario.estimacion || null,
-          criterios: nuevoFormulario.criterios.filter(c => c.trim()),
+          id_proyecto:   parseInt(id),
+          id_subproceso: form.id_subproceso ? parseInt(form.id_subproceso) : null,
+          titulo:        form.titulo,
+          rol:           form.rol,
+          accion:        form.accion,
+          beneficio:     form.beneficio,
+          prioridad:     form.prioridad,
+          estimacion:    form.estimacion || null,
+          criterios:     form.criterios.filter((c) => c.trim()),
         }),
       });
       if (!res.ok) {
@@ -72,228 +89,162 @@ export default function CrearHistoriaDeUsuario() {
     }
   };
 
-  const agregarCriterio = () => {
-    setNuevoFormulario({
-      ...nuevoFormulario,
-      criterios: [...nuevoFormulario.criterios, ""],
-    });
-  };
-
-  const actualizarCriterio = (index, valor) => {
-    const nuevosCriterios = [...nuevoFormulario.criterios];
-    nuevosCriterios[index] = valor;
-    setNuevoFormulario({
-      ...nuevoFormulario,
-      criterios: nuevosCriterios,
-    });
-  };
-
-  const eliminarCriterio = (index) => {
-    if (nuevoFormulario.criterios.length > 1)
-      setNuevoFormulario({
-        ...nuevoFormulario,
-        criterios: nuevoFormulario.criterios.filter((_, i) => i !== index),
-      });
-  };
-
   return (
-    <div className="space-y-6">
-      {/* Encabezado con botón atrás */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => navegar(`/app/proyectos/${id}/requerimientos/historias-usuario`)}
-          className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
-        >
-          ← Atrás
-        </button>
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Historias de Usuario
-          </h1>
-          <p className="text-gray-600 mt-1">(2)</p>
-        </div>
+    <div className="space-y-7 max-w-3xl mx-auto">
+
+      {/* Botón de regreso */}
+      <button
+        onClick={() => navegar(`/app/proyectos/${id}/requerimientos/historias-usuario`)}
+        className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors duration-150"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        Volver a Historias de Usuario
+      </button>
+
+      {/* Encabezado */}
+      <div className="pb-5 border-b border-gray-200">
+        <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Nueva Historia de Usuario</h1>
+        <p className="text-sm text-gray-500 mt-0.5">Formato: Como [rol], quiero [acción], para que [beneficio]</p>
       </div>
 
       {/* Formulario */}
-      <div className="bg-white rounded-xl border border-gray-200 p-8 space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Título de la Historia <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={nuevoFormulario.titulo}
-            onChange={(e) =>
-              setNuevoFormulario({
-                ...nuevoFormulario,
-                titulo: e.target.value,
-              })
-            }
-            placeholder="Ej: Registro de usuario en el sistema"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm divide-y divide-gray-100">
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Proceso
-            </label>
-            <select
-              value={nuevoFormulario.id_proceso}
-              onChange={handleCambiarProceso}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-            >
-              <option value="">Selecciona un proceso</option>
-              {procesos.map(p => (
-                <option key={p.id_proceso} value={p.id_proceso}>{p.nombre}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Subproceso
-            </label>
-            <select
-              value={nuevoFormulario.id_subproceso}
-              onChange={e => setNuevoFormulario({ ...nuevoFormulario, id_subproceso: e.target.value })}
-              disabled={!nuevoFormulario.id_proceso}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white disabled:bg-gray-50 disabled:text-gray-400"
-            >
-              <option value="">
-                {nuevoFormulario.id_proceso ? "Selecciona un subproceso" : "Primero elige un proceso"}
-              </option>
-              {subprocesosFiltrados.map(sp => (
-                <option key={sp.id_subproceso} value={sp.id_subproceso}>{sp.nombre}</option>
-              ))}
-            </select>
-          </div>
-        </div>
+        {/* Información general */}
+        <div className="px-6 py-5 space-y-4">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Información general</p>
 
-        <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 space-y-3">
-          <p className="text-sm font-bold text-indigo-600">
-            Formato: Como [rol], quiero [acción], para que [beneficio]
-          </p>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Como... (rol del usuario) <span className="text-red-500">*</span>
-            </label>
+            <label className={labelCls}>Título <span className="text-red-500">*</span></label>
             <input
               type="text"
-              value={nuevoFormulario.rol}
-              onChange={(e) =>
-                setNuevoFormulario({
-                  ...nuevoFormulario,
-                  rol: e.target.value,
-                })
-              }
-              placeholder="Ej: usuario del sistema"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              value={form.titulo}
+              onChange={(e) => set("titulo", e.target.value)}
+              placeholder="Ej: Registro de usuario en el sistema"
+              className={inputCls}
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Quiero... (acción que desea realizar) <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={nuevoFormulario.accion}
-              onChange={(e) =>
-                setNuevoFormulario({
-                  ...nuevoFormulario,
-                  accion: e.target.value,
-                })
-              }
-              placeholder="Ej: poder restablecer mi contraseña"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Para que... (beneficio o valor) <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={nuevoFormulario.beneficio}
-              onChange={(e) =>
-                setNuevoFormulario({
-                  ...nuevoFormulario,
-                  beneficio: e.target.value,
-                })
-              }
-              placeholder="Ej: pueda acceder nuevamente a mi cuenta"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Prioridad <span className="text-red-500">*</span></label>
+              <div className="flex gap-2">
+                {PRIORIDADES.map((p) => (
+                  <button
+                    key={p.value}
+                    type="button"
+                    onClick={() => set("prioridad", p.value)}
+                    className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-colors ${
+                      form.prioridad === p.value
+                        ? p.value === "alta"  ? "bg-red-600 text-white border-red-600"
+                        : p.value === "media" ? "bg-amber-500 text-white border-amber-500"
+                        :                       "bg-blue-500 text-white border-blue-500"
+                        : "bg-white text-gray-600 border-gray-300 hover:border-gray-400"
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>
+                Estimación <span className="text-gray-400 font-normal normal-case">(opcional)</span>
+              </label>
+              <input
+                type="text"
+                value={form.estimacion}
+                onChange={(e) => set("estimacion", e.target.value)}
+                placeholder="Ej: 5, 8, 13"
+                className={inputCls}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Historia de usuario */}
+        <div className="px-6 py-5 space-y-4">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Historia de usuario</p>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Prioridad <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={nuevoFormulario.prioridad}
-              onChange={(e) =>
-                setNuevoFormulario({
-                  ...nuevoFormulario,
-                  prioridad: e.target.value,
-                })
-              }
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="baja">Baja</option>
-              <option value="media">Media</option>
-              <option value="alta">Alta</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Estimación (opcional)
-            </label>
+            <label className={labelCls}>Como... (rol) <span className="text-red-500">*</span></label>
             <input
               type="text"
-              value={nuevoFormulario.estimacion}
-              onChange={(e) =>
-                setNuevoFormulario({
-                  ...nuevoFormulario,
-                  estimacion: e.target.value,
-                })
-              }
-              placeholder="Ej: 5 puntos, 2 días, etc."
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              value={form.rol}
+              onChange={(e) => set("rol", e.target.value)}
+              placeholder="Ej: usuario del sistema, administrador"
+              className={inputCls}
             />
           </div>
+
+          <div>
+            <label className={labelCls}>Quiero... (acción) <span className="text-red-500">*</span></label>
+            <input
+              type="text"
+              value={form.accion}
+              onChange={(e) => set("accion", e.target.value)}
+              placeholder="Ej: restablecer mi contraseña desde el correo"
+              className={inputCls}
+            />
+          </div>
+
+          <div>
+            <label className={labelCls}>Para que... (beneficio) <span className="text-red-500">*</span></label>
+            <input
+              type="text"
+              value={form.beneficio}
+              onChange={(e) => set("beneficio", e.target.value)}
+              placeholder="Ej: pueda acceder nuevamente sin contactar soporte"
+              className={inputCls}
+            />
+          </div>
+
+          {/* Preview */}
+          {(form.rol || form.accion || form.beneficio) && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-600 italic">
+              Como <span className="font-semibold text-gray-800 not-italic">{form.rol || "…"}</span>, quiero{" "}
+              <span className="font-semibold text-gray-800 not-italic">{form.accion || "…"}</span>, para que{" "}
+              <span className="font-semibold text-gray-800 not-italic">{form.beneficio || "…"}</span>.
+            </div>
+          )}
         </div>
 
-        <div>
-          <div className="flex justify-between items-center mb-3">
-            <label className="block text-sm font-medium text-gray-700">
-              Criterios de Aceptación <span className="text-red-500">*</span>
-            </label>
+        {/* Criterios de aceptación */}
+        <div className="px-6 py-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Criterios de aceptación</p>
             <button
+              type="button"
               onClick={agregarCriterio}
-              className="text-indigo-600 hover:text-indigo-700 font-medium text-sm"
+              className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors"
             >
               + Agregar criterio
             </button>
           </div>
           <div className="space-y-2">
-            {nuevoFormulario.criterios.map((criterio, index) => (
-              <div key={index} className="flex gap-2">
+            {form.criterios.map((criterio, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <svg className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" viewBox="0 0 16 16" fill="none">
+                  <path d="M3 8l4 4 6-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
                 <input
                   type="text"
                   value={criterio}
-                  onChange={(e) => actualizarCriterio(index, e.target.value)}
-                  placeholder={`Criterio ${index + 1}`}
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  onChange={(e) => actualizarCriterio(idx, e.target.value)}
+                  placeholder={`Criterio ${idx + 1}`}
+                  className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
-                {nuevoFormulario.criterios.length > 1 && (
+                {form.criterios.length > 1 && (
                   <button
-                    onClick={() => eliminarCriterio(index)}
-                    className="px-3 py-2 text-red-500 hover:text-red-700 font-medium text-sm"
+                    type="button"
+                    onClick={() => eliminarCriterio(idx)}
+                    className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0"
                   >
-                    Eliminar
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
                   </button>
                 )}
               </div>
@@ -301,20 +252,52 @@ export default function CrearHistoriaDeUsuario() {
           </div>
         </div>
 
-        <div className="flex gap-3 pt-4">
-          <button
-            onClick={handleAgregarHistoria}
-            className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-lg font-medium transition"
-          >
-            Crear Historia de Usuario
-          </button>
-          <button
-            onClick={() => navegar(`/app/proyectos/${id}/requerimientos/historias-usuario`)}
-            className="flex-1 border border-gray-300 text-gray-700 px-4 py-3 rounded-lg font-medium hover:bg-gray-50 transition"
-          >
-            Cancelar
-          </button>
+        {/* Proceso relacionado */}
+        <div className="px-6 py-5 space-y-4">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Proceso relacionado</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Proceso</label>
+              <select value={form.id_proceso} onChange={handleCambiarProceso} className={inputCls}>
+                <option value="">Sin proceso</option>
+                {procesos.map((p) => (
+                  <option key={p.id_proceso} value={p.id_proceso}>{p.nombre}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Subproceso</label>
+              <select
+                value={form.id_subproceso}
+                onChange={(e) => set("id_subproceso", e.target.value)}
+                disabled={!form.id_proceso}
+                className={inputCls + " disabled:opacity-50"}
+              >
+                <option value="">{form.id_proceso ? "Sin subproceso" : "Elige un proceso primero"}</option>
+                {subprocesosFiltrados.map((sp) => (
+                  <option key={sp.id_subproceso} value={sp.id_subproceso}>{sp.nombre}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
+      </div>
+
+      {/* Botones */}
+      <div className="flex gap-3 pb-4">
+        <button
+          onClick={() => navegar(`/app/proyectos/${id}/requerimientos/historias-usuario`)}
+          className="flex-1 border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={handleGuardar}
+          disabled={guardando}
+          className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition"
+        >
+          {guardando ? "Guardando..." : "Crear Historia"}
+        </button>
       </div>
     </div>
   );
