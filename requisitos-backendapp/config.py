@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 
 # Carga las variables de entorno del archivo .env
-load_dotenv()
+load_dotenv(encoding='cp1252')
 
 class Config:
     # Base de datos
@@ -13,7 +13,7 @@ class Config:
     DB_PORT = os.getenv("DB_PORT")
     DB_NAME = os.getenv("DB_NAME")
 
-    DATABASE_URL = (f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}"f"@{DB_HOST}:{DB_PORT}/{DB_NAME}")
+    DATABASE_URL = (f"postgresql+psycopg://{DB_USER}:{DB_PASSWORD}"f"@{DB_HOST}:{DB_PORT}/{DB_NAME}")
 
     # JWT
     SECRET_KEY = os.getenv("SECRET_KEY", "fallback_inseguro")
