@@ -122,7 +122,8 @@ def obtener_todas_encuestas(id_proyecto):
                     "titulo": e.titulo,
                     "descripcion": e.descripcion,
                     "estado": e.estado,
-                    "num_participantes": e.num_participantes
+                    "num_participantes": e.num_participantes,
+                    "fecha_creacion": e.fecha_creacion.strftime("%d/%m/%Y") if e.fecha_creacion else None,
                 }
                 for e in encuestas
             ]), 200
@@ -167,6 +168,20 @@ def obtener_encuesta(id_encuesta):
 
             return jsonify(encuesta_dict), 200
 
+    except SQLAlchemyError as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@encuestas_bp.route('/encuestas/<int:id_encuesta>', methods=['DELETE'])
+def eliminar_encuesta(id_encuesta):
+    try:
+        with Session(engine) as session:
+            encuesta = session.get(Encuestas, id_encuesta)
+            if not encuesta:
+                return jsonify({"error": "No encontrada"}), 404
+            session.delete(encuesta)
+            session.commit()
+            return jsonify({"message": "Encuesta eliminada"}), 200
     except SQLAlchemyError as e:
         return jsonify({"error": str(e)}), 500
 
