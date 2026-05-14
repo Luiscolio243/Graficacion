@@ -1,130 +1,144 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
- 
+
 const BASE_URL = "http://127.0.0.1:5000";
- 
+
 export default function Observaciones() {
   const { id } = useParams();
   const navegar = useNavigate();
- 
+
   const [observaciones, setObservaciones] = useState([]);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState(null);
+  const [cargando,      setCargando]      = useState(true);
+  const [error,         setError]         = useState(null);
   const [modalEliminar, setModalEliminar] = useState(null);
- 
+
   useEffect(() => {
-    const obtenerObservaciones = async () => {
+    const obtener = async () => {
       try {
-        const response = await fetch(`${BASE_URL}/observaciones/${id}`);
-        if (!response.ok) throw new Error("Error al obtener las observaciones");
-        const data = await response.json();
-        setObservaciones(data);
+        const res = await fetch(`${BASE_URL}/observaciones/${id}`);
+        if (!res.ok) throw new Error("Error al obtener las observaciones");
+        setObservaciones(await res.json());
       } catch (err) {
         setError(err.message);
       } finally {
         setCargando(false);
       }
     };
-    obtenerObservaciones();
+    obtener();
   }, [id]);
- 
-  const confirmarEliminar = (id_observacion) => {
-    setModalEliminar(id_observacion);
-  };
- 
+
   const ejecutarEliminar = async () => {
     try {
-      const response = await fetch(
-        `${BASE_URL}/observaciones/eliminar/${modalEliminar}`,
-        { method: "DELETE" }
-      );
- 
-      if (!response.ok) {
-        const err = await response.json();
+      const res = await fetch(`${BASE_URL}/observaciones/eliminar/${modalEliminar}`, { method: "DELETE" });
+      if (!res.ok) {
+        const err = await res.json();
         return alert(err.error || "Error al eliminar la observación.");
       }
- 
-      setObservaciones((prev) =>
-        prev.filter((o) => o.id_observacion !== modalEliminar)
-      );
+      setObservaciones((prev) => prev.filter((o) => o.id_observacion !== modalEliminar));
       setModalEliminar(null);
     } catch {
       alert("Error de conexión al eliminar la observación.");
     }
   };
- 
-  if (cargando) return <p className="text-center text-gray-500 mt-10">Cargando observaciones...</p>;
-  if (error)    return <p className="text-center text-red-500 mt-10">{error}</p>;
- 
+
+  const botonAtras = (
+    <button
+      onClick={() => navegar(`/app/proyectos/${id}/requerimientos`)}
+      className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors duration-150"
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+      Volver a Requerimientos
+    </button>
+  );
+
+  if (cargando) return (
+    <div className="space-y-7 max-w-4xl mx-auto">
+      {botonAtras}
+      <div className="flex items-center gap-2 py-8 text-sm text-gray-400">
+        <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-200 border-t-violet-500 animate-spin" />
+        Cargando observaciones...
+      </div>
+    </div>
+  );
+
+  if (error) return (
+    <div className="space-y-7 max-w-4xl mx-auto">
+      {botonAtras}
+      <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
+    </div>
+  );
+
+  const conProblema    = observaciones.filter((o) => o.problema_detectado);
+  const sinProblema    = observaciones.filter((o) => !o.problema_detectado);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-7 max-w-4xl mx-auto">
+
+      {botonAtras}
+
       {/* Encabezado */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => navegar(`/app/proyectos/${id}`)}
-          className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
-        >
-          ← Atrás
-        </button>
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold text-gray-900">Observaciones</h1>
-          <p className="text-gray-600 mt-1">Notas rápidas de campo</p>
+      <div className="flex items-end justify-between pb-5 border-b border-gray-200">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Observaciones</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Notas rápidas de campo del proyecto</p>
         </div>
         <button
           onClick={() => navegar(`/app/proyectos/${id}/requerimientos/observaciones/crear`)}
-          className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-medium transition"
+          className="inline-flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
         >
-          + Nueva Nota
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+          Nueva Observación
         </button>
       </div>
- 
-      {/* Estadística rápida */}
-      {observaciones.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-purple-50 border border-purple-200 rounded-xl p-5">
-            <p className="text-sm text-gray-600 mb-1">Total</p>
-            <p className="text-4xl font-bold text-gray-900">{observaciones.length}</p>
-          </div>
-          <div className="bg-orange-50 border border-orange-200 rounded-xl p-5">
-            <p className="text-sm text-gray-600 mb-1">Con problema detectado</p>
-            <p className="text-4xl font-bold text-gray-900">
-              {observaciones.filter((o) => o.problema_detectado).length}
-            </p>
-          </div>
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
-            <p className="text-sm text-gray-600 mb-1">Sin problema</p>
-            <p className="text-4xl font-bold text-gray-900">
-              {observaciones.filter((o) => !o.problema_detectado).length}
-            </p>
-          </div>
-        </div>
-      )}
- 
-      {/* Tarjetas */}
-      {observaciones.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {observaciones.map((observacion) => (
-            <TarjetaObservacion
-              key={observacion.id_observacion}
-              observacion={observacion}
-              onEliminar={confirmarEliminar}
-              onVer={() =>
-                navegar(
-                  `/app/proyectos/${id}/requerimientos/observaciones/${observacion.id_observacion}`
-                )
-              }
-            />
-          ))}
+
+      {/* Estadísticas */}
+      <div className="grid grid-cols-3 gap-4">
+        <StatCard titulo="Total" valor={observaciones.length} color="violet" />
+        <StatCard titulo="Con problema" valor={conProblema.length} color="orange" />
+        <StatCard titulo="Sin problema" valor={sinProblema.length} color="blue" />
+      </div>
+
+      {/* Lista */}
+      {observaciones.length === 0 ? (
+        <div className="bg-white border border-dashed border-gray-300 rounded-xl py-16 text-center">
+          <p className="text-sm text-gray-400">No hay observaciones aún.</p>
+          <button
+            onClick={() => navegar(`/app/proyectos/${id}/requerimientos/observaciones/crear`)}
+            className="mt-3 text-sm text-green-600 hover:text-green-800 font-medium"
+          >
+            Crear la primera
+          </button>
         </div>
       ) : (
-        <div className="bg-white rounded-xl p-12 text-center border border-gray-200">
-          <p className="text-gray-500 text-lg">
-            No hay observaciones aún. Crea una para comenzar.
-          </p>
+        <div className="space-y-6">
+          {conProblema.length > 0 && (
+            <Grupo
+              titulo="Con problema detectado"
+              color="orange"
+              observaciones={conProblema}
+              proyectoId={id}
+              navegar={navegar}
+              onEliminar={setModalEliminar}
+            />
+          )}
+          {sinProblema.length > 0 && (
+            <Grupo
+              titulo="Sin problema detectado"
+              color="violet"
+              observaciones={sinProblema}
+              proyectoId={id}
+              navegar={navegar}
+              onEliminar={setModalEliminar}
+            />
+          )}
         </div>
       )}
- 
-      {/* Modal de confirmación */}
+
+      {/* Modal eliminar */}
       {modalEliminar && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full mx-4 space-y-4">
@@ -136,9 +150,7 @@ export default function Observaciones() {
             </div>
             <div className="text-center">
               <h2 className="text-lg font-bold text-gray-900">¿Eliminar observación?</h2>
-              <p className="text-sm text-gray-500 mt-2">
-                Esta acción no se puede deshacer.
-              </p>
+              <p className="text-sm text-gray-500 mt-2">Esta acción no se puede deshacer.</p>
             </div>
             <div className="flex gap-3 pt-2">
               <button
@@ -160,57 +172,70 @@ export default function Observaciones() {
     </div>
   );
 }
- 
-function TarjetaObservacion({ observacion, onEliminar, onVer }) {
-  const fecha = observacion.fecha_observacion
-    ? new Date(observacion.fecha_observacion).toLocaleDateString("es-MX", {
-        day: "2-digit", month: "short", year: "numeric",
-      })
-    : "Sin fecha";
- 
+
+/* ── Stat Card ──────────────────────────────────────── */
+function StatCard({ titulo, valor, color }) {
+  const colors = {
+    violet: { bg: "bg-violet-50",  icon: "bg-violet-100", num: "text-violet-700" },
+    orange: { bg: "bg-orange-50",  icon: "bg-orange-100", num: "text-orange-700" },
+    blue:   { bg: "bg-blue-50",    icon: "bg-blue-100",   num: "text-blue-700"   },
+  };
+  const c = colors[color];
   return (
-    <div className="rounded-xl border border-purple-200 bg-purple-50 p-6 space-y-3 hover:shadow-lg transition flex flex-col">
-      {/* Título y botón eliminar */}
-      <div className="flex justify-between items-start gap-2">
-        <h3 className="text-lg font-bold text-gray-900 flex-1 line-clamp-2">
-          {observacion.lugar}
-        </h3>
-        <button
-          onClick={() => onEliminar(observacion.id_observacion)}
-          className="p-2 text-red-500 hover:text-red-700 hover:bg-white rounded-lg transition text-sm font-medium flex-shrink-0"
-        >
+    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{titulo}</p>
+      <p className={`text-3xl font-bold ${c.num}`}>{valor}</p>
+    </div>
+  );
+}
+
+/* ── Grupo ──────────────────────────────────────────── */
+function Grupo({ titulo, color, observaciones, proyectoId, navegar, onEliminar }) {
+  const dots = { orange: "bg-orange-400", violet: "bg-violet-400" };
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 px-1">
+        <span className={`w-2 h-2 rounded-full ${dots[color]}`} />
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">{titulo}</span>
+        <span className="text-xs text-gray-400">({observaciones.length})</span>
+      </div>
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm divide-y divide-gray-100">
+        {observaciones.map((obs) => (
+          <TarjetaObservacion
+            key={obs.id_observacion}
+            obs={obs}
+            color={color}
+            onVer={() => navegar(`/app/proyectos/${proyectoId}/requerimientos/observaciones/${obs.id_observacion}`)}
+            onEliminar={() => onEliminar(obs.id_observacion)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Tarjeta Observacion ────────────────────────────── */
+function TarjetaObservacion({ obs, color, onVer, onEliminar }) {
+  const accents = { orange: "border-l-orange-400", violet: "border-l-violet-400" };
+  const fecha = obs.fecha_observacion
+    ? new Date(obs.fecha_observacion).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" })
+    : null;
+
+  return (
+    <div className={`flex items-center justify-between gap-4 px-5 py-4 border-l-4 ${accents[color]}`}>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-gray-900 truncate">{obs.lugar}</p>
+        <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{obs.descripcion}</p>
+        {fecha && <p className="text-[11px] text-gray-400 mt-1">{fecha}{obs.duracion_minutos ? ` · ${obs.duracion_minutos} min` : ""}</p>}
+      </div>
+      <div className="flex items-center gap-4 flex-shrink-0">
+        <button onClick={onVer} className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors">
+          Ver detalle
+        </button>
+        <button onClick={onEliminar} className="text-xs font-medium text-gray-400 hover:text-red-500 transition-colors">
           Eliminar
         </button>
       </div>
- 
-      {/* Descripción */}
-      <p className="text-gray-700 text-sm line-clamp-3 flex-1">
-        {observacion.descripcion}
-      </p>
- 
-      {/* Problema detectado */}
-      {observacion.problema_detectado && (
-        <div className="bg-orange-100 border border-orange-200 rounded-lg px-3 py-2">
-          <p className="text-xs font-medium text-orange-700 mb-0.5">Problema detectado</p>
-          <p className="text-xs text-orange-600 line-clamp-2">{observacion.problema_detectado}</p>
-        </div>
-      )}
- 
-      {/* Footer */}
-      <div className="flex items-center justify-between text-xs text-gray-500 pt-1">
-        <span>{fecha}</span>
-        {observacion.duracion_minutos && (
-          <span>{observacion.duracion_minutos} min</span>
-        )}
-      </div>
- 
-      {/* Botón ver detalle */}
-      <button
-        onClick={onVer}
-        className="w-full border border-purple-300 text-purple-700 hover:bg-purple-100 px-4 py-2 rounded-lg text-sm font-medium transition"
-      >
-        Ver detalle
-      </button>
     </div>
   );
 }

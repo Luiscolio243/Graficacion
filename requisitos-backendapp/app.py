@@ -23,6 +23,26 @@ from Routers.stakeholders import stakeholders_bp
 from Routers.procesos import procesos_bp
 from Routers.Equipo_ti_router import equipo_ti_bp
 from Routers.roles import roles_bp
+from Routers.auth import auth_bp
+from Routers.entrevistas import entrevistas_bp
+from Routers.entrevistaPreguntas import entrevista_preguntas_bp
+from Routers.FocusGroup import focus_groups_bp
+from Routers.Encuestas import encuestas_bp
+from Routers.encuestaPreguntas import encuesta_preguntas_bp
+from Routers.responderEncuesta import responder_encuesta_bp
+from Routers.Observaciones import observaciones_bp
+from Routers.historiasUsuario import historias_bp
+from Routers.Seguimiento import seguimiento_bp
+from Routers.SubprocesoTecnica import subproceso_tecnica_bp
+from Routers.documentos import documentos_router
+from Routers.Diagramas import diagramas_bp
+from Routers.ClasesUML import clases_uml_bp
+from Routers.CasosUML import casos_uml_bp
+from Routers.PaquetesUML import paquetes_uml_bp
+from Routers.Secuencia import secuencia_uml_bp
+from Routers.Specs import specs_bp
+from Routers.SpecsArchivos import specs_archivos_bp
+from Routers.SpecsTecnicas import specs_tecnicas_bp
 from config import Config
 try:
     Config.validate()
@@ -49,6 +69,26 @@ app.register_blueprint(stakeholders_bp)
 app.register_blueprint(procesos_bp)
 app.register_blueprint(equipo_ti_bp)
 app.register_blueprint(roles_bp)
+app.register_blueprint(auth_bp)
+app.register_blueprint(entrevistas_bp)
+app.register_blueprint(entrevista_preguntas_bp)
+app.register_blueprint(focus_groups_bp)
+app.register_blueprint(encuestas_bp)
+app.register_blueprint(encuesta_preguntas_bp)
+app.register_blueprint(responder_encuesta_bp)
+app.register_blueprint(observaciones_bp)
+app.register_blueprint(historias_bp)
+app.register_blueprint(seguimiento_bp)
+app.register_blueprint(subproceso_tecnica_bp)
+app.register_blueprint(documentos_router)
+app.register_blueprint(diagramas_bp)
+app.register_blueprint(clases_uml_bp)
+app.register_blueprint(casos_uml_bp)
+app.register_blueprint(paquetes_uml_bp)
+app.register_blueprint(secuencia_uml_bp)
+app.register_blueprint(specs_bp)
+app.register_blueprint(specs_archivos_bp)
+app.register_blueprint(specs_tecnicas_bp)
 
 
 class LoginRequest(BaseModel):

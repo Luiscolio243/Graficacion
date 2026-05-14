@@ -3,108 +3,78 @@ import { useParams, useNavigate } from "react-router-dom";
 
 const BASE_URL = "http://127.0.0.1:5000";
 
-const PASOS = {
-  IDLE: "idle",
-  SUBIENDO: "subiendo",
-  SUBIDO: "subido",
-  PROCESANDO: "procesando",
-  LISTO: "listo",
-  ERROR: "error",
-};
+const inputCls = "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white";
+const labelCls = "block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5";
+
+const PASOS = { IDLE: "idle", SUBIENDO: "subiendo", PROCESANDO: "procesando", LISTO: "listo", ERROR: "error" };
 
 export default function CrearFocusGroup() {
   const { id } = useParams();
   const navegar = useNavigate();
 
-  const [procesos, setProcesos] = useState([]);
-  const [subprocesosFiltrados, setSubprocesosFiltrados] = useState([]);
-  const [equipoTI, setEquipoTI] = useState([]);
-  const [stakeholders, setStakeholders] = useState([]);
-  const [guardando, setGuardando] = useState(false);
-
-  // Audio
-  const [archivo, setArchivo] = useState(null);
-  const [paso, setPaso] = useState(PASOS.IDLE);
-  const [rutaAudio, setRutaAudio] = useState(null);
+  const [procesos,    setProcesos]    = useState([]);
+  const [equipoTI,    setEquipoTI]    = useState([]);
+  const [stakeholders,setStakeholders]= useState([]);
+  const [guardando,   setGuardando]   = useState(false);
+  const [archivo,     setArchivo]     = useState(null);
+  const [paso,        setPaso]        = useState(PASOS.IDLE);
   const [resultadoIA, setResultadoIA] = useState(null);
-  const [mensajeError, setMensajeError] = useState("");
 
-  const [formulario, setFormulario] = useState({
-    titulo: "",
-    id_moderador: "",
-    tipo_media: "",
-    objetivo: "",
+  const [form, setForm] = useState({
+    titulo:        "",
+    id_moderador:  "",
+    tipo_media:    "",
+    objetivo:      "",
     transcripcion: "",
-    id_proceso: "",
+    id_proceso:    "",
     id_subproceso: "",
-    participantes: [],   // array de id_stakeholder
-    conclusiones: [""],
+    participantes: [],
+    conclusiones:  [""],
   });
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const headers = { Authorization: `Bearer ${token}` };
-
-    fetch(`${BASE_URL}/procesos/${id}`, { headers })
-      .then(r => r.ok ? r.json() : []).then(setProcesos).catch(() => {});
-
-    fetch(`${BASE_URL}/ti/${id}`, { headers })
-      .then(r => r.ok ? r.json() : []).then(setEquipoTI).catch(() => {});
-
-    fetch(`${BASE_URL}/stakeholders/${id}`, { headers })
-      .then(r => r.ok ? r.json() : []).then(setStakeholders).catch(() => {});
+    const h = { Authorization: `Bearer ${token}` };
+    fetch(`${BASE_URL}/procesos/${id}`, { headers: h }).then((r) => r.ok ? r.json() : []).then(setProcesos).catch(() => {});
+    fetch(`${BASE_URL}/ti/${id}`, { headers: h }).then((r) => r.ok ? r.json() : []).then(setEquipoTI).catch(() => {});
+    fetch(`${BASE_URL}/stakeholders/${id}`, { headers: h }).then((r) => r.ok ? r.json() : []).then(setStakeholders).catch(() => {});
   }, [id]);
 
-  const handleCambiarProceso = (e) => {
-    const idProceso = e.target.value;
-    const proceso = procesos.find(p => String(p.id_proceso) === String(idProceso));
-    setSubprocesosFiltrados(proceso?.subprocesos || []);
-    setFormulario({ ...formulario, id_proceso: idProceso, id_subproceso: "" });
+  const subprocesosFiltrados =
+    procesos.find((p) => String(p.id_proceso) === String(form.id_proceso))?.subprocesos || [];
+
+  const set = (campo, valor) => setForm((prev) => ({ ...prev, [campo]: valor }));
+
+  const handleCambiarProceso = (e) =>
+    setForm((prev) => ({ ...prev, id_proceso: e.target.value, id_subproceso: "" }));
+
+  const toggleParticipante = (id_sh) =>
+    set("participantes", form.participantes.includes(id_sh)
+      ? form.participantes.filter((p) => p !== id_sh)
+      : [...form.participantes, id_sh]);
+
+  const agregarConclusion  = () => set("conclusiones", [...form.conclusiones, ""]);
+  const actualizarConclusion = (idx, val) =>
+    set("conclusiones", form.conclusiones.map((c, i) => i === idx ? val : c));
+  const eliminarConclusion = (idx) => {
+    if (form.conclusiones.length > 1)
+      set("conclusiones", form.conclusiones.filter((_, i) => i !== idx));
   };
 
-  const toggleParticipante = (id_stakeholder) => {
-    const ya = formulario.participantes.includes(id_stakeholder);
-    setFormulario({
-      ...formulario,
-      participantes: ya
-        ? formulario.participantes.filter(p => p !== id_stakeholder)
-        : [...formulario.participantes, id_stakeholder],
-    });
-  };
-
-  const agregarConclusion = () =>
-    setFormulario({ ...formulario, conclusiones: [...formulario.conclusiones, ""] });
-
-  const actualizarConclusion = (index, valor) => {
-    const nuevas = [...formulario.conclusiones];
-    nuevas[index] = valor;
-    setFormulario({ ...formulario, conclusiones: nuevas });
-  };
-
-  const eliminarConclusion = (index) => {
-    if (formulario.conclusiones.length > 1)
-      setFormulario({ ...formulario, conclusiones: formulario.conclusiones.filter((_, i) => i !== index) });
-  };
-
-  // ── Audio ──
-  const subirAudio = async (focusGroupId) => {
+  const subirAudio = async (fgId) => {
     if (!archivo) return null;
     setPaso(PASOS.SUBIENDO);
-    const formData = new FormData();
-    formData.append("audio", archivo);
-    const res = await fetch(`${BASE_URL}/focus-groups/subir-audio/${focusGroupId}`, {
-      method: "POST", body: formData,
-    });
+    const fd = new FormData();
+    fd.append("audio", archivo);
+    const res = await fetch(`${BASE_URL}/focus-groups/subir-audio/${fgId}`, { method: "POST", body: fd });
     if (!res.ok) throw new Error("Error al subir el audio");
     const data = await res.json();
-    setRutaAudio(data.ruta_audio);
-    setPaso(PASOS.SUBIDO);
     return data.ruta_audio;
   };
 
-  const procesarConIA = async (focusGroupId, ruta) => {
+  const procesarConIA = async (fgId, ruta) => {
     setPaso(PASOS.PROCESANDO);
-    const res = await fetch(`${BASE_URL}/focus-groups/procesar-audio/${focusGroupId}`, {
+    const res = await fetch(`${BASE_URL}/focus-groups/procesar-audio/${fgId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ruta_audio: ruta }),
@@ -113,55 +83,44 @@ export default function CrearFocusGroup() {
     const data = await res.json();
     setResultadoIA(data);
     setPaso(PASOS.LISTO);
-    // Actualizar formulario con datos de IA
-    setFormulario(prev => ({
+    setForm((prev) => ({
       ...prev,
       transcripcion: data.transcripcion || prev.transcripcion,
-      conclusiones: data.conclusiones?.length > 0 ? data.conclusiones : prev.conclusiones,
+      conclusiones:  data.conclusiones?.length > 0 ? data.conclusiones : prev.conclusiones,
     }));
   };
 
   const handleGuardar = async () => {
-    if (!formulario.titulo.trim() || !formulario.id_moderador || !formulario.objetivo.trim()) {
-      alert("Completa los campos obligatorios: título, moderador y objetivo.");
-      return;
-    }
+    if (!form.titulo.trim() || !form.id_moderador || !form.objetivo.trim())
+      return alert("Completa los campos obligatorios: título, moderador y objetivo.");
+
     setGuardando(true);
     try {
       const token = localStorage.getItem("token");
-      const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
-
-      // 1. Crear el focus group
       const res = await fetch(`${BASE_URL}/focus-groups/crear`, {
         method: "POST",
-        headers,
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          id_proyecto: parseInt(id),
-          id_moderador: parseInt(formulario.id_moderador),
-          titulo: formulario.titulo,
-          objetivo: formulario.objetivo,
-          tipo_media: formulario.tipo_media || null,
-          transcripcion: formulario.transcripcion || null,
-          id_subproceso: formulario.id_subproceso ? parseInt(formulario.id_subproceso) : null,
-          conclusiones: formulario.conclusiones.filter(c => c.trim()),
-          participantes: formulario.participantes,
+          id_proyecto:   parseInt(id),
+          id_moderador:  parseInt(form.id_moderador),
+          titulo:        form.titulo,
+          objetivo:      form.objetivo,
+          tipo_media:    form.tipo_media || null,
+          transcripcion: form.transcripcion || null,
+          id_subproceso: form.id_subproceso ? parseInt(form.id_subproceso) : null,
+          conclusiones:  form.conclusiones.filter((c) => c.trim()),
+          participantes: form.participantes,
         }),
       });
-
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.error || "Error al crear focus group");
       }
-
       const { focus_group } = await res.json();
-      const fgId = focus_group.id_focus_group;
-
-      // 2. Subir y procesar audio si hay archivo
       if (archivo) {
-        const ruta = await subirAudio(fgId);
-        if (ruta) await procesarConIA(fgId, ruta);
+        const ruta = await subirAudio(focus_group.id_focus_group);
+        if (ruta) await procesarConIA(focus_group.id_focus_group, ruta);
       }
-
       navegar(`/app/proyectos/${id}/requerimientos/focus-groups`);
     } catch (e) {
       alert(e.message);
@@ -170,170 +129,141 @@ export default function CrearFocusGroup() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => navegar(`/app/proyectos/${id}/requerimientos/focus-groups`)}
-          className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
-        >
-          ← Atrás
-        </button>
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Registrar Nuevo Focus Group</h1>
-          <p className="text-gray-600 mt-1">Documenta los resultados de la sesión</p>
-        </div>
+    <div className="space-y-7 max-w-3xl mx-auto">
+
+      {/* Botón de regreso */}
+      <button
+        onClick={() => navegar(`/app/proyectos/${id}/requerimientos/focus-groups`)}
+        className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors duration-150"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        Volver a Focus Groups
+      </button>
+
+      {/* Encabezado */}
+      <div className="pb-5 border-b border-gray-200">
+        <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Nuevo Focus Group</h1>
+        <p className="text-sm text-gray-500 mt-0.5">Documenta los resultados de la sesión grupal</p>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-8 space-y-6">
+      {/* Formulario */}
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm divide-y divide-gray-100">
 
-        {/* Título */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Título del Focus Group <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={formulario.titulo}
-            onChange={e => setFormulario({ ...formulario, titulo: e.target.value })}
-            placeholder="Ej: Focus group sobre usabilidad"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-          />
-        </div>
+        {/* Información general */}
+        <div className="px-6 py-5 space-y-4">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Información general</p>
 
-        {/* Moderador y Tipo de Media */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Moderador <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={formulario.id_moderador}
-              onChange={e => setFormulario({ ...formulario, id_moderador: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
-            >
-              <option value="">Selecciona un moderador</option>
-              {equipoTI.map(e => (
-                <option key={e.usuario.id_usuario} value={e.usuario.id_usuario}>
-                  {e.usuario.nombre} {e.usuario.apellido}
-                </option>
-              ))}
-            </select>
+            <label className={labelCls}>Título <span className="text-red-500">*</span></label>
+            <input
+              type="text"
+              value={form.titulo}
+              onChange={(e) => set("titulo", e.target.value)}
+              placeholder="Ej: Sesión de descubrimiento de necesidades"
+              className={inputCls}
+            />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Media</label>
-            <select
-              value={formulario.tipo_media}
-              onChange={e => setFormulario({ ...formulario, tipo_media: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
-            >
-              <option value="">Selecciona un tipo</option>
-              <option value="presencial">Presencial</option>
-              <option value="virtual">Virtual</option>
-              <option value="hibrido">Híbrido</option>
-            </select>
-          </div>
-        </div>
 
-        {/* Objetivo */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Objetivo <span className="text-red-500">*</span>
-          </label>
-          <textarea
-            value={formulario.objetivo}
-            onChange={e => setFormulario({ ...formulario, objetivo: e.target.value })}
-            placeholder="Objetivo del focus group"
-            rows={3}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-          />
-        </div>
-
-        {/* Proceso / Subproceso */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Proceso</label>
-            <select
-              value={formulario.id_proceso}
-              onChange={handleCambiarProceso}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
-            >
-              <option value="">Selecciona un proceso</option>
-              {procesos.map(p => (
-                <option key={p.id_proceso} value={p.id_proceso}>{p.nombre}</option>
-              ))}
-            </select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Moderador <span className="text-red-500">*</span></label>
+              <select value={form.id_moderador} onChange={(e) => set("id_moderador", e.target.value)} className={inputCls}>
+                <option value="">Selecciona un moderador</option>
+                {equipoTI.map((e) => (
+                  <option key={e.usuario.id_usuario} value={e.usuario.id_usuario}>
+                    {e.usuario.nombre} {e.usuario.apellido}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Tipo de sesión</label>
+              <select value={form.tipo_media} onChange={(e) => set("tipo_media", e.target.value)} className={inputCls}>
+                <option value="">Sin especificar</option>
+                <option value="presencial">Presencial</option>
+                <option value="virtual">Virtual</option>
+                <option value="hibrido">Híbrido</option>
+              </select>
+            </div>
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Subproceso</label>
-            <select
-              value={formulario.id_subproceso}
-              onChange={e => setFormulario({ ...formulario, id_subproceso: e.target.value })}
-              disabled={!formulario.id_proceso}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white disabled:bg-gray-50 disabled:text-gray-400"
-            >
-              <option value="">
-                {formulario.id_proceso ? "Selecciona un subproceso" : "Primero elige un proceso"}
-              </option>
-              {subprocesosFiltrados.map(sp => (
-                <option key={sp.id_subproceso} value={sp.id_subproceso}>{sp.nombre}</option>
-              ))}
-            </select>
+            <label className={labelCls}>Objetivo <span className="text-red-500">*</span></label>
+            <textarea
+              value={form.objetivo}
+              onChange={(e) => set("objetivo", e.target.value)}
+              placeholder="¿Qué se busca obtener de esta sesión?"
+              rows={3}
+              className={inputCls}
+            />
           </div>
         </div>
 
         {/* Participantes */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Participantes <span className="text-red-500">*</span>
-            <span className="ml-2 text-gray-400 font-normal">({formulario.participantes.length} seleccionados)</span>
-          </label>
+        <div className="px-6 py-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Participantes</p>
+            {form.participantes.length > 0 && (
+              <span className="text-xs text-gray-500">{form.participantes.length} seleccionados</span>
+            )}
+          </div>
           {stakeholders.length === 0 ? (
-            <p className="text-sm text-amber-600">No hay stakeholders en este proyecto.</p>
+            <p className="text-sm text-amber-600 italic">No hay stakeholders registrados en este proyecto.</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {stakeholders.map(s => (
-                <label
-                  key={s.id_stakeholder}
-                  className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition ${
-                    formulario.participantes.includes(s.id_stakeholder)
-                      ? "border-orange-400 bg-orange-50"
-                      : "border-gray-200 hover:bg-gray-50"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={formulario.participantes.includes(s.id_stakeholder)}
-                    onChange={() => toggleParticipante(s.id_stakeholder)}
-                    className="accent-orange-500"
-                  />
-                  <span className="text-sm text-gray-700">{s.nombre}</span>
-                </label>
-              ))}
+              {stakeholders.map((s) => {
+                const activo = form.participantes.includes(s.id_stakeholder);
+                return (
+                  <label
+                    key={s.id_stakeholder}
+                    className={`flex items-center gap-3 px-3 py-2.5 border rounded-lg cursor-pointer transition-colors ${
+                      activo ? "border-green-400 bg-green-50" : "border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={activo}
+                      onChange={() => toggleParticipante(s.id_stakeholder)}
+                      className="accent-green-600 w-4 h-4"
+                    />
+                    <span className="text-sm text-gray-700">{s.nombre}</span>
+                  </label>
+                );
+              })}
             </div>
           )}
         </div>
 
         {/* Conclusiones */}
-        <div>
-          <div className="flex justify-between items-center mb-3">
-            <label className="block text-sm font-medium text-gray-700">Conclusiones</label>
-            <button onClick={agregarConclusion} className="text-orange-600 hover:text-orange-700 font-medium text-sm">
-              + Añadir Conclusión
+        <div className="px-6 py-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Conclusiones</p>
+            <button type="button" onClick={agregarConclusion}
+              className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors">
+              + Añadir
             </button>
           </div>
           <div className="space-y-2">
-            {formulario.conclusiones.map((conclusion, index) => (
-              <div key={index} className="flex gap-2">
+            {form.conclusiones.map((c, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <svg className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" viewBox="0 0 16 16" fill="none">
+                  <path d="M3 8l4 4 6-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
                 <input
                   type="text"
-                  value={conclusion}
-                  onChange={e => actualizarConclusion(index, e.target.value)}
-                  placeholder={`Conclusión ${index + 1}`}
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  value={c}
+                  onChange={(e) => actualizarConclusion(idx, e.target.value)}
+                  placeholder={`Conclusión ${idx + 1}`}
+                  className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
-                {formulario.conclusiones.length > 1 && (
-                  <button onClick={() => eliminarConclusion(index)} className="px-3 py-2 text-red-500 hover:text-red-700 font-medium text-sm">
-                    Eliminar
+                {form.conclusiones.length > 1 && (
+                  <button type="button" onClick={() => eliminarConclusion(idx)}
+                    className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
                   </button>
                 )}
               </div>
@@ -342,69 +272,96 @@ export default function CrearFocusGroup() {
         </div>
 
         {/* Transcripción */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="px-6 py-5 space-y-3">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
             Transcripción / Notas
-            {resultadoIA && <span className="ml-2 text-xs text-purple-600 font-normal">Completada por IA</span>}
-          </label>
+            {resultadoIA && <span className="ml-2 text-emerald-600 normal-case font-normal">completada por IA</span>}
+          </p>
           <textarea
-            value={formulario.transcripcion}
-            onChange={e => setFormulario({ ...formulario, transcripcion: e.target.value })}
-            placeholder="Transcripción de la sesión o notas principales"
+            value={form.transcripcion}
+            onChange={(e) => set("transcripcion", e.target.value)}
+            placeholder="Transcripción de la sesión o notas principales..."
             rows={4}
-            className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 ${
-              resultadoIA ? "border-purple-300 bg-purple-50" : "border-gray-300"
-            }`}
+            className={inputCls + (resultadoIA ? " border-emerald-300 bg-emerald-50" : "")}
           />
         </div>
 
-        {/* Audio */}
-        <div className="border-2 border-dashed border-orange-200 rounded-xl p-6 space-y-4 bg-orange-50">
-          <p className="text-sm font-medium text-orange-800">
-            Procesar con IA (opcional)
-          </p>
-          <p className="text-xs text-orange-600">
+        {/* Proceso */}
+        <div className="px-6 py-5 space-y-4">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Proceso relacionado</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Proceso</label>
+              <select value={form.id_proceso} onChange={handleCambiarProceso} className={inputCls}>
+                <option value="">Sin proceso</option>
+                {procesos.map((p) => (
+                  <option key={p.id_proceso} value={p.id_proceso}>{p.nombre}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Subproceso</label>
+              <select
+                value={form.id_subproceso}
+                onChange={(e) => set("id_subproceso", e.target.value)}
+                disabled={!form.id_proceso}
+                className={inputCls + " disabled:opacity-50"}
+              >
+                <option value="">{form.id_proceso ? "Sin subproceso" : "Elige un proceso primero"}</option>
+                {subprocesosFiltrados.map((sp) => (
+                  <option key={sp.id_subproceso} value={sp.id_subproceso}>{sp.nombre}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* IA — procesar audio */}
+        <div className="px-6 py-5 space-y-3">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Procesar con IA</p>
+          <p className="text-xs text-gray-500">
             Sube la grabación de la sesión y Gemini completará automáticamente la transcripción y conclusiones.
           </p>
 
           {[PASOS.IDLE, PASOS.ERROR].includes(paso) && (
             <div className="flex items-center gap-3">
-              <label className="cursor-pointer bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition">
+              <label className="cursor-pointer inline-flex items-center gap-2 border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium transition">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 2v8M5 5l3-3 3 3M3 12h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
                 Seleccionar audio
-                <input type="file" accept="audio/*" onChange={e => setArchivo(e.target.files[0])} className="hidden" />
+                <input type="file" accept="audio/*" onChange={(e) => setArchivo(e.target.files[0])} className="hidden" />
               </label>
-              {archivo && <span className="text-sm text-gray-700">{archivo.name}</span>}
+              {archivo && <span className="text-xs text-gray-500 truncate max-w-[180px]">{archivo.name}</span>}
             </div>
           )}
 
-          {paso === PASOS.SUBIENDO && <p className="text-sm text-orange-700 animate-pulse">Subiendo audio...</p>}
-          {paso === PASOS.SUBIDO && <p className="text-sm text-orange-700">Audio listo. Se procesará al guardar.</p>}
-          {paso === PASOS.PROCESANDO && <p className="text-sm text-purple-700 animate-pulse">Gemini analizando la sesión...</p>}
+          {paso === PASOS.SUBIENDO   && <p className="text-sm text-gray-500 animate-pulse">Subiendo audio...</p>}
+          {paso === PASOS.PROCESANDO && <p className="text-sm text-emerald-600 animate-pulse">Gemini analizando la sesión...</p>}
           {paso === PASOS.LISTO && (
-            <div className="bg-white border border-purple-200 rounded-lg p-3">
-              <p className="text-sm font-medium text-purple-800 mb-1">Procesamiento completado</p>
-              <p className="text-xs text-purple-600">{resultadoIA?.temas_detectados?.length ?? 0} temas detectados</p>
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3">
+              <p className="text-sm font-medium text-emerald-800">Procesamiento completado</p>
+              <p className="text-xs text-emerald-600 mt-0.5">{resultadoIA?.temas_detectados?.length ?? 0} temas detectados por IA</p>
             </div>
           )}
-          {mensajeError && <p className="text-sm text-red-600">{mensajeError}</p>}
         </div>
+      </div>
 
-        {/* Botones */}
-        <div className="flex gap-3 pt-4">
-          <button
-            onClick={handleGuardar}
-            disabled={guardando}
-            className="flex-1 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white px-4 py-3 rounded-lg font-medium transition"
-          >
-            {guardando ? "Guardando..." : "Guardar Focus Group"}
-          </button>
-          <button
-            onClick={() => navegar(`/app/proyectos/${id}/requerimientos/focus-groups`)}
-            className="flex-1 border border-gray-300 text-gray-700 px-4 py-3 rounded-lg font-medium hover:bg-gray-50 transition"
-          >
-            Cancelar
-          </button>
-        </div>
+      {/* Botones */}
+      <div className="flex gap-3 pb-4">
+        <button
+          onClick={() => navegar(`/app/proyectos/${id}/requerimientos/focus-groups`)}
+          className="flex-1 border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={handleGuardar}
+          disabled={guardando}
+          className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition"
+        >
+          {guardando ? "Guardando..." : "Guardar Focus Group"}
+        </button>
       </div>
     </div>
   );
