@@ -1,367 +1,346 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
+const BASE_URL = "http://127.0.0.1:5000";
+
+const TIPOS = [
+  { value: "abierta",        label: "Abierta"         },
+  { value: "opcionMultiple", label: "Opción múltiple"  },
+  { value: "escala",         label: "Escala 1-5"       },
+  { value: "siNo",           label: "Sí / No"          },
+];
+
+const inputCls = "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white";
+const labelCls = "block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5";
+
 export default function CrearCuestionario() {
-  const { id } = useParams();
-  const navegar = useNavigate();
+  const { id }    = useParams();
+  const navegar   = useNavigate();
+  const [guardando, setGuardando] = useState(false);
+  const [procesos,  setProcesos]  = useState([]);
 
-  const [procesos, setProcesos] = useState([]);
-  const [subprocesosFiltrados, setSubprocesosFiltrados] = useState([]);
-
-  const [nuevoFormulario, setNuevoFormulario] = useState({
-    titulo: "",
-    descripcion: "",
-    participantesEsperados: "",
-    id_proceso: "",
-    id_subproceso: "",
-    preguntas: [
-      {
-        texto: "",
-        tipo: "abierta",
-        opciones: [],
-      },
-    ],
+  const [form, setForm] = useState({
+    titulo:                "",
+    descripcion:           "",
+    participantesEsperados:"",
+    id_proceso:            "",
+    id_subproceso:         "",
+    preguntas: [{ texto: "", tipo: "abierta", opciones: [] }],
   });
 
   useEffect(() => {
-    fetch(`http://127.0.0.1:5000/procesos/${id}`)
-      .then(r => r.ok ? r.json() : [])
-      .then(data => setProcesos(data))
+    fetch(`${BASE_URL}/procesos/${id}`)
+      .then((r) => r.ok ? r.json() : [])
+      .then(setProcesos)
       .catch(() => {});
   }, [id]);
 
+  const subprocesosFiltrados =
+    procesos.find((p) => String(p.id_proceso) === String(form.id_proceso))?.subprocesos || [];
+
+  const set = (field, value) => setForm((f) => ({ ...f, [field]: value }));
+
   const handleCambiarProceso = (e) => {
-    const idProceso = e.target.value;
-    const proceso = procesos.find(p => String(p.id_proceso) === String(idProceso));
-    setSubprocesosFiltrados(proceso?.subprocesos || []);
-    setNuevoFormulario({
-      ...nuevoFormulario,
-      id_proceso: idProceso,
-      id_subproceso: "",  // limpiar subproceso al cambiar proceso
-    });
+    setForm((f) => ({ ...f, id_proceso: e.target.value, id_subproceso: "" }));
   };
 
-  const handleAgregarCuestionario = async () => {
-    if (
-      nuevoFormulario.titulo.trim() &&
-      nuevoFormulario.preguntas.some((p) => p.texto.trim())
-    ) {
-      console.log("Crear cuestionario:", nuevoFormulario);
-      //NUevo
+  const agregarPregunta = () =>
+    set("preguntas", [...form.preguntas, { texto: "", tipo: "abierta", opciones: [] }]);
 
-      try{
-        const response = await fetch(`http://localhost:5000/encuestas/crear`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id_proyecto: Number(id),
-            titulo: nuevoFormulario.titulo,
-            descripcion: nuevoFormulario.descripcion,
-            num_participantes: Number(nuevoFormulario.participantesEsperados) || 0,
-            id_subproceso: nuevoFormulario.id_subproceso || null, // necesitas un selector real
-            preguntas: nuevoFormulario.preguntas.map((p, i) => ({
+  const actualizarPregunta = (idx, campo, valor) =>
+    set("preguntas", form.preguntas.map((p, i) => i === idx ? { ...p, [campo]: valor } : p));
+
+  const eliminarPregunta = (idx) => {
+    if (form.preguntas.length === 1) return;
+    set("preguntas", form.preguntas.filter((_, i) => i !== idx));
+  };
+
+  const agregarOpcion = (idx) =>
+    set("preguntas", form.preguntas.map((p, i) =>
+      i === idx ? { ...p, opciones: [...(p.opciones || []), ""] } : p
+    ));
+
+  const actualizarOpcion = (idxP, idxO, valor) =>
+    set("preguntas", form.preguntas.map((p, i) => {
+      if (i !== idxP) return p;
+      const ops = [...p.opciones];
+      ops[idxO] = valor;
+      return { ...p, opciones: ops };
+    }));
+
+  const eliminarOpcion = (idxP, idxO) =>
+    set("preguntas", form.preguntas.map((p, i) =>
+      i === idxP ? { ...p, opciones: p.opciones.filter((_, j) => j !== idxO) } : p
+    ));
+
+  const handleGuardar = async () => {
+    if (!form.titulo.trim())                          return alert("El título es obligatorio.");
+    if (!form.preguntas.some((p) => p.texto.trim())) return alert("Agrega al menos una pregunta.");
+
+    setGuardando(true);
+    try {
+      const res = await fetch(`${BASE_URL}/encuestas/crear`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_proyecto:      Number(id),
+          titulo:           form.titulo,
+          descripcion:      form.descripcion,
+          num_participantes:Number(form.participantesEsperados) || 0,
+          id_subproceso:    form.id_subproceso || null,
+          preguntas: form.preguntas
+            .filter((p) => p.texto.trim())
+            .map((p, i) => ({
               pregunta: p.texto,
-              tipo: p.tipo === "opcionMultiple" ? "opcion_multiple" : p.tipo,
+              tipo:     p.tipo === "opcionMultiple" ? "opcion_multiple"
+                      : p.tipo === "siNo"           ? "si_no"
+                      : p.tipo,
               orden: i + 1,
-              ...(p.tipo === "opcionMultiple" && { opciones: p.opciones || [] }),
-          })),
+              ...(p.tipo === "opcionMultiple" && {
+                opciones: (p.opciones || []).filter((o) => o.trim()),
+              }),
+            })),
         }),
       });
-
-        if (response.ok) {
-          console.log("Cuestionario creado exitosamente");
-        } else {
-          console.error("Error al crear el cuestionario");
-        }
-      } catch(error){
-        console.error("Error al crear el cuestionario:", error);
+      if (!res.ok) {
+        const err = await res.json();
+        return alert(err.message || "Error al crear el cuestionario.");
       }
-
-      //nuevo
-
       navegar(`/app/proyectos/${id}/requerimientos/cuestionarios`);
+    } catch {
+      alert("Error de conexión con el servidor.");
+    } finally {
+      setGuardando(false);
     }
-    else{
-      alert("Por favor, completa el título y al menos una pregunta para crear el cuestionario.");
-    }
-  };
-
-  const agregarPregunta = () => {
-    setNuevoFormulario({
-      ...nuevoFormulario,
-      preguntas: [...nuevoFormulario.preguntas, { texto: "", tipo: "abierta", opciones: [] }],
-    });
-  };
-
-  const actualizarPregunta = (index, campo, valor) => {
-    const nuevasPreguntas = [...nuevoFormulario.preguntas];
-    nuevasPreguntas[index] = {
-      ...nuevasPreguntas[index],
-      [campo]: valor,
-    };
-    setNuevoFormulario({
-      ...nuevoFormulario,
-      preguntas: nuevasPreguntas,
-    });
-  };
-
-  const eliminarPregunta = (index) => {
-    if (nuevoFormulario.preguntas.length > 1) {
-      const nuevasPreguntas = nuevoFormulario.preguntas.filter(
-        (_, i) => i !== index
-      );
-      setNuevoFormulario({
-        ...nuevoFormulario,
-        preguntas: nuevasPreguntas,
-      });
-    }
-  };
-
-  const agregarOpcion = (indexPregunta) => {
-    const nuevasPreguntas = [...nuevoFormulario.preguntas];
-    if (!nuevasPreguntas[indexPregunta].opciones) {
-      nuevasPreguntas[indexPregunta].opciones = [];
-    }
-    nuevasPreguntas[indexPregunta].opciones.push("");
-    setNuevoFormulario({
-      ...nuevoFormulario,
-      preguntas: nuevasPreguntas,
-    });
-  };
-
-  const actualizarOpcion = (indexPregunta, indexOpcion, valor) => {
-    const nuevasPreguntas = [...nuevoFormulario.preguntas];
-    nuevasPreguntas[indexPregunta].opciones[indexOpcion] = valor;
-    setNuevoFormulario({
-      ...nuevoFormulario,
-      preguntas: nuevasPreguntas,
-    });
-  };
-
-  const eliminarOpcion = (indexPregunta, indexOpcion) => {
-    const nuevasPreguntas = [...nuevoFormulario.preguntas];
-    nuevasPreguntas[indexPregunta].opciones = nuevasPreguntas[
-      indexPregunta
-    ].opciones.filter((_, i) => i !== indexOpcion);
-    setNuevoFormulario({
-      ...nuevoFormulario,
-      preguntas: nuevasPreguntas,
-    });
   };
 
   return (
-    <div className="space-y-6">
-      {/* Encabezado con botón atrás */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => navegar(`/app/proyectos/${id}/requerimientos/cuestionarios`)}
-          className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
-        >
-          ← Atrás
-        </button>
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Crear Nuevo Cuestionario
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Diseña preguntas y gestiona las respuestas de los participantes
-          </p>
-        </div>
+    <div className="space-y-7 max-w-3xl mx-auto">
+
+      {/* Botón de regreso */}
+      <button
+        onClick={() => navegar(`/app/proyectos/${id}/requerimientos/cuestionarios`)}
+        className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        Volver a Cuestionarios
+      </button>
+
+      {/* Encabezado */}
+      <div className="pb-5 border-b border-gray-200">
+        <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Nuevo Cuestionario</h1>
+        <p className="text-sm text-gray-500 mt-0.5">
+          Diseña las preguntas y asígnalo a un proceso
+        </p>
       </div>
 
       {/* Formulario */}
-      <div className="bg-white rounded-xl border border-gray-200 p-8 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm divide-y divide-gray-100">
+
+        {/* Información general */}
+        <div className="px-6 py-5 space-y-4">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Información general</p>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Título de la Encuesta <span className="text-red-500">*</span>
-            </label>
+            <label className={labelCls}>Título <span className="text-red-500">*</span></label>
             <input
               type="text"
-              value={nuevoFormulario.titulo}
-              onChange={(e) =>
-                setNuevoFormulario({
-                  ...nuevoFormulario,
-                  titulo: e.target.value,
-                })
-              }
+              value={form.titulo}
+              onChange={(e) => set("titulo", e.target.value)}
               placeholder="Ej: Encuesta de satisfacción"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              className={inputCls}
             />
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>
+                Participantes esperados
+                <span className="ml-1 text-gray-400 normal-case font-normal">(opcional)</span>
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={form.participantesEsperados}
+                onChange={(e) => set("participantesEsperados", e.target.value)}
+                placeholder="0"
+                className={inputCls}
+              />
+            </div>
+          </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Número de Participantes Esperados
-            </label>
-            <input
-              type="number"
-              value={nuevoFormulario.participantesEsperados}
-              onChange={(e) =>
-                setNuevoFormulario({
-                  ...nuevoFormulario,
-                  participantesEsperados: e.target.value,
-                })
-              }
-              placeholder="0"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+            <label className={labelCls}>Descripción</label>
+            <textarea
+              value={form.descripcion}
+              onChange={(e) => set("descripcion", e.target.value)}
+              placeholder="Objetivo del cuestionario..."
+              rows={3}
+              className={inputCls}
             />
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Descripción <span className="text-red-500">*</span>
-          </label>
-          <textarea
-            value={nuevoFormulario.descripcion}
-            onChange={(e) =>
-              setNuevoFormulario({
-                ...nuevoFormulario,
-                descripcion: e.target.value,
-              })
-            }
-            placeholder="Objetivo de la encuesta"
-            rows="3"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Proceso
-            </label>
-            <select
-              value={nuevoFormulario.id_proceso}
-              onChange={handleCambiarProceso}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
-            >
-              <option value="">Selecciona un proceso</option>
-              {procesos.map((p) => (
-                <option key={p.id_proceso} value={p.id_proceso}>
-                  {p.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Subproceso
-            </label>
-            <select
-              value={nuevoFormulario.id_subproceso}
-              onChange={(e) =>
-                setNuevoFormulario({ ...nuevoFormulario, id_subproceso: e.target.value })
-              }
-              disabled={!nuevoFormulario.id_proceso}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white disabled:bg-gray-50 disabled:text-gray-400"
-            >
-              <option value="">
-                {nuevoFormulario.id_proceso ? "Selecciona un subproceso" : "Primero elige un proceso"}
-              </option>
-              {subprocesosFiltrados.map((sp) => (
-                <option key={sp.id_subproceso} value={sp.id_subproceso}>
-                  {sp.nombre}
-                </option>
-              ))}
-            </select>
+        {/* Proceso */}
+        <div className="px-6 py-5 space-y-4">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Proceso relacionado</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Proceso</label>
+              <select value={form.id_proceso} onChange={handleCambiarProceso} className={inputCls}>
+                <option value="">Sin proceso</option>
+                {procesos.map((p) => (
+                  <option key={p.id_proceso} value={p.id_proceso}>{p.nombre}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Subproceso</label>
+              <select
+                value={form.id_subproceso}
+                onChange={(e) => set("id_subproceso", e.target.value)}
+                disabled={!form.id_proceso}
+                className={inputCls + " disabled:opacity-50"}
+              >
+                <option value="">{form.id_proceso ? "Sin subproceso" : "Elige un proceso primero"}</option>
+                {subprocesosFiltrados.map((sp) => (
+                  <option key={sp.id_subproceso} value={sp.id_subproceso}>{sp.nombre}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
-        <div>
-          <div className="flex justify-between items-center mb-3">
-            <label className="block text-sm font-medium text-gray-700">
+        {/* Preguntas */}
+        <div className="px-6 py-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
               Preguntas <span className="text-red-500">*</span>
-            </label>
+            </p>
             <button
+              type="button"
               onClick={agregarPregunta}
-              className="text-green-600 hover:text-green-700 font-medium text-sm"
+              className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors"
             >
-              + Añadir Pregunta
+              + Añadir pregunta
             </button>
           </div>
-          <div className="space-y-4">
-            {nuevoFormulario.preguntas.map((pregunta, index) => (
-              <div key={index} className="border border-gray-300 rounded-lg p-4 space-y-3">
-                <div className="flex justify-between items-start gap-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Pregunta {index + 1}
-                  </label>
-                  {nuevoFormulario.preguntas.length > 1 && (
+
+          <div className="space-y-3">
+            {form.preguntas.map((pregunta, idx) => (
+              <div key={idx} className="border border-gray-200 rounded-xl p-4 space-y-3 bg-gray-50">
+                {/* Fila: número + eliminar */}
+                <div className="flex items-center justify-between">
+                  <span className="w-5 h-5 rounded-full bg-green-100 text-green-700 text-[11px] font-bold
+                                   flex items-center justify-center flex-shrink-0">
+                    {idx + 1}
+                  </span>
+                  {form.preguntas.length > 1 && (
                     <button
-                      onClick={() => eliminarPregunta(index)}
-                      className="text-red-500 hover:text-red-700 font-medium text-sm"
+                      type="button"
+                      onClick={() => eliminarPregunta(idx)}
+                      className="text-gray-300 hover:text-red-500 transition-colors"
                     >
-                      Eliminar
+                      <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                        <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                      </svg>
                     </button>
                   )}
                 </div>
+
+                {/* Texto */}
                 <input
                   type="text"
                   value={pregunta.texto}
-                  onChange={(e) =>
-                    actualizarPregunta(index, "texto", e.target.value)
-                  }
-                  placeholder="Escribe la pregunta"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  onChange={(e) => actualizarPregunta(idx, "texto", e.target.value)}
+                  placeholder={`Escribe la pregunta ${idx + 1}...`}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white
+                             focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-1 block">
-                    Tipo de Pregunta
-                  </label>
-                  <select
-                    value={pregunta.tipo}
-                    onChange={(e) =>
-                      actualizarPregunta(index, "tipo", e.target.value)
-                    }
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                  >
-                    <option value="abierta">Abierta</option>
-                    <option value="opcionMultiple">Opción Múltiple</option>
-                    <option value="escala">Escala</option>
-                    <option value="siNo">Sí / No</option>
-                  </select>
+
+                {/* Tipo — botones toggle */}
+                <div className="flex flex-wrap gap-1.5">
+                  {TIPOS.map((t) => (
+                    <button
+                      key={t.value}
+                      type="button"
+                      onClick={() => actualizarPregunta(idx, "tipo", t.value)}
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+                        pregunta.tipo === t.value
+                          ? "bg-green-600 text-white border-green-600"
+                          : "bg-white text-gray-600 border-gray-300 hover:border-green-400"
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
                 </div>
 
+                {/* Opciones (opción múltiple) */}
                 {pregunta.tipo === "opcionMultiple" && (
-                  <div className="border-t border-gray-200 pt-3">
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="text-sm font-medium text-gray-700">
-                        Opciones de Respuesta
-                      </label>
+                  <div className="border-t border-gray-200 pt-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Opciones</span>
                       <button
-                        onClick={() => agregarOpcion(index)}
-                        className="text-green-600 hover:text-green-700 font-medium text-sm"
+                        type="button"
+                        onClick={() => agregarOpcion(idx)}
+                        className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors"
                       >
-                        + Agregar Opción
+                        + Agregar opción
                       </button>
                     </div>
-                    <div className="space-y-2">
-                      {pregunta.opciones && pregunta.opciones.length > 0 ? (
-                        pregunta.opciones.map((opcion, indexOpcion) => (
-                          <div key={indexOpcion} className="flex gap-2">
-                            <input
-                              type="text"
-                              value={opcion}
-                              onChange={(e) =>
-                                actualizarOpcion(index, indexOpcion, e.target.value)
-                              }
-                              placeholder={`Opción ${indexOpcion + 1}`}
-                              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                            />
-                            <button
-                              onClick={() => eliminarOpcion(index, indexOpcion)}
-                              className="text-red-500 hover:text-red-700 font-medium text-sm px-2"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-sm text-gray-500">No hay opciones aún. Añade una para empezar.</p>
-                      )}
+                    {pregunta.opciones && pregunta.opciones.length > 0 ? (
+                      pregunta.opciones.map((op, idxO) => (
+                        <div key={idxO} className="flex items-center gap-2">
+                          <span className="text-xs text-gray-400 w-4 text-right">{idxO + 1}.</span>
+                          <input
+                            type="text"
+                            value={op}
+                            onChange={(e) => actualizarOpcion(idx, idxO, e.target.value)}
+                            placeholder={`Opción ${idxO + 1}`}
+                            className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white
+                                       focus:outline-none focus:ring-2 focus:ring-green-500"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => eliminarOpcion(idx, idxO)}
+                            className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                              <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                            </svg>
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-gray-400 italic">Sin opciones aún — agrega al menos una.</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Preview escala */}
+                {pregunta.tipo === "escala" && (
+                  <div className="border-t border-gray-200 pt-3">
+                    <p className="text-xs text-gray-400 mb-2">Vista previa:</p>
+                    <div className="flex gap-1.5">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <span key={n} className="w-8 h-8 rounded-lg border-2 border-gray-200 flex items-center justify-center text-xs font-medium text-gray-400">
+                          {n}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Preview sí/no */}
+                {pregunta.tipo === "siNo" && (
+                  <div className="border-t border-gray-200 pt-3">
+                    <p className="text-xs text-gray-400 mb-2">Vista previa:</p>
+                    <div className="flex gap-2">
+                      <span className="px-4 py-1 rounded-lg border-2 border-gray-200 text-xs font-medium text-gray-500">Sí</span>
+                      <span className="px-4 py-1 rounded-lg border-2 border-gray-200 text-xs font-medium text-gray-500">No</span>
                     </div>
                   </div>
                 )}
@@ -369,21 +348,25 @@ export default function CrearCuestionario() {
             ))}
           </div>
         </div>
+      </div>
 
-        <div className="flex gap-3 pt-4">
-          <button
-            onClick={handleAgregarCuestionario}
-            className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition"
-          >
-            Guardar Cuestionario
-          </button>
-          <button
-            onClick={() => navegar(`/app/proyectos/${id}/requerimientos/cuestionarios`)}
-            className="flex-1 border border-gray-300 text-gray-700 px-4 py-3 rounded-lg font-medium hover:bg-gray-50 transition"
-          >
-            Cancelar
-          </button>
-        </div>
+      {/* Botones */}
+      <div className="flex gap-3 pb-4">
+        <button
+          onClick={() => navegar(`/app/proyectos/${id}/requerimientos/cuestionarios`)}
+          className="flex-1 border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg
+                     text-sm font-medium hover:bg-gray-50 transition"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={handleGuardar}
+          disabled={guardando}
+          className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400
+                     text-white px-4 py-2.5 rounded-lg text-sm font-medium transition"
+        >
+          {guardando ? "Guardando..." : "Crear Cuestionario"}
+        </button>
       </div>
     </div>
   );
