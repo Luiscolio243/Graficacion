@@ -7,17 +7,14 @@ export default function ListaProcesos({
   onAsignarTecnicas,
   onEditarProceso,
   onEditarSubproceso,
+  onEliminarProceso,
+  onEliminarSubproceso,
 }) {
-
   if (procesos.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
-        <p className="text-gray-500 mb-4">
-          No hay procesos
-        </p>
-        <p className="text-sm text-gray-400">
-          Define los procesos principales para comenzar
-        </p>
+      <div className="bg-white border border-dashed border-gray-300 rounded-xl p-10 text-center">
+        <p className="text-sm text-gray-500 mb-1">No hay procesos registrados</p>
+        <p className="text-xs text-gray-400">Define los procesos principales para comenzar</p>
       </div>
     );
   }
@@ -33,6 +30,8 @@ export default function ListaProcesos({
           onAsignarTecnicas={onAsignarTecnicas}
           onEditarProceso={onEditarProceso}
           onEditarSubproceso={onEditarSubproceso}
+          onEliminarProceso={onEliminarProceso}
+          onEliminarSubproceso={onEliminarSubproceso}
         />
       ))}
     </div>

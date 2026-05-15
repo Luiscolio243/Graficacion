@@ -18,7 +18,7 @@ function OrgIcon() {
   );
 }
 
-export default function TarjetaStakeholder({ stakeholder, onEditar, index = 0 }) {
+export default function TarjetaStakeholder({ stakeholder, onEditar, onEliminar, index = 0 }) {
   const initial    = (stakeholder.nombre?.[0] ?? "?").toUpperCase();
   const color      = COLORS[index % COLORS.length];
   const isEditable = !!stakeholder.id_stakeholder;
@@ -41,18 +41,22 @@ export default function TarjetaStakeholder({ stakeholder, onEditar, index = 0 })
           <span className="font-semibold text-gray-900 text-sm">
             {stakeholder.nombre} {stakeholder.apellidos}
           </span>
-          <span className="text-[11px] font-medium bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">
-            {stakeholder.rol}
-          </span>
+          {stakeholder.rol && (
+            <span className="text-[11px] font-medium bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-100">
+              {stakeholder.rol}
+            </span>
+          )}
           <span className="text-[11px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
             {stakeholder.tipo}
           </span>
         </div>
 
         <div className="flex items-center gap-4 flex-wrap">
-          <span className="text-xs text-gray-500 flex items-center gap-1.5">
-            <MailIcon /> {stakeholder.correo}
-          </span>
+          {stakeholder.correo && (
+            <span className="text-xs text-gray-500 flex items-center gap-1.5">
+              <MailIcon /> {stakeholder.correo}
+            </span>
+          )}
           {stakeholder.organizacion && (
             <span className="text-xs text-gray-400 flex items-center gap-1.5">
               <OrgIcon /> {stakeholder.organizacion}
@@ -61,16 +65,24 @@ export default function TarjetaStakeholder({ stakeholder, onEditar, index = 0 })
         </div>
       </div>
 
-      {/* Editar */}
+      {/* Acciones — solo para stakeholders editables (no PO/TL) */}
       {isEditable && (
-        <button
-          type="button"
-          onClick={() => onEditar?.(stakeholder)}
-          className="flex-shrink-0 text-xs font-medium text-indigo-600 border border-indigo-200
-                     bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors"
-        >
-          Editar
-        </button>
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <button
+            type="button"
+            onClick={() => onEditar?.(stakeholder)}
+            className="text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
+          >
+            Editar
+          </button>
+          <button
+            type="button"
+            onClick={() => onEliminar?.(stakeholder.id_stakeholder)}
+            className="text-xs font-medium text-gray-400 hover:text-red-500 transition-colors"
+          >
+            Eliminar
+          </button>
+        </div>
       )}
     </div>
   );

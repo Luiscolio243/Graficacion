@@ -30,6 +30,8 @@ export default function TarjetaProceso({
   onAsignarTecnicas,
   onEditarProceso,
   onEditarSubproceso,
+  onEliminarProceso,
+  onEliminarSubproceso,
 }) {
   const [mostrarModal,            setMostrarModal]            = useState(false);
   const [mostrarTecnicas,         setMostrarTecnicas]         = useState(false);
@@ -61,6 +63,13 @@ export default function TarjetaProceso({
         </button>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onEliminarProceso?.(proceso.id)}
+            className="px-3 py-1.5 text-xs font-medium text-red-200 hover:text-white transition-colors"
+          >
+            Eliminar
+          </button>
           <button
             type="button"
             onClick={() => onEditarProceso?.(proceso)}
@@ -115,6 +124,13 @@ export default function TarjetaProceso({
                       className="text-[11px] font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
                     >
                       Asignar técnicas
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onEliminarSubproceso?.({ id_proceso: proceso.id, id_subproceso: sp.id })}
+                      className="text-[11px] font-medium text-gray-400 hover:text-red-500 transition-colors"
+                    >
+                      Eliminar
                     </button>
                   </div>
                 </div>
