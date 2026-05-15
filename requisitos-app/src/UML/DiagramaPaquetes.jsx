@@ -289,7 +289,7 @@ function PaquetesEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo 
           <div className="toolbar">
             {diagramaId && (
               <>
-                <button className="tb-btn back-btn" onClick={() => navigate(`/app/diagramas/${tipo || 'paquetes'}`)}>
+                <button className="tb-btn back-btn" onClick={() => navigate(idProyecto ? `/app/proyectos/${idProyecto}/diagramas/${tipo || 'paquetes'}` : `/app/proyectos`)}>
                   ← Volver
                 </button>
                 <div className="tb-sep" />
@@ -352,8 +352,9 @@ function PaquetesEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo 
 // ─── EXPORT PRINCIPAL ─────────────────────────────────────────────────────────
 export default function DiagramaPaquetes() {
   const [searchParams] = useSearchParams();
-  const id   = searchParams.get('id');
-  const tipo = searchParams.get('tipo') || 'paquetes';
+  const id          = searchParams.get('id');
+  const tipo        = searchParams.get('tipo') || 'paquetes';
+  const idProyecto  = searchParams.get('id_proyecto');
 
   const [listo, setListo]                 = useState(false);
   const [initNodes, setInitNodes]         = useState([]);

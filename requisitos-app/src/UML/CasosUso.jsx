@@ -407,7 +407,7 @@ function DiagramEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo }
         {/*  TOOLBAR  */}
         <Panel position="top-left">
           <div className="toolbar">
-            <button className="tb-btn back-btn" onClick={() => navigate(`/app/diagramas/${tipo || 'casos-uso'}`)}>
+            <button className="tb-btn back-btn" onClick={() => navigate(idProyecto ? `/app/proyectos/${idProyecto}/diagramas/${tipo || 'casos-uso'}` : `/app/proyectos`)}>
               ← Volver
             </button>
             <div className="tb-sep" />
@@ -508,8 +508,9 @@ function DiagramEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo }
 //  LOADER + PROVIDER 
 export default function CasosUsoDiagram() {
   const [searchParams] = useSearchParams();
-  const id   = searchParams.get('id');
-  const tipo = searchParams.get('tipo') || 'casos-uso';
+  const id          = searchParams.get('id');
+  const tipo        = searchParams.get('tipo') || 'casos-uso';
+  const idProyecto  = searchParams.get('id_proyecto');
 
   const [initData, setInitData] = useState(null);
   const [error, setError]       = useState(null);

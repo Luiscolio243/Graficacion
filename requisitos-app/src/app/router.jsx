@@ -208,13 +208,13 @@ export const router = createBrowserRouter([
                 element: <Documentos />
             },
             {
-                //Menú de diagramas UML
-                path: "diagramas",
+                //Menú de diagramas UML del proyecto
+                path: "proyectos/:id/diagramas",
                 element: <MenuDiagramas />
             },
             {
-                //Lista de diagramas por tipo
-                path: "diagramas/:tipo",
+                //Lista de diagramas por tipo del proyecto
+                path: "proyectos/:id/diagramas/:tipo",
                 element: <ListaDiagramas />
             }
         ]

@@ -14,6 +14,8 @@ function IconUsers() { return <svg width="20" height="20" viewBox="0 0 20 20" fi
 function IconCode()  { return <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M6.5 7l-4 3 4 3M13.5 7l4 3-4 3M11.5 5l-3 10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>; }
 function IconFlow()  { return <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="1" y="7.5" width="5" height="5" rx="1.2" stroke="currentColor" strokeWidth="1.4"/><rect x="14" y="2" width="5" height="5" rx="1.2" stroke="currentColor" strokeWidth="1.4"/><rect x="14" y="13" width="5" height="5" rx="1.2" stroke="currentColor" strokeWidth="1.4"/><path d="M6 10h4.5V4.5H14M10.5 10V15.5H14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>; }
 function IconDoc()   { return <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12 2H5a1 1 0 00-1 1v14a1 1 0 001 1h10a1 1 0 001-1V7l-4-5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/><path d="M12 2v5h5M7 10h6M7 13h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>; }
+function IconUML()   { return <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="1" y="1" width="6" height="4" rx="1" stroke="currentColor" strokeWidth="1.4"/><rect x="13" y="1" width="6" height="4" rx="1" stroke="currentColor" strokeWidth="1.4"/><rect x="13" y="15" width="6" height="4" rx="1" stroke="currentColor" strokeWidth="1.4"/><path d="M7 3h3.5v8H13M13 17h-2.5V11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>; }
+function IconSpecs() { return <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 2h8l4 4v12a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/><path d="M12 2v4h4M7 9h6M7 12h6M7 15h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>; }
 
 /* ── Configuración de estado ────────────────────────── */
 const STATUS_STYLE = {
@@ -29,6 +31,8 @@ const MODULO_CONFIG = {
   indigo:  { icon: <IconCode />,  iconBg: "bg-indigo-50",  iconText: "text-indigo-600",  border: "border-indigo-100",  cta: "text-indigo-600"  },
   emerald: { icon: <IconFlow />,  iconBg: "bg-emerald-50", iconText: "text-emerald-600", border: "border-emerald-100", cta: "text-emerald-600" },
   rose:    { icon: <IconDoc />,   iconBg: "bg-rose-50",    iconText: "text-rose-600",    border: "border-rose-100",    cta: "text-rose-600"    },
+  violet:  { icon: <IconUML />,   iconBg: "bg-violet-50",  iconText: "text-violet-600",  border: "border-violet-100",  cta: "text-violet-600"  },
+  amber:   { icon: <IconSpecs />, iconBg: "bg-amber-50",   iconText: "text-amber-600",   border: "border-amber-100",   cta: "text-amber-600"   },
 };
 
 /* ── Componente principal ───────────────────────────── */
@@ -177,7 +181,7 @@ export default function ProyectoDashboard() {
         <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
           Módulos del proyecto
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           <ModuloCard
             titulo="Stakeholders"
             descripcion="Gestión de personas relacionadas con el Product Owner"
@@ -201,6 +205,18 @@ export default function ProyectoDashboard() {
             descripcion="Documentación de requerimientos del proyecto"
             color="rose"
             onClick={() => navigate(`/app/proyectos/${id}/requerimientos`)}
+          />
+          <ModuloCard
+            titulo="Diagramas UML"
+            descripcion="Clases, paquetes, secuencias y casos de uso del sistema"
+            color="violet"
+            onClick={() => navigate(`/app/proyectos/${id}/diagramas`)}
+          />
+          <ModuloCard
+            titulo="Specs Técnicas"
+            descripcion="Arquitectura, tecnologías y especificaciones del sistema"
+            color="amber"
+            onClick={() => navigate(`/app/proyectos/${id}/specs-tecnicas`)}
           />
         </div>
       </div>

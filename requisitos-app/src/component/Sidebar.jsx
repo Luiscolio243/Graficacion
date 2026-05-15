@@ -54,13 +54,6 @@ export default function Sidebar() {
           <span className="text-base">📁</span>
           Proyectos
         </button>
-        <button
-          onClick={() => navigate("/app/diagramas")}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 text-sm font-medium hover:bg-gray-100 transition"
-        >
-          <span className="text-base">📐</span>
-          Diagramas
-        </button>
       </nav>
 
       {/* Espaciador */}
