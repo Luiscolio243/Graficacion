@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
  
+const BASE_URL = "http://127.0.0.1:5000";
+
 const ESTADOS_COLOR = {
   realizada: "bg-emerald-100 text-emerald-800",
   pendiente: "bg-orange-100 text-orange-800",
@@ -29,7 +31,7 @@ export default function DetalleEntrevista() {
   const cargar = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5000/entrevistas/detalle/${id_entrevista}`
+        `${BASE_URL}/entrevistas/detalle/${id_entrevista}`
       );
       if (!response.ok) throw new Error("Error al cargar la entrevista");
       const data = await response.json();
@@ -60,28 +62,32 @@ export default function DetalleEntrevista() {
  
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
+
+      {/* Botón de regreso */}
+      <button
+        onClick={() => navegar(`/app/proyectos/${id}/entrevistas`)}
+        className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors duration-150"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        Volver a Entrevistas
+      </button>
+
       {/* Encabezado */}
-      <div className="flex items-start gap-4">
-        <button
-          onClick={() => navegar(`/app/proyectos/${id}/entrevistas`)}
-          className="mt-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium text-sm"
-        >
-          ← Atrás
-        </button>
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-3xl font-bold text-gray-900">{entrevista.titulo}</h1>
-            <span className={`px-3 py-1 rounded-full text-xs font-medium ${ESTADOS_COLOR[entrevista.estado] ?? "bg-gray-100 text-gray-600"}`}>
-              {ESTADOS_LABEL[entrevista.estado] ?? entrevista.estado}
+      <div className="pb-5 border-b border-gray-200">
+        <div className="flex items-center gap-2 flex-wrap mb-1">
+          <h1 className="text-xl font-semibold text-gray-900 tracking-tight">{entrevista.titulo}</h1>
+          <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${ESTADOS_COLOR[entrevista.estado] ?? "bg-gray-100 text-gray-600"}`}>
+            {ESTADOS_LABEL[entrevista.estado] ?? entrevista.estado}
+          </span>
+          {entrevista.procesado_ia && (
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+              Procesado por IA
             </span>
-            {entrevista.procesado_ia && (
-              <span className="px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
-                Procesado por IA
-              </span>
-            )}
-          </div>
-          <p className="text-gray-500 text-sm">{fecha}{entrevista.lugar ? ` · ${entrevista.lugar}` : ""}</p>
+          )}
         </div>
+        <p className="text-sm text-gray-500">{fecha}{entrevista.lugar ? ` · ${entrevista.lugar}` : ""}</p>
       </div>
  
       {/* Acciones */}

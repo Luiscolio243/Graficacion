@@ -127,8 +127,9 @@ const COL_PAD   = 40;    // padding izquierdo del canvas
 // ─── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
 export default function SequenceDiagram() {
   const [searchParams] = useSearchParams();
-  const id   = searchParams.get('id');
-  const tipo = searchParams.get('tipo') || 'secuencia';
+  const id          = searchParams.get('id');
+  const tipo        = searchParams.get('tipo') || 'secuencia';
+  const idProyecto  = searchParams.get('id_proyecto');
  
   const [initData, setInitData] = useState(null);
   const [error, setError]       = useState(null);
@@ -209,22 +210,115 @@ function DiagramEditor({ initData, diagramaId, tipo }) {
     finally { setGuardando(false); }
   }
  
-  // ─── EXPORTAR PDF ─────────────────────────────────────────────────────────
+  // ─── EXPORTAR PDF (render programático en canvas) ────────────────────────
   async function exportPDF() {
     setExporting(true);
     try {
-      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
       await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-      await new Promise(r => setTimeout(r, 200));
-      const canvas = await window.html2canvas(canvasRef.current, {
-        backgroundColor: '#0f1117', scale: 2, useCORS: true, logging: false,
+
+      const SCALE  = 2;
+      const BOX_H  = 30;
+      const BOX_Y  = 20;
+      const STUB   = 20;
+      const HEADER = BOX_Y + BOX_H + STUB;
+      const ROW_H  = 44;
+      const W = COL_PAD * 2 + participantes.length * COL_WIDTH;
+      const H = HEADER + mensajesOrdenados.length * ROW_H + COL_PAD;
+
+      const cvs = document.createElement('canvas');
+      cvs.width  = W * SCALE;
+      cvs.height = H * SCALE;
+      const ctx  = cvs.getContext('2d');
+      ctx.scale(SCALE, SCALE);
+
+      // Fondo
+      ctx.fillStyle = '#0f1117';
+      ctx.fillRect(0, 0, W, H);
+
+      const TYPE_STYLE = {
+        object:   { border:'#378ADD', bg:'#161c2e', text:'#63b3ed' },
+        actor:    { border:'#7F77DD', bg:'#1e1830', text:'#a78bfa' },
+        boundary: { border:'#68d391', bg:'#1a2618', text:'#68d391' },
+        control:  { border:'#f6ad55', bg:'#2a1e10', text:'#f6ad55' },
+        entity:   { border:'#a78bfa', bg:'#1e1830', text:'#a78bfa' },
+      };
+      const cx     = (idx) => COL_PAD + idx * COL_WIDTH + COL_WIDTH / 2;
+      const cxById = (pid) => { const i = participantes.findIndex(p => p.id === pid); return i >= 0 ? cx(i) : 0; };
+      const BOX_W  = 130;
+
+      // Participantes + lifelines
+      participantes.forEach((p, idx) => {
+        const s = TYPE_STYLE[p.tipo] || TYPE_STYLE.object;
+        const x = cx(idx);
+        ctx.fillStyle   = s.bg;
+        ctx.strokeStyle = s.border;
+        ctx.lineWidth   = 1.5;
+        ctx.beginPath(); ctx.rect(x - BOX_W / 2, BOX_Y, BOX_W, BOX_H); ctx.fill(); ctx.stroke();
+        ctx.fillStyle    = s.text;
+        ctx.font         = 'bold 11px "Courier New", monospace';
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`:${p.nombre}`, x, BOX_Y + BOX_H / 2);
+        ctx.strokeStyle = '#2d3148';
+        ctx.setLineDash([6, 6]);
+        ctx.beginPath(); ctx.moveTo(x, BOX_Y + BOX_H); ctx.lineTo(x, H - COL_PAD / 2); ctx.stroke();
+        ctx.setLineDash([]);
       });
+
+      const MSG_C = { sync:'#378ADD', async:'#68d391', return:'#718096', create:'#f6ad55', destroy:'#fc8181' };
+
+      // Mensajes
+      mensajesOrdenados.forEach((m, i) => {
+        const y     = HEADER + i * ROW_H + ROW_H / 2;
+        const x1    = cxById(m.source_id);
+        const x2    = cxById(m.target_id);
+        const color = MSG_C[m.tipo] || '#718096';
+        ctx.strokeStyle = color;
+        ctx.fillStyle   = color;
+        ctx.lineWidth   = 1.5;
+
+        if (m.es_self) {
+          ctx.setLineDash(m.tipo === 'return' ? [5, 3] : []);
+          ctx.beginPath();
+          ctx.moveTo(x1, y - 8); ctx.lineTo(x1 + 36, y - 8);
+          ctx.lineTo(x1 + 36, y + 8); ctx.lineTo(x1 + 4, y + 8);
+          ctx.stroke(); ctx.setLineDash([]);
+          ctx.beginPath();
+          ctx.moveTo(x1 + 10, y + 3); ctx.lineTo(x1, y + 8); ctx.lineTo(x1 + 10, y + 13);
+          ctx.closePath(); ctx.fill();
+        } else {
+          const goRight = x2 > x1;
+          if (m.tipo === 'async' || m.tipo === 'return') ctx.setLineDash([5, 3]);
+          const tip = goRight ? x2 - 8 : x2 + 8;
+          ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(tip, y); ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.beginPath();
+          if (goRight) {
+            ctx.moveTo(x2 - 8, y - 5); ctx.lineTo(x2, y); ctx.lineTo(x2 - 8, y + 5);
+          } else {
+            ctx.moveTo(x2 + 8, y - 5); ctx.lineTo(x2, y); ctx.lineTo(x2 + 8, y + 5);
+          }
+          ctx.closePath(); ctx.fill();
+        }
+
+        const midX = m.es_self ? x1 + 22 : (x1 + x2) / 2;
+        ctx.fillStyle    = color;
+        ctx.font         = '10px "Courier New", monospace';
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(m.contenido, midX, y - 2);
+        ctx.fillStyle    = '#4a5568';
+        ctx.font         = '9px monospace';
+        ctx.textAlign    = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${i + 1}`, 6, y);
+      });
+
       const { jsPDF } = window.jspdf;
-      const iw = canvas.width/2, ih = canvas.height/2;
-      const pdf = new jsPDF({ orientation: iw>ih?'landscape':'portrait', unit:'px', format:[iw,ih] });
-      pdf.addImage(canvas.toDataURL('image/png'),'PNG',0,0,iw,ih);
+      const pdf = new jsPDF({ orientation: W > H ? 'landscape' : 'portrait', unit: 'px', format: [W, H] });
+      pdf.addImage(cvs.toDataURL('image/png'), 'PNG', 0, 0, W, H);
       pdf.save(`${nombre}.pdf`);
-    } catch { alert('Error al exportar'); }
+    } catch (e) { console.error(e); alert('Error al exportar: ' + e.message); }
     finally { setExporting(false); }
   }
  
@@ -325,7 +419,7 @@ function DiagramEditor({ initData, diagramaId, tipo }) {
  
       {/* TOOLBAR */}
       <div className="seq-toolbar">
-        <button className="tb" onClick={() => navigate(`/app/diagramas/${tipo}`)}>← Volver</button>
+        <button className="tb" onClick={() => navigate(idProyecto ? `/app/proyectos/${idProyecto}/diagramas/${tipo}` : `/app/proyectos`)}>← Volver</button>
         <div className="tb-sep" />
         <input className="tb-title" value={nombre} onChange={e=>setNombre(e.target.value)} placeholder="Nombre del diagrama" />
         <button className="tb save-btn" onClick={guardar} disabled={guardando}>
@@ -410,7 +504,7 @@ function DiagramEditor({ initData, diagramaId, tipo }) {
                     <div className="msg-bg" />
                     <div className="msg-num">{m.orden+1}</div>
  
-                    <div className="msg-arrow-wrap" style={{ left: left+COL_PAD, width }}>
+                    <div className="msg-arrow-wrap" style={{ left, width }}>
                       {/* Flecha hacia la derecha */}
                       {goRight && !m.es_self && (
                         <>

@@ -1,195 +1,315 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { X } from "lucide-react";
 
 const BASE_URL = "http://127.0.0.1:5000";
+
+const ESTADO_CONFIG = {
+  planificado: { dot: "bg-blue-400",    border: "border-l-blue-400",    badge: "bg-blue-50 text-blue-700 border-blue-200",       label: "Planificado"  },
+  en_progreso: { dot: "bg-amber-400",   border: "border-l-amber-400",   badge: "bg-amber-50 text-amber-700 border-amber-200",    label: "En progreso"  },
+  realizado:   { dot: "bg-emerald-400", border: "border-l-emerald-400", badge: "bg-emerald-50 text-emerald-700 border-emerald-200", label: "Realizado"  },
+  cancelado:   { dot: "bg-red-400",     border: "border-l-red-400",     badge: "bg-red-50 text-red-700 border-red-200",          label: "Cancelado"    },
+};
 
 export default function FocusGroups() {
   const { id } = useParams();
   const navegar = useNavigate();
-  const [focusGroups, setFocusGroups] = useState([]);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState(null);
-  const [seleccionado, setSeleccionado] = useState(null);
+
+  const [focusGroups,   setFocusGroups]   = useState([]);
+  const [cargando,      setCargando]      = useState(true);
+  const [error,         setError]         = useState(null);
+  const [detalle,       setDetalle]       = useState(null);
+  const [modalEliminar, setModalEliminar] = useState(null);
 
   useEffect(() => {
     fetch(`${BASE_URL}/focus-groups/${id}`)
-      .then(r => r.ok ? r.json() : Promise.reject("Error al cargar"))
+      .then((r) => r.ok ? r.json() : Promise.reject("Error al cargar"))
       .then(setFocusGroups)
-      .catch(err => setError(String(err)))
+      .catch((err) => setError(String(err)))
       .finally(() => setCargando(false));
   }, [id]);
 
-  const eliminarFocusGroup = async (id_focus_group) => {
+  const ejecutarEliminar = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/focus-groups/eliminar/${id_focus_group}`, { method: "DELETE" });
+      const res = await fetch(`${BASE_URL}/focus-groups/eliminar/${modalEliminar}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Error al eliminar");
-      setFocusGroups(prev => prev.filter(f => f.id_focus_group !== id_focus_group));
-      if (seleccionado?.id_focus_group === id_focus_group) setSeleccionado(null);
+      setFocusGroups((prev) => prev.filter((f) => f.id_focus_group !== modalEliminar));
+      if (detalle?.id_focus_group === modalEliminar) setDetalle(null);
+      setModalEliminar(null);
     } catch (e) {
       alert(e.message);
     }
   };
 
-  if (cargando) return <p className="text-center text-gray-500 mt-10">Cargando focus groups...</p>;
-  if (error) return <p className="text-center text-red-500 mt-10">{error}</p>;
+  const botonAtras = (
+    <button
+      onClick={() => navegar(`/app/proyectos/${id}/requerimientos`)}
+      className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors duration-150"
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+      Volver a Requerimientos
+    </button>
+  );
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => navegar(`/app/proyectos/${id}`)}
-          className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
-        >
-          ← Atrás
-        </button>
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold text-gray-900">Focus Groups</h1>
-          <p className="text-gray-600 mt-1">Registra sesiones de focus group</p>
-        </div>
-        <button
-          onClick={() => navegar(`/app/proyectos/${id}/requerimientos/focus-groups/crear`)}
-          className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg font-medium transition"
-        >
-          + Nuevo Focus Group
-        </button>
+  if (cargando) return (
+    <div className="space-y-7 max-w-4xl mx-auto">
+      {botonAtras}
+      <div className="flex items-center gap-2 py-8 text-sm text-gray-400">
+        <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-200 border-t-orange-500 animate-spin" />
+        Cargando focus groups...
       </div>
-
-      {focusGroups.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {focusGroups.map(fg => (
-            <TarjetaFocusGroup
-              key={fg.id_focus_group}
-              focusGroup={fg}
-              onEliminar={eliminarFocusGroup}
-              onVer={() => setSeleccionado(fg)}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="bg-white rounded-xl p-12 text-center border border-gray-200">
-          <p className="text-gray-500 text-lg">No hay focus groups aún. Crea uno para comenzar.</p>
-        </div>
-      )}
-
-      {seleccionado && (
-        <ModalDetalleFocusGroup
-          focusGroup={seleccionado}
-          onClose={() => setSeleccionado(null)}
-          onEliminar={eliminarFocusGroup}
-        />
-      )}
     </div>
   );
-}
 
-function TarjetaFocusGroup({ focusGroup, onEliminar, onVer }) {
-  const estadoColor = {
-    planificado: "bg-blue-100 text-blue-800",
-    realizado:   "bg-emerald-100 text-emerald-800",
-    cancelado:   "bg-red-100 text-red-800",
+  if (error) return (
+    <div className="space-y-7 max-w-4xl mx-auto">
+      {botonAtras}
+      <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
+    </div>
+  );
+
+  const porEstado = {
+    planificado: focusGroups.filter((f) => f.estado === "planificado"),
+    en_progreso: focusGroups.filter((f) => f.estado === "en_progreso"),
+    realizado:   focusGroups.filter((f) => f.estado === "realizado"),
+    cancelado:   focusGroups.filter((f) => f.estado === "cancelado"),
   };
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6 space-y-4 hover:shadow-lg transition">
-      <div className="flex justify-between items-start gap-2">
-        <h3 className="text-lg font-bold text-gray-900 flex-1">{focusGroup.titulo}</h3>
-        <div className="flex gap-2">
-          <button
-            onClick={onVer}
-            className="p-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-lg transition text-sm font-medium"
-          >
-            Ver
-          </button>
-          <button
-            onClick={() => onEliminar(focusGroup.id_focus_group)}
-            className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition text-sm font-medium"
-          >
-            Eliminar
-          </button>
+    <div className="space-y-7 max-w-4xl mx-auto">
+
+      {botonAtras}
+
+      {/* Encabezado */}
+      <div className="flex items-end justify-between pb-5 border-b border-gray-200">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Focus Groups</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Sesiones grupales de levantamiento de requisitos</p>
         </div>
+        <button
+          onClick={() => navegar(`/app/proyectos/${id}/requerimientos/focus-groups/crear`)}
+          className="inline-flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+          Nuevo Focus Group
+        </button>
       </div>
 
-      {focusGroup.objetivo && (
-        <p className="text-gray-600 text-sm line-clamp-2">{focusGroup.objetivo}</p>
+      {/* Estadísticas */}
+      <div className="grid grid-cols-4 gap-4">
+        <StatCard titulo="Total"        valor={focusGroups.length}           color="gray"    />
+        <StatCard titulo="Planificados" valor={porEstado.planificado.length} color="blue"    />
+        <StatCard titulo="En progreso"  valor={porEstado.en_progreso.length} color="amber"   />
+        <StatCard titulo="Realizados"   valor={porEstado.realizado.length}   color="emerald" />
+      </div>
+
+      {/* Lista */}
+      {focusGroups.length === 0 ? (
+        <div className="bg-white border border-dashed border-gray-300 rounded-xl py-16 text-center">
+          <p className="text-sm text-gray-400">No hay focus groups aún.</p>
+          <button
+            onClick={() => navegar(`/app/proyectos/${id}/requerimientos/focus-groups/crear`)}
+            className="mt-3 text-sm text-green-600 hover:text-green-800 font-medium"
+          >
+            Crear el primero
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {["planificado", "en_progreso", "realizado", "cancelado"].map((estado) =>
+            porEstado[estado]?.length > 0 && (
+              <Grupo
+                key={estado}
+                estado={estado}
+                focusGroups={porEstado[estado]}
+                onVer={setDetalle}
+                onEliminar={setModalEliminar}
+              />
+            )
+          )}
+        </div>
       )}
 
-      <div className="flex gap-2 flex-wrap">
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${estadoColor[focusGroup.estado] ?? "bg-gray-100 text-gray-600"}`}>
-          {focusGroup.estado}
-        </span>
-        {focusGroup.tipo_media && (
-          <span className="px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
-            {focusGroup.tipo_media}
-          </span>
-        )}
-      </div>
+      {/* Modal detalle */}
+      {detalle && (
+        <ModalDetalle
+          fg={detalle}
+          onClose={() => setDetalle(null)}
+          onEliminar={(id_fg) => { setModalEliminar(id_fg); setDetalle(null); }}
+        />
+      )}
 
-      <div className="grid grid-cols-2 gap-4 pt-2 border-t text-sm">
-        <div>
-          <p className="text-gray-500">Participantes</p>
-          <p className="text-lg font-bold text-gray-900">{focusGroup.total_participantes}</p>
+      {/* Modal eliminar */}
+      {modalEliminar && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full mx-4 space-y-4">
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mx-auto">
+              <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </div>
+            <div className="text-center">
+              <h2 className="text-lg font-bold text-gray-900">¿Eliminar focus group?</h2>
+              <p className="text-sm text-gray-500 mt-2">Esta acción eliminará también sus temas y participantes.</p>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setModalEliminar(null)}
+                className="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition">
+                Cancelar
+              </button>
+              <button onClick={ejecutarEliminar}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                Sí, eliminar
+              </button>
+            </div>
+          </div>
         </div>
-        <div>
-          <p className="text-gray-500">Temas</p>
-          <p className="text-lg font-bold text-gray-900">{focusGroup.total_temas}</p>
-        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Stat Card ──────────────────────────────────────── */
+function StatCard({ titulo, valor, color }) {
+  const nums = { gray: "text-gray-700", blue: "text-blue-700", amber: "text-amber-700", emerald: "text-emerald-700" };
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{titulo}</p>
+      <p className={`text-3xl font-bold ${nums[color]}`}>{valor}</p>
+    </div>
+  );
+}
+
+/* ── Grupo por estado ───────────────────────────────── */
+function Grupo({ estado, focusGroups, onVer, onEliminar }) {
+  const cfg = ESTADO_CONFIG[estado] ?? ESTADO_CONFIG.planificado;
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 px-1">
+        <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">{cfg.label}</span>
+        <span className="text-xs text-gray-400">({focusGroups.length})</span>
+      </div>
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm divide-y divide-gray-100">
+        {focusGroups.map((fg) => (
+          <TarjetaFG
+            key={fg.id_focus_group}
+            fg={fg}
+            onVer={() => onVer(fg)}
+            onEliminar={() => onEliminar(fg.id_focus_group)}
+          />
+        ))}
       </div>
     </div>
   );
 }
 
-function ModalDetalleFocusGroup({ focusGroup, onClose, onEliminar }) {
+/* ── Tarjeta FG ─────────────────────────────────────── */
+function TarjetaFG({ fg, onVer, onEliminar }) {
+  const cfg = ESTADO_CONFIG[fg.estado] ?? ESTADO_CONFIG.planificado;
+  const fecha = fg.fecha
+    ? new Date(fg.fecha).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" })
+    : null;
+
+  return (
+    <div className={`flex items-start justify-between gap-4 px-5 py-4 border-l-4 ${cfg.border}`}>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-gray-900 truncate">{fg.titulo}</p>
+        {fg.objetivo && (
+          <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{fg.objetivo}</p>
+        )}
+        <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ${cfg.badge}`}>
+            {cfg.label}
+          </span>
+          {fg.tipo_media && (
+            <span className="text-[11px] text-gray-400 capitalize">{fg.tipo_media}</span>
+          )}
+          <span className="text-[11px] text-gray-400">{fg.total_participantes} participantes</span>
+          <span className="text-[11px] text-gray-400">{fg.total_temas} temas</span>
+          {fecha && <span className="text-[11px] text-gray-400">{fecha}</span>}
+        </div>
+      </div>
+      <div className="flex items-center gap-4 flex-shrink-0 pt-0.5">
+        <button onClick={onVer} className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors">
+          Ver
+        </button>
+        <button onClick={onEliminar} className="text-xs font-medium text-gray-400 hover:text-red-500 transition-colors">
+          Eliminar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Modal Detalle ──────────────────────────────────── */
+function ModalDetalle({ fg, onClose, onEliminar }) {
+  const cfg = ESTADO_CONFIG[fg.estado] ?? ESTADO_CONFIG.planificado;
+  const fecha = fg.fecha
+    ? new Date(fg.fecha).toLocaleDateString("es-MX", { day: "2-digit", month: "long", year: "numeric" })
+    : null;
+
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
 
+        {/* Header */}
         <div className="flex items-start justify-between p-6 border-b border-gray-200">
           <div className="flex-1 pr-4">
-            <h2 className="text-xl font-bold text-gray-900">{focusGroup.titulo}</h2>
-            {focusGroup.fecha_creacion && (
-              <p className="text-xs text-gray-400 mt-1">
-                Creado el {new Date(focusGroup.fecha_creacion).toLocaleDateString("es-MX", {
-                  day: "2-digit", month: "long", year: "numeric"
-                })}
-              </p>
-            )}
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ${cfg.badge}`}>
+                {cfg.label}
+              </span>
+              {fg.tipo_media && (
+                <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded capitalize">{fg.tipo_media}</span>
+              )}
+            </div>
+            <h2 className="text-lg font-semibold text-gray-900">{fg.titulo}</h2>
+            {fecha && <p className="text-xs text-gray-400 mt-0.5">{fecha}</p>}
           </div>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
-            <X size={20} />
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors p-1">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+              <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
           </button>
         </div>
 
         <div className="p-6 space-y-5">
 
-          {/* Estado y tipo */}
-          <div className="flex gap-2 flex-wrap">
-            <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              {focusGroup.estado}
-            </span>
-            {focusGroup.tipo_media && (
-              <span className="px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
-                {focusGroup.tipo_media}
-              </span>
-            )}
+          {/* Stats */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-gray-50 rounded-lg px-4 py-3 text-center">
+              <p className="text-2xl font-bold text-gray-900">{fg.total_participantes}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Participantes</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg px-4 py-3 text-center">
+              <p className="text-2xl font-bold text-gray-900">{fg.total_temas}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Temas</p>
+            </div>
           </div>
 
           {/* Objetivo */}
-          {focusGroup.objetivo && (
+          {fg.objetivo && (
             <div>
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Objetivo</p>
-              <p className="text-sm text-gray-700">{focusGroup.objetivo}</p>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Objetivo</p>
+              <p className="text-sm text-gray-700">{fg.objetivo}</p>
             </div>
           )}
 
           {/* Conclusiones */}
-          {focusGroup.conclusiones?.length > 0 && (
+          {fg.conclusiones?.length > 0 && (
             <div>
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Conclusiones</p>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Conclusiones</p>
               <ul className="space-y-2">
-                {focusGroup.conclusiones.map((c, i) => (
-                  <li key={i} className="flex items-start gap-2 bg-orange-50 border border-orange-200 rounded-lg px-4 py-2">
-                    <span className="text-orange-500 font-bold text-sm mt-0.5">→</span>
+                {fg.conclusiones.map((c, i) => (
+                  <li key={i} className="flex items-start gap-3 bg-white border border-gray-200 rounded-lg px-4 py-2.5">
+                    <svg className="w-3.5 h-3.5 text-emerald-500 mt-0.5 flex-shrink-0" viewBox="0 0 16 16" fill="none">
+                      <path d="M3 8l4 4 6-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
                     <span className="text-sm text-gray-700">{c}</span>
                   </li>
                 ))}
@@ -198,39 +318,24 @@ function ModalDetalleFocusGroup({ focusGroup, onClose, onEliminar }) {
           )}
 
           {/* Transcripción */}
-          {focusGroup.transcripcion && (
+          {fg.transcripcion && (
             <div>
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Transcripción / Notas</p>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Transcripción / Notas</p>
               <p className="text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg p-4 whitespace-pre-wrap">
-                {focusGroup.transcripcion}
+                {fg.transcripcion}
               </p>
             </div>
           )}
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 gap-4 pt-2 border-t">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">{focusGroup.total_participantes}</p>
-              <p className="text-xs text-gray-500">Participantes</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">{focusGroup.total_temas}</p>
-              <p className="text-xs text-gray-500">Temas detectados</p>
-            </div>
-          </div>
         </div>
 
+        {/* Footer */}
         <div className="flex gap-3 p-6 border-t border-gray-200">
-          <button
-            onClick={onClose}
-            className="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition text-sm"
-          >
+          <button onClick={onClose}
+            className="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition text-sm">
             Cerrar
           </button>
-          <button
-            onClick={() => { onEliminar(focusGroup.id_focus_group); onClose(); }}
-            className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm"
-          >
+          <button onClick={() => onEliminar(fg.id_focus_group)}
+            className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">
             Eliminar
           </button>
         </div>

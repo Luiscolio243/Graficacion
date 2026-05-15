@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
  
+const BASE_URL = "http://127.0.0.1:5000";
+
 const PASOS = {
   IDLE: "idle",
   SUBIENDO: "subiendo",
@@ -24,26 +26,30 @@ export default function SubirAudio() {
     const file = e.target.files[0];
     if (file) setArchivo(file);
   };
- 
+
   const handleDrop = (e) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
-    if (file) setArchivo(file);
-    subirAudio();
+    if (file) {
+      setArchivo(file);
+      subirAudio(file); // pasar file directamente: el estado aún no se actualiza
+    }
   };
- 
+
   // Paso 1: subir el archivo al servidor
-  const subirAudio = async () => {
-    if (!archivo) return;
+  // fileParam permite pasar el archivo directamente desde handleDrop
+  const subirAudio = async (fileParam) => {
+    const fileToUpload = fileParam || archivo;
+    if (!fileToUpload) return;
     setPaso(PASOS.SUBIENDO);
     setMensajeError("");
- 
+
     try {
       const formData = new FormData();
-      formData.append("audio", archivo);
- 
+      formData.append("audio", fileToUpload);
+
       const response = await fetch(
-        `http://localhost:5000/entrevistas/subir-audio/${id_entrevista}`,
+        `${BASE_URL}/entrevistas/subir-audio/${id_entrevista}`,
         { method: "POST", body: formData }
       );
  
@@ -69,7 +75,7 @@ export default function SubirAudio() {
  
     try {
       const response = await fetch(
-        `http://localhost:5000/entrevistas/procesar-audio/${id_entrevista}`,
+        `${BASE_URL}/entrevistas/procesar-audio/${id_entrevista}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -99,20 +105,23 @@ export default function SubirAudio() {
  
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      {/* Botón de regreso */}
+      <button
+        onClick={() => navegar(`/app/proyectos/${id}/entrevistas/${id_entrevista}`)}
+        className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors duration-150"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        Volver a la entrevista
+      </button>
+
       {/* Encabezado */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => navegar(`/app/proyectos/${id}/entrevistas/${id_entrevista}`)}
-          className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium text-sm"
-        >
-          ← Atrás
-        </button>
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Procesar Audio con IA</h1>
-          <p className="text-gray-600 mt-1">
-            Sube la grabación y Gemini responderá las preguntas automáticamente
-          </p>
-        </div>
+      <div className="pb-5 border-b border-gray-200">
+        <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Procesar Audio con IA</h1>
+        <p className="text-sm text-gray-500 mt-0.5">
+          Sube la grabación y Gemini responderá las preguntas automáticamente
+        </p>
       </div>
  
       {/* Pasos visuales */}
@@ -185,13 +194,13 @@ export default function SubirAudio() {
 
 
       {archivo && paso === PASOS.IDLE && (
-  <button
-    onClick={subirAudio}
-    className="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-medium text-sm transition"
-  >
-    Subir audio
-  </button>
-)}
+        <button
+          onClick={() => subirAudio()}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-medium text-sm transition"
+        >
+          Subir audio
+        </button>
+      )}
  
       {/* Procesando */}
       {paso === PASOS.PROCESANDO && (

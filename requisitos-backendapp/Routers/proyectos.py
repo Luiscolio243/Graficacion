@@ -115,28 +115,28 @@ def crear_proyecto():
             ).fetchone()
             id_proyecto = proyecto[0]
 
-            #--------------------------Esto es nuevo--------------
-
             participantes = [
-                {"id": id_creador, "rol": "Creador"},
+                {"id": id_creador,    "rol": "Creador"},
                 {"id": id_usuario_po, "rol": "Product_Owner"},
-                {"id": id_usuario_tl, "rol": "Tech Leader"}
+                {"id": id_usuario_tl, "rol": "Tech Leader"},
             ]
 
             for p in participantes:
+                if p["id"] is None:
+                    continue
                 conn.execute(
                     text("""
                         INSERT INTO proyecto_usuarios (id_proyecto, id_usuario, rol_en_proyecto, fecha_asignacion)
                         VALUES (:id_proyecto, :id_usuario, :rol, :fecha_asignacion)
+                        ON CONFLICT (id_proyecto, id_usuario) DO NOTHING
                     """),
                     {
-                        "id_proyecto": id_proyecto,
-                        "id_usuario": p["id"],
-                        "rol": p["rol"],
-                        "fecha_asignacion": datetime.utcnow()
+                        "id_proyecto":    id_proyecto,
+                        "id_usuario":     p["id"],
+                        "rol":            p["rol"],
+                        "fecha_asignacion": datetime.utcnow(),
                     }
                 )
-            #-----------------------------------------------------
 
 
 
