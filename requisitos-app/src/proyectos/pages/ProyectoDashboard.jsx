@@ -55,8 +55,10 @@ export default function ProyectoDashboard() {
       const a    = document.createElement("a");
       a.href     = url;
       a.download = `specs_${proyecto.nombre}.zip`;
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 150);
     } catch {
       alert("No se pudo conectar al servidor");
     }
