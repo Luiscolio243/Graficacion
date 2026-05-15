@@ -127,8 +127,9 @@ const COL_PAD   = 40;    // padding izquierdo del canvas
 // ─── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
 export default function SequenceDiagram() {
   const [searchParams] = useSearchParams();
-  const id   = searchParams.get('id');
-  const tipo = searchParams.get('tipo') || 'secuencia';
+  const id          = searchParams.get('id');
+  const tipo        = searchParams.get('tipo') || 'secuencia';
+  const idProyecto  = searchParams.get('id_proyecto');
  
   const [initData, setInitData] = useState(null);
   const [error, setError]       = useState(null);
@@ -418,7 +419,7 @@ function DiagramEditor({ initData, diagramaId, tipo }) {
  
       {/* TOOLBAR */}
       <div className="seq-toolbar">
-        <button className="tb" onClick={() => navigate(`/app/diagramas/${tipo}`)}>← Volver</button>
+        <button className="tb" onClick={() => navigate(idProyecto ? `/app/proyectos/${idProyecto}/diagramas/${tipo}` : `/app/proyectos`)}>← Volver</button>
         <div className="tb-sep" />
         <input className="tb-title" value={nombre} onChange={e=>setNombre(e.target.value)} placeholder="Nombre del diagrama" />
         <button className="tb save-btn" onClick={guardar} disabled={guardando}>

@@ -35,28 +35,28 @@ const TIPO_INFO = {
 };
  
 export default function ListaDiagramas() {
-  const { tipo } = useParams();
+  const { tipo, id } = useParams();
   const navegar = useNavigate();
   const info = TIPO_INFO[tipo] || TIPO_INFO.clases;
- 
+
   const [diagramas, setDiagramas]   = useState([]);
   const [cargando, setCargando]     = useState(true);
   const [creando, setCreando]       = useState(false);
   const [error, setError]           = useState(null);
   const tipoMap = { 'casos-uso': 'casos_uso', 'secuencias': 'secuencia' };
   const tipoBD = tipoMap[tipo] || tipo;
- 
+
 
   useEffect(() => {
     if (!info.disponible) { setCargando(false); return; }
- 
+
     setCargando(true);
-    fetch(`${API}/diagramas?tipo=${tipoBD}`)
+    fetch(`${API}/diagramas?tipo=${tipoBD}&id_proyecto=${id}`)
       .then((r) => r.json())
       .then((data) => { setDiagramas(data); setCargando(false); })
       .catch(() => { setError("No se pudo conectar al servidor"); setCargando(false); });
-  }, [tipo]);
- 
+  }, [tipo, id]);
+
 
   async function crearNuevo() {
     setCreando(true);
@@ -67,19 +67,19 @@ export default function ListaDiagramas() {
         body: JSON.stringify({
           nombre: "Nuevo diagrama",
           tipo: tipoBD,
+          id_proyecto: id,
         }),
       });
       const data = await res.json();
       if (!res.ok) { alert(data.message || "Error al crear"); return; }
-      // Redirigir al editor con el id real de la BD
-      navegar(`${info.editorRuta}?id=${data.diagrama.id_diagrama}&tipo=${tipo}`);
+      navegar(`${info.editorRuta}?id=${data.diagrama.id_diagrama}&tipo=${tipo}&id_proyecto=${id}`);
     } catch {
       alert("No se pudo conectar al servidor");
     } finally {
       setCreando(false);
     }
   }
- 
+
   async function eliminarDiagrama(e, id_diagrama) {
     e.stopPropagation();
     if (!confirm("¿Eliminar este diagrama?")) return;
@@ -91,17 +91,17 @@ export default function ListaDiagramas() {
       alert("No se pudo conectar al servidor");
     }
   }
- 
+
   function abrirDiagrama(id_diagrama) {
-    navegar(`${info.editorRuta}?id=${id_diagrama}&tipo=${tipo}`);
+    navegar(`${info.editorRuta}?id=${id_diagrama}&tipo=${tipo}&id_proyecto=${id}`);
   }
- 
+
   return (
     <div className="space-y-6">
       {/* Encabezado */}
       <div className="flex items-center gap-4">
         <button
-          onClick={() => navegar("/app/diagramas")}
+          onClick={() => navegar(`/app/proyectos/${id}/diagramas`)}
           className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
         >
           ← Atrás

@@ -1,29 +1,29 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
-const diagramas = [
+const TIPOS_DIAGRAMA = [
   {
     titulo: "Diagrama de Paquetes",
     descripcion: "Organización de clases y componentes en grupos o módulos del sistema",
     color: "violet",
-    ruta: "/app/diagramas/paquetes",
+    tipo: "paquetes",
   },
   {
     titulo: "Diagrama de Clases",
     descripcion: "Estructura estática del sistema con clases, atributos, métodos y relaciones",
     color: "blue",
-    ruta: "/app/diagramas/clases",
+    tipo: "clases",
   },
   {
     titulo: "Diagrama de Secuencias",
     descripcion: "Interacción entre objetos a lo largo del tiempo mediante mensajes ordenados",
     color: "emerald",
-    ruta: "/app/diagramas/secuencias",
+    tipo: "secuencias",
   },
   {
     titulo: "Diagrama de Casos de Uso",
     descripcion: "Funcionalidades del sistema desde la perspectiva de los actores externos",
     color: "amber",
-    ruta: "/app/diagramas/casos-uso",
+    tipo: "casos-uso",
   },
 ];
 
@@ -60,25 +60,35 @@ const estilosPorColor = {
 
 export default function MenuDiagramas() {
   const navegar = useNavigate();
+  const { id } = useParams();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl mx-auto">
+      <button
+        onClick={() => navegar(`/app/proyectos/${id}`)}
+        className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors duration-150"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        Volver al proyecto
+      </button>
+
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Diagramas UML</h1>
-        <p className="text-gray-500 mt-1">
+        <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Diagramas UML</h1>
+        <p className="text-sm text-gray-500 mt-0.5">
           Herramientas de modelado y diseño del sistema
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-        {diagramas.map((diagrama, index) => {
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {TIPOS_DIAGRAMA.map((diagrama, index) => {
           const estilos = estilosPorColor[diagrama.color];
-          //const disponible = diagrama.ruta !== null;
 
           return (
             <div
               key={index}
-              onClick={() => navegar(diagrama.ruta)}
+              onClick={() => navegar(`/app/proyectos/${id}/diagramas/${diagrama.tipo}`)}
               className={`
                 ${estilos.fondo} ${estilos.borde}
                 border rounded-xl p-5
