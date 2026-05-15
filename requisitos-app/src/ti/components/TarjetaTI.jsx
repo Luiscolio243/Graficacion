@@ -9,7 +9,7 @@ function MailIcon() {
   );
 }
 
-export default function TarjetaTI({ ti, onEditar, index = 0 }) {
+export default function TarjetaTI({ ti, onEditar, onEliminar, index = 0 }) {
   const nombre   = ti?.usuario?.nombre  ?? "";
   const apellido = ti?.usuario?.apellido ?? "";
   const initial  = (nombre[0] ?? "?").toUpperCase();
@@ -31,14 +31,14 @@ export default function TarjetaTI({ ti, onEditar, index = 0 }) {
       {/* Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap mb-1">
-          <span className="font-semibold text-gray-900 text-sm">
-            {nombre} {apellido}
-          </span>
-          <span className="text-[11px] font-medium bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">
-            {ti?.rol?.nombre || "Sin rol"}
-          </span>
+          <span className="font-semibold text-gray-900 text-sm">{nombre} {apellido}</span>
+          {ti?.rol?.nombre && (
+            <span className="text-[11px] font-medium bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-100">
+              {ti.rol.nombre}
+            </span>
+          )}
           {!activo && (
-            <span className="text-[11px] bg-red-50 text-red-600 px-2 py-0.5 rounded-full">
+            <span className="text-[11px] bg-red-50 text-red-600 px-2 py-0.5 rounded-full border border-red-100">
               Inactivo
             </span>
           )}
@@ -48,15 +48,23 @@ export default function TarjetaTI({ ti, onEditar, index = 0 }) {
         </span>
       </div>
 
-      {/* Editar */}
-      <button
-        type="button"
-        onClick={() => onEditar?.(ti)}
-        className="flex-shrink-0 text-xs font-medium text-indigo-600 border border-indigo-200
-                   bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors"
-      >
-        Editar
-      </button>
+      {/* Acciones */}
+      <div className="flex items-center gap-3 flex-shrink-0">
+        <button
+          type="button"
+          onClick={() => onEditar?.(ti)}
+          className="text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
+        >
+          Editar
+        </button>
+        <button
+          type="button"
+          onClick={() => onEliminar?.(ti.id_personal_ti)}
+          className="text-xs font-medium text-gray-400 hover:text-red-500 transition-colors"
+        >
+          Eliminar
+        </button>
+      </div>
     </div>
   );
 }

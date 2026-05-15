@@ -329,3 +329,31 @@ def asignar_tecnicas():
     except SQLAlchemyError as e:
         print(str(e))
         return jsonify({"error": str(e)}), 500
+
+
+@procesos_bp.route('/procesos/eliminar/<int:id_proceso>', methods=['DELETE'])
+def eliminar_proceso(id_proceso):
+    try:
+        with Session(engine) as session:
+            proceso = session.get(Proceso, id_proceso)
+            if not proceso:
+                return jsonify({"error": "Proceso no encontrado"}), 404
+            session.delete(proceso)
+            session.commit()
+            return jsonify({"mensaje": "Proceso eliminado correctamente"}), 200
+    except SQLAlchemyError as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@procesos_bp.route('/subprocesos/eliminar/<int:id_subproceso>', methods=['DELETE'])
+def eliminar_subproceso(id_subproceso):
+    try:
+        with Session(engine) as session:
+            subproceso = session.get(Subproceso, id_subproceso)
+            if not subproceso:
+                return jsonify({"error": "Subproceso no encontrado"}), 404
+            session.delete(subproceso)
+            session.commit()
+            return jsonify({"mensaje": "Subproceso eliminado correctamente"}), 200
+    except SQLAlchemyError as e:
+        return jsonify({"error": str(e)}), 500

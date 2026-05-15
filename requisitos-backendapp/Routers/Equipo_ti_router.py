@@ -242,7 +242,27 @@ def crear_integrante_ti(id_proyecto):
         print(str(e))
         return jsonify({"error": str(e)}), 500
 
-#Edita los datos de un integrante de ti 
+#Elimina un integrante del equipo TI
+@equipo_ti_bp.route('/ti/eliminar/<int:id_personal_ti>', methods=['DELETE'])
+def eliminar_integrante_ti(id_personal_ti):
+    try:
+        with engine.begin() as conn:
+            existente = conn.execute(
+                text("SELECT id_personal_ti FROM personal_ti WHERE id_personal_ti = :id"),
+                {"id": id_personal_ti},
+            ).fetchone()
+            if existente is None:
+                return jsonify({"error": "Integrante TI no encontrado"}), 404
+            conn.execute(
+                text("DELETE FROM personal_ti WHERE id_personal_ti = :id"),
+                {"id": id_personal_ti},
+            )
+        return jsonify({"mensaje": "Integrante TI eliminado correctamente"}), 200
+    except SQLAlchemyError as e:
+        return jsonify({"error": str(e)}), 500
+
+
+#Edita los datos de un integrante de ti
 @equipo_ti_bp.route('/ti/editar/<int:id_personal_ti>', methods=['PUT'])
 def editar_integrante_ti(id_personal_ti):
     try:

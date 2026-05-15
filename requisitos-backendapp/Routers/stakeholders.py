@@ -83,6 +83,20 @@ def obtener_stakeholders(id_proyecto):
         ]), 200
 
 
+@stakeholders_bp.route('/stakeholders/eliminar/<int:id_stakeholder>', methods=['DELETE'])
+def eliminar_stakeholder(id_stakeholder):
+    try:
+        with Session(engine) as session:
+            stakeholder = session.get(Stakeholders, id_stakeholder)
+            if not stakeholder:
+                return jsonify({"error": "Stakeholder no encontrado"}), 404
+            session.delete(stakeholder)
+            session.commit()
+            return jsonify({"mensaje": "Stakeholder eliminado correctamente"}), 200
+    except SQLAlchemyError as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @stakeholders_bp.route('/stakeholders/<int:id_stakeholder>', methods=['PUT'])
 def editar_stakeholder(id_stakeholder):
     try:
