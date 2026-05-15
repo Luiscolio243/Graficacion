@@ -34,7 +34,7 @@ export default function ModalNuevoStakeholder({
       setError("El nombre es obligatorio.");
       return;
     }
-    if (!form.rol) {
+    if (!form.rol && rolesDisponibles.length > 0) {
       setError("Selecciona un rol.");
       return;
     }
@@ -166,17 +166,32 @@ export default function ModalNuevoStakeholder({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={labelCls}>Rol <span className="text-red-500">*</span></label>
-                <select
-                  value={form.rol}
-                  onChange={(e) => set("rol", e.target.value)}
-                  className={inputCls}
-                >
-                  <option value="">Selecciona un rol</option>
-                  {rolesDisponibles.map((r) => (
-                    <option key={r.id_rol ?? r.nombre} value={r.nombre}>{r.nombre}</option>
-                  ))}
-                </select>
+                <label className={labelCls}>Rol</label>
+                {rolesDisponibles.length > 0 ? (
+                  <select
+                    value={form.rol}
+                    onChange={(e) => set("rol", e.target.value)}
+                    className={inputCls}
+                  >
+                    <option value="">Selecciona un rol</option>
+                    {rolesDisponibles.map((r) => (
+                      <option key={r.id_rol ?? r.nombre} value={r.nombre}>{r.nombre}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      value={form.rol}
+                      onChange={(e) => set("rol", e.target.value)}
+                      placeholder="Escribe el rol manualmente"
+                      className={inputCls}
+                    />
+                    <p className="text-[11px] text-amber-600 mt-1">
+                      No hay roles creados. Cierra este modal y usa "+ Nuevo Rol" para crearlos, o escríbelo aquí.
+                    </p>
+                  </>
+                )}
               </div>
               <div>
                 <label className={labelCls}>Tipo</label>

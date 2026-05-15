@@ -41,9 +41,13 @@ export default function TarjetaStakeholder({ stakeholder, onEditar, onEliminar, 
           <span className="font-semibold text-gray-900 text-sm">
             {stakeholder.nombre} {stakeholder.apellidos}
           </span>
-          {stakeholder.rol && (
+          {stakeholder.rol && stakeholder.rol !== "Sin rol" ? (
             <span className="text-[11px] font-medium bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-100">
               {stakeholder.rol}
+            </span>
+          ) : (
+            <span className="text-[11px] text-gray-400 px-2 py-0.5 rounded-full border border-dashed border-gray-300">
+              Sin rol
             </span>
           )}
           <span className="text-[11px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">

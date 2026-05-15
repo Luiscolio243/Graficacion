@@ -210,7 +210,10 @@ export default function Stakeholders() {
         <ModalNuevoRol
           onClose={() => setMostrarNuevoRol(false)}
           onGuardar={(nuevoRol) => {
-            setRoles((prev) => [...prev, nuevoRol]);
+            setRoles((prev) => [
+              ...prev,
+              { id_rol: nuevoRol.id_rol ?? nuevoRol.id, nombre: nuevoRol.nombre, descripcion: nuevoRol.descripcion },
+            ]);
             setMostrarNuevoRol(false);
           }}
         />

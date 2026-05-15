@@ -148,7 +148,7 @@ function DiagramEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo }
   const [guardando, setGuardando]   = useState(false);
   const [guardado, setGuardado]     = useState(false);
   const [nombre, setNombre]         = useState(nombreInicial || 'Nuevo diagrama');
-  const { fitView }                 = useReactFlow();
+  const { fitView, setViewport }    = useReactFlow();
   const flowRef                     = useRef(null);
   const navigate                    = useNavigate();
  
@@ -191,21 +191,48 @@ function DiagramEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo }
     try {
       await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
       await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-      fitView({ padding: 0.12, duration: 0 });
-      await new Promise((r) => setTimeout(r, 350));
-      const canvas = await window.html2canvas(flowRef.current, {
-        backgroundColor: '#0f1117', scale: 2, useCORS: true, logging: false,
+
+      if (nodes.length === 0) { alert('Agrega al menos un nodo'); return; }
+
+      // Calcular bounding box de todos los nodos
+      const PAD = 40;
+      const minX = Math.min(...nodes.map(n => n.position.x)) - PAD;
+      const minY = Math.min(...nodes.map(n => n.position.y)) - PAD;
+      const maxX = Math.max(...nodes.map(n => n.position.x + (n.width  || 220))) + PAD;
+      const maxY = Math.max(...nodes.map(n => n.position.y + (n.height || 200))) + PAD;
+
+      const el   = flowRef.current;
+      const vw   = el.clientWidth  || 800;
+      const vh   = el.clientHeight || 600;
+      const zoom = Math.min(vw / (maxX - minX), vh / (maxY - minY), 1.5);
+
+      // Centrar todos los nodos con zoom calculado (sin animación)
+      setViewport({ x: -minX * zoom + (vw - (maxX - minX) * zoom) / 2, y: -minY * zoom + (vh - (maxY - minY) * zoom) / 2, zoom });
+      await new Promise(r => setTimeout(r, 500));
+
+      const cap = await window.html2canvas(el, {
+        backgroundColor: '#0f1117',
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        width:  vw,
+        height: vh,
         ignoreElements: (el) =>
           el.classList?.contains('react-flow__panel') ||
           el.classList?.contains('react-flow__minimap') ||
           el.classList?.contains('react-flow__controls'),
       });
+
+      // Restaurar vista
+      fitView({ padding: 0.12, duration: 300 });
+
       const { jsPDF } = window.jspdf;
-      const imgW = canvas.width / 2, imgH = canvas.height / 2;
+      const imgW = cap.width / 2, imgH = cap.height / 2;
       const pdf = new jsPDF({ orientation: imgW > imgH ? 'landscape' : 'portrait', unit: 'px', format: [imgW, imgH] });
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgW, imgH);
+      pdf.addImage(cap.toDataURL('image/png'), 'PNG', 0, 0, imgW, imgH);
       pdf.save(`${nombre}.pdf`);
-    } catch { alert('Error al exportar'); }
+    } catch (e) { console.error(e); alert('Error al exportar'); }
     finally { setExporting(false); }
   }
  
