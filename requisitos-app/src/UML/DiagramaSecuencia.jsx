@@ -456,12 +456,12 @@ function DiagramEditor({ initData, diagramaId, tipo }) {
               <h4>Participante</h4>
               <div className="pf">
                 <label>Nombre</label>
-                <input value={selParticipante.nombre} onChange={e=>updateParticipante(selParticipante.id,'nombre',e.target.value)}
-                  onInput={e=>updateParticipante(selParticipante.id, 'nombre', e.target.value)} />
+                <input value={selParticipante.nombre}
+                  onChange={e=>updateParticipante(selParticipante.id, { nombre: e.target.value })} />
               </div>
               <div className="pf">
                 <label>Tipo</label>
-                <select value={selParticipante.tipo} onChange={e=>updateParticipante(selParticipante.id,'tipo',e.target.value)}>
+                <select value={selParticipante.tipo} onChange={e=>updateParticipante(selParticipante.id, { tipo: e.target.value })}>
                   <option value="object">Objeto</option>
                   <option value="actor">Actor</option>
                   <option value="boundary">Boundary</option>
