@@ -21,6 +21,9 @@ class Diagrama(Base):
     tipo: Mapped[str] = mapped_column(
         String(20), nullable=False
     )
+    id_proyecto: Mapped[int] = mapped_column(
+        Integer, ForeignKey("proyectos.id_proyecto"), nullable=True
+    )
     creado_en: Mapped[str] = mapped_column(
         DateTime, default=datetime.utcnow
     )
