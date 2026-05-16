@@ -23,12 +23,15 @@ def serializar_diagrama(d: Diagrama) -> dict:
 @diagramas_bp.route('/diagramas', methods=['GET'])
 def listar_diagramas():
     try:
-        tipo = request.args.get('tipo')  # ?tipo=clases  (opcional)
+        tipo = request.args.get('tipo')  # ?tipo=clases  
+        id_proyecto = request.args.get('id_proyecto')
 
         with Session(engine) as session:
             stmt = select(Diagrama).order_by(Diagrama.editado_en.desc())
             if tipo:
                 stmt = stmt.where(Diagrama.tipo == tipo)
+            if id_proyecto:                             
+                stmt = stmt.where(Diagrama.id_proyecto == int(id_proyecto))
 
             diagramas = session.scalars(stmt).all()
             return jsonify([serializar_diagrama(d) for d in diagramas]), 200
@@ -60,6 +63,7 @@ def crear_diagrama():
                 nombre=data["nombre"],
                 descripcion=data.get("descripcion", ""),
                 tipo=data["tipo"],
+                id_proyecto=data.get("id_proyecto"),
             )
             session.add(diagrama)
             session.commit()
