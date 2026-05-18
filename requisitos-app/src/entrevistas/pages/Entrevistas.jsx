@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 
 const BASE_URL = "http://127.0.0.1:5000";
 
-/* ── Icons ──────────────────────────────────────────── */
+/*Icons */
 function IconTotal() {
   return (
     <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
@@ -204,7 +204,7 @@ export default function Entrevistas() {
   );
 }
 
-/* ── Stat Card ──────────────────────────────────────── */
+/* Stat Card  */
 function StatCard({ titulo, cantidad, icon, color }) {
   const colors = {
     blue:    { bg: "bg-blue-50",    text: "text-blue-600",    num: "text-blue-700"    },
@@ -223,19 +223,19 @@ function StatCard({ titulo, cantidad, icon, color }) {
   );
 }
 
-/* ── Tarjeta Entrevista ─────────────────────────────── */
+/* Tarjeta Entrevista */
 function TarjetaEntrevista({ entrevista, idProyecto, onEliminar }) {
   const navegar = useNavigate();
   const cfg     = ESTADO_CONFIG[entrevista.estado] ?? ESTADO_CONFIG.pendiente;
-
+ 
   const fecha = entrevista.fecha_programada
     ? new Date(entrevista.fecha_programada).toLocaleDateString("es-MX", {
         day: "2-digit", month: "short", year: "numeric",
       })
     : null;
-
+ 
   const base = `/app/proyectos/${idProyecto}/entrevistas/${entrevista.id_entrevista}`;
-
+ 
   return (
     <div className={`bg-white border border-gray-200 border-l-4 ${cfg.accent} rounded-xl p-5 shadow-sm`}>
       <div className="flex items-start justify-between gap-4">
@@ -255,7 +255,7 @@ function TarjetaEntrevista({ entrevista, idProyecto, onEliminar }) {
             )}
           </div>
         </div>
-
+ 
         {/* Acciones */}
         <div className="flex items-center gap-1 flex-shrink-0">
           <button
@@ -264,6 +264,14 @@ function TarjetaEntrevista({ entrevista, idProyecto, onEliminar }) {
                        px-2.5 py-1.5 rounded-md transition-colors"
           >
             Ver
+          </button>
+          {/* ── BOTÓN EDITAR ── */}
+          <button
+            onClick={() => navegar(`${base}/editar`)}
+            className="text-xs font-medium text-blue-500 hover:text-blue-700 hover:bg-blue-50
+                       px-2.5 py-1.5 rounded-md transition-colors"
+          >
+            Editar
           </button>
           <button
             onClick={() => onEliminar(entrevista.id_entrevista)}
@@ -274,7 +282,7 @@ function TarjetaEntrevista({ entrevista, idProyecto, onEliminar }) {
           </button>
         </div>
       </div>
-
+ 
       {/* Acciones principales */}
       <div className="flex items-center gap-2 mt-4">
         <button

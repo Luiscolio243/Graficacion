@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 
-/* ── Iconos ──────────────────────────────────────────── */
+/*  Iconos */
 function IconEntrevistas() {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -78,7 +78,7 @@ function IconArrow() {
   );
 }
 
-/* ── Config de colores ───────────────────────────────── */
+/* Config de colores */
 const COLOR_CONFIG = {
   blue:    { iconBg: "bg-blue-50",    iconText: "text-blue-600",    border: "border-blue-100",    cta: "text-blue-600"    },
   indigo:  { iconBg: "bg-indigo-50",  iconText: "text-indigo-600",  border: "border-indigo-100",  cta: "text-indigo-600"  },
@@ -89,7 +89,7 @@ const COLOR_CONFIG = {
   cyan:    { iconBg: "bg-cyan-50",    iconText: "text-cyan-600",    border: "border-cyan-100",    cta: "text-cyan-600"    },
 };
 
-/* ── Página principal ────────────────────────────────── */
+/* Página principal */
 export default function Requerimientos() {
   const { id }  = useParams();
   const navegar = useNavigate();
@@ -192,7 +192,7 @@ export default function Requerimientos() {
   );
 }
 
-/* ── Tarjeta ─────────────────────────────────────────── */
+/* Tarjeta */
 function TarjetaModulo({ titulo, descripcion, color = "indigo", icon, onClick }) {
   const c = COLOR_CONFIG[color] ?? COLOR_CONFIG.indigo;
 

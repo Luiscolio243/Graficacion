@@ -10,6 +10,7 @@ from Routers.procesos import procesos_bp
 from Routers.entrevistas import entrevistas_bp
 from Routers.entrevistaPreguntas import entrevista_preguntas_bp
 from Routers.Encuestas import encuestas_bp
+from Routers.encuestaPreguntas import encuesta_preguntas_bp
 from Routers.Equipo_ti_router import equipo_ti_bp
 from Routers.Seguimiento import seguimiento_bp
 from Routers.Observaciones import observaciones_bp
@@ -54,6 +55,7 @@ app.register_blueprint(secuencia_uml_bp)
 app.register_blueprint(specs_bp)
 app.register_blueprint(specs_tecnicas_bp)
 app.register_blueprint(specs_archivos_bp)
+app.register_blueprint(encuesta_preguntas_bp)
 
 
 if __name__ == '__main__':

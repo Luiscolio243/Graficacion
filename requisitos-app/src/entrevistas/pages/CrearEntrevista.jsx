@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 
 const BASE_URL = "http://127.0.0.1:5000";
 
+const TECNICA = "Entrevista";
+
 export default function CrearEntrevista() {
   const { id }  = useParams();
   const navegar = useNavigate();
@@ -18,11 +20,14 @@ export default function CrearEntrevista() {
     preguntas:        [""],
   });
 
-  const [entrevistadores, setEntrevistadores] = useState([]);
-  const [stakeholders,    setStakeholders]    = useState([]);
-  const [procesos,        setProcesos]        = useState([]);
-  const [guardando,       setGuardando]       = useState(false);
+  const [entrevistadores,      setEntrevistadores]      = useState([]);
+  const [stakeholders,         setStakeholders]         = useState([]);
+  const [procesos,             setProcesos]             = useState([]);
+  const [subprocesosDisp,      setSubprocesosDisp]      = useState([]);  
+  const [cargandoSubprocesos,  setCargandoSubprocesos]  = useState(false);
+  const [guardando,            setGuardando]            = useState(false);
 
+  // Carga inicial 
   useEffect(() => {
     const token   = localStorage.getItem("token");
     const headers = { Authorization: `Bearer ${token}` };
@@ -35,28 +40,46 @@ export default function CrearEntrevista() {
       .then((r) => r.ok ? r.json() : []).then(setProcesos).catch(() => {});
   }, [id]);
 
-  const subprocesosFiltrados =
-    procesos.find((p) => String(p.id_proceso) === String(form.proceso))?.subprocesos || [];
+  // Al cambiar el proceso, buscar subprocesos con técnica "Entrevista" 
+  useEffect(() => {
+    if (!form.proceso) {
+      setSubprocesosDisp([]);
+      return;
+    }
 
+    setCargandoSubprocesos(true);
+    const token   = localStorage.getItem("token");
+    const headers = { Authorization: `Bearer ${token}` };
+
+    fetch(
+      `${BASE_URL}/subprocesos/por-tecnica?id_proceso=${form.proceso}&tecnica=${encodeURIComponent(TECNICA)}`,
+      { headers }
+    )
+      .then((r) => r.ok ? r.json() : [])
+      .then((data) => { setSubprocesosDisp(data); })
+      .catch(() => setSubprocesosDisp([]))
+      .finally(() => setCargandoSubprocesos(false));
+  }, [form.proceso]);
+
+  // Helpers 
   const set = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
 
-  const agregarPregunta = () => set("preguntas", [...form.preguntas, ""]);
-
+  const agregarPregunta    = () => set("preguntas", [...form.preguntas, ""]);
   const actualizarPregunta = (index, valor) => {
     const copia = [...form.preguntas];
     copia[index] = valor;
     set("preguntas", copia);
   };
-
-  const eliminarPregunta = (index) => {
+  const eliminarPregunta   = (index) => {
     if (form.preguntas.length === 1) return;
     set("preguntas", form.preguntas.filter((_, i) => i !== index));
   };
 
+  // Guardar 
   const handleGuardar = async () => {
-    if (!form.titulo.trim())     return alert("El título es obligatorio.");
-    if (!form.entrevistador)     return alert("Selecciona un entrevistador.");
-    if (!form.entrevistado)      return alert("Selecciona un entrevistado.");
+    if (!form.titulo.trim()) return alert("El título es obligatorio.");
+    if (!form.entrevistador) return alert("Selecciona un entrevistador.");
+    if (!form.entrevistado)  return alert("Selecciona un entrevistado.");
 
     setGuardando(true);
     try {
@@ -103,6 +126,14 @@ export default function CrearEntrevista() {
 
   const inputCls = "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white";
   const labelCls = "block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5";
+
+  // Texto de ayuda del selector de subproceso 
+  const subprocesoPlaceholder = () => {
+    if (!form.proceso)           return "Elige un proceso primero";
+    if (cargandoSubprocesos)     return "Cargando...";
+    if (subprocesosDisp.length === 0) return "Sin subprocesos disponibles";
+    return "Sin subproceso";
+  };
 
   return (
     <div className="space-y-7 max-w-3xl mx-auto">
@@ -198,11 +229,16 @@ export default function CrearEntrevista() {
         <div className="px-6 py-5 space-y-4">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Proceso relacionado</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            {/* Selector de proceso */}
             <div>
               <label className={labelCls}>Proceso</label>
               <select
                 value={form.proceso}
-                onChange={(e) => set("proceso", e.target.value) || set("subproceso", "")}
+                onChange={(e) => {
+                  set("proceso", e.target.value);
+                  set("subproceso", "");   // resetear subproceso al cambiar proceso
+                }}
                 className={inputCls}
               >
                 <option value="">Sin proceso</option>
@@ -211,19 +247,39 @@ export default function CrearEntrevista() {
                 ))}
               </select>
             </div>
+
+            {/* Selector de subproceso — filtrado por técnica "Entrevista" */}
             <div>
               <label className={labelCls}>Subproceso</label>
               <select
                 value={form.subproceso}
                 onChange={(e) => set("subproceso", e.target.value)}
-                disabled={!form.proceso}
+                disabled={!form.proceso || cargandoSubprocesos || subprocesosDisp.length === 0}
                 className={inputCls + " disabled:opacity-50"}
               >
-                <option value="">{form.proceso ? "Sin subproceso" : "Elige un proceso primero"}</option>
-                {subprocesosFiltrados.map((sp) => (
+                <option value="">{subprocesoPlaceholder()}</option>
+                {subprocesosDisp.map((sp) => (
                   <option key={sp.id_subproceso} value={sp.id_subproceso}>{sp.nombre}</option>
                 ))}
               </select>
+
+              {/* Aviso cuando hay proceso pero ningún subproceso tiene la técnica */}
+              {form.proceso && !cargandoSubprocesos && subprocesosDisp.length === 0 && (
+                <p className="mt-1.5 text-xs text-amber-600 flex items-center gap-1">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" className="flex-shrink-0">
+                    <path d="M8 2a6 6 0 100 12A6 6 0 008 2zm0 4v3m0 2.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                  Ningún subproceso tiene asignada la técnica <strong className="ml-0.5">Entrevista</strong>.
+                  Asígnala desde el módulo de Procesos.
+                </p>
+              )}
+
+              {/* Indicador de qué técnica filtra este selector */}
+              {form.proceso && !cargandoSubprocesos && subprocesosDisp.length > 0 && (
+                <p className="mt-1.5 text-xs text-gray-400">
+                  Solo subprocesos con técnica <strong>Entrevista</strong> asignada
+                </p>
+              )}
             </div>
           </div>
         </div>

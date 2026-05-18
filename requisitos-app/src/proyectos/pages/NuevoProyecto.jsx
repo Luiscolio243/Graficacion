@@ -250,7 +250,7 @@ export default function NuevoProyecto() {
   );
 }
 
-/* ── Sub-componentes ─────────────────────────────── */
+/* Sub-componentes */
 
 const COLOR_MAP = {
   indigo: { dot: "bg-indigo-500", badge: "bg-indigo-100 text-indigo-700", iconBg: "bg-indigo-50 text-indigo-600", border: "border-indigo-100" },
