@@ -127,7 +127,7 @@ export default function VerResultados() {
   );
 }
 
-/* ── Stat Card ──────────────────────────────────────── */
+/* Stat Card  */
 function StatCard({ titulo, valor, sub, barra, color }) {
   const colors = {
     blue:    { bg: "bg-blue-50",    text: "text-blue-600",    num: "text-blue-700",    bar: "bg-blue-500"    },
@@ -149,7 +149,7 @@ function StatCard({ titulo, valor, sub, barra, color }) {
   );
 }
 
-/* ── Pregunta Resultados ────────────────────────────── */
+/* Pregunta Resultados */
 function PreguntaResultados({ pregunta, numero, respuestas }) {
   const total = respuestas.length;
 

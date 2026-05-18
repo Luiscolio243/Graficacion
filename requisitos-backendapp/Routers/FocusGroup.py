@@ -170,7 +170,7 @@ def actualizar_focus_group(id_focus_group):
         if not data:
             return jsonify({"error": "JSON inválido o vacío"}), 400
 
-        campos_editables = ["titulo", "lugar", "objetivo", "estado", "id_subproceso", "id_moderador", "fecha"]
+        campos_editables = ["titulo", "lugar", "objetivo", "estado", "id_subproceso", "id_moderador", "fecha","tipo_media", "transcripcion", "conclusiones",]
 
         with Session(engine) as session:
             fg = session.get(FocusGroup, id_focus_group)

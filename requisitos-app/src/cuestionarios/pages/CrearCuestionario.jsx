@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 const BASE_URL = "http://127.0.0.1:5000";
+const TECNICA  = "Formulario / Encuesta";
 
 const TIPOS = [
   { value: "abierta",        label: "Abierta"         },
@@ -16,8 +17,10 @@ const labelCls = "block text-xs font-semibold text-gray-500 uppercase tracking-w
 export default function CrearCuestionario() {
   const { id }    = useParams();
   const navegar   = useNavigate();
-  const [guardando, setGuardando] = useState(false);
-  const [procesos,  setProcesos]  = useState([]);
+  const [guardando,            setGuardando]            = useState(false);
+  const [procesos,             setProcesos]             = useState([]);
+  const [subprocesosDisp,      setSubprocesosDisp]      = useState([]);
+  const [cargandoSubprocesos,  setCargandoSubprocesos]  = useState(false);
 
   const [form, setForm] = useState({
     titulo:                "",
@@ -35,14 +38,21 @@ export default function CrearCuestionario() {
       .catch(() => {});
   }, [id]);
 
-  const subprocesosFiltrados =
-    procesos.find((p) => String(p.id_proceso) === String(form.id_proceso))?.subprocesos || [];
+  // Filtrar subprocesos por técnica al cambiar proceso
+  useEffect(() => {
+    if (!form.id_proceso) { setSubprocesosDisp([]); return; }
+    setCargandoSubprocesos(true);
+    fetch(`${BASE_URL}/subprocesos/por-tecnica?id_proceso=${form.id_proceso}&tecnica=${encodeURIComponent(TECNICA)}`)
+      .then((r) => r.ok ? r.json() : [])
+      .then(setSubprocesosDisp)
+      .catch(() => setSubprocesosDisp([]))
+      .finally(() => setCargandoSubprocesos(false));
+  }, [form.id_proceso]);
 
   const set = (field, value) => setForm((f) => ({ ...f, [field]: value }));
 
-  const handleCambiarProceso = (e) => {
+  const handleCambiarProceso = (e) =>
     setForm((f) => ({ ...f, id_proceso: e.target.value, id_subproceso: "" }));
-  };
 
   const agregarPregunta = () =>
     set("preguntas", [...form.preguntas, { texto: "", tipo: "abierta", opciones: [] }]);
@@ -114,10 +124,16 @@ export default function CrearCuestionario() {
     }
   };
 
+  const subprocesoPlaceholder = () => {
+    if (!form.id_proceso)              return "Elige un proceso primero";
+    if (cargandoSubprocesos)           return "Cargando...";
+    if (subprocesosDisp.length === 0)  return "Sin subprocesos disponibles";
+    return "Sin subproceso";
+  };
+
   return (
     <div className="space-y-7 max-w-3xl mx-auto">
 
-      {/* Botón de regreso */}
       <button
         onClick={() => navegar(`/app/proyectos/${id}/requerimientos/cuestionarios`)}
         className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
@@ -128,15 +144,11 @@ export default function CrearCuestionario() {
         Volver a Cuestionarios
       </button>
 
-      {/* Encabezado */}
       <div className="pb-5 border-b border-gray-200">
         <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Nuevo Cuestionario</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          Diseña las preguntas y asígnalo a un proceso
-        </p>
+        <p className="text-sm text-gray-500 mt-0.5">Diseña las preguntas y asígnalo a un proceso</p>
       </div>
 
-      {/* Formulario */}
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm divide-y divide-gray-100">
 
         {/* Información general */}
@@ -183,7 +195,7 @@ export default function CrearCuestionario() {
           </div>
         </div>
 
-        {/* Proceso */}
+        {/* Proceso relacionado */}
         <div className="px-6 py-5 space-y-4">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Proceso relacionado</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -201,14 +213,28 @@ export default function CrearCuestionario() {
               <select
                 value={form.id_subproceso}
                 onChange={(e) => set("id_subproceso", e.target.value)}
-                disabled={!form.id_proceso}
+                disabled={!form.id_proceso || cargandoSubprocesos || subprocesosDisp.length === 0}
                 className={inputCls + " disabled:opacity-50"}
               >
-                <option value="">{form.id_proceso ? "Sin subproceso" : "Elige un proceso primero"}</option>
-                {subprocesosFiltrados.map((sp) => (
+                <option value="">{subprocesoPlaceholder()}</option>
+                {subprocesosDisp.map((sp) => (
                   <option key={sp.id_subproceso} value={sp.id_subproceso}>{sp.nombre}</option>
                 ))}
               </select>
+              {form.id_proceso && !cargandoSubprocesos && subprocesosDisp.length === 0 && (
+                <p className="mt-1.5 text-xs text-amber-600 flex items-center gap-1">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" className="flex-shrink-0">
+                    <path d="M8 2a6 6 0 100 12A6 6 0 008 2zm0 4v3m0 2.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                  Ningún subproceso tiene asignada la técnica <strong className="ml-0.5">Formulario / Encuesta</strong>.
+                  Asígnala desde el módulo de Procesos.
+                </p>
+              )}
+              {form.id_proceso && !cargandoSubprocesos && subprocesosDisp.length > 0 && (
+                <p className="mt-1.5 text-xs text-gray-400">
+                  Solo subprocesos con técnica <strong>Formulario / Encuesta</strong> asignada
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -219,11 +245,8 @@ export default function CrearCuestionario() {
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
               Preguntas <span className="text-red-500">*</span>
             </p>
-            <button
-              type="button"
-              onClick={agregarPregunta}
-              className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors"
-            >
+            <button type="button" onClick={agregarPregunta}
+              className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors">
               + Añadir pregunta
             </button>
           </div>
@@ -231,18 +254,13 @@ export default function CrearCuestionario() {
           <div className="space-y-3">
             {form.preguntas.map((pregunta, idx) => (
               <div key={idx} className="border border-gray-200 rounded-xl p-4 space-y-3 bg-gray-50">
-                {/* Fila: número + eliminar */}
                 <div className="flex items-center justify-between">
-                  <span className="w-5 h-5 rounded-full bg-green-100 text-green-700 text-[11px] font-bold
-                                   flex items-center justify-center flex-shrink-0">
+                  <span className="w-5 h-5 rounded-full bg-green-100 text-green-700 text-[11px] font-bold flex items-center justify-center flex-shrink-0">
                     {idx + 1}
                   </span>
                   {form.preguntas.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => eliminarPregunta(idx)}
-                      className="text-gray-300 hover:text-red-500 transition-colors"
-                    >
+                    <button type="button" onClick={() => eliminarPregunta(idx)}
+                      className="text-gray-300 hover:text-red-500 transition-colors">
                       <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
                         <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                       </svg>
@@ -250,44 +268,34 @@ export default function CrearCuestionario() {
                   )}
                 </div>
 
-                {/* Texto */}
                 <input
                   type="text"
                   value={pregunta.texto}
                   onChange={(e) => actualizarPregunta(idx, "texto", e.target.value)}
                   placeholder={`Escribe la pregunta ${idx + 1}...`}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white
-                             focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
 
-                {/* Tipo — botones toggle */}
                 <div className="flex flex-wrap gap-1.5">
                   {TIPOS.map((t) => (
-                    <button
-                      key={t.value}
-                      type="button"
+                    <button key={t.value} type="button"
                       onClick={() => actualizarPregunta(idx, "tipo", t.value)}
                       className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
                         pregunta.tipo === t.value
                           ? "bg-green-600 text-white border-green-600"
                           : "bg-white text-gray-600 border-gray-300 hover:border-green-400"
-                      }`}
-                    >
+                      }`}>
                       {t.label}
                     </button>
                   ))}
                 </div>
 
-                {/* Opciones (opción múltiple) */}
                 {pregunta.tipo === "opcionMultiple" && (
                   <div className="border-t border-gray-200 pt-3 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Opciones</span>
-                      <button
-                        type="button"
-                        onClick={() => agregarOpcion(idx)}
-                        className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors"
-                      >
+                      <button type="button" onClick={() => agregarOpcion(idx)}
+                        className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors">
                         + Agregar opción
                       </button>
                     </div>
@@ -295,19 +303,13 @@ export default function CrearCuestionario() {
                       pregunta.opciones.map((op, idxO) => (
                         <div key={idxO} className="flex items-center gap-2">
                           <span className="text-xs text-gray-400 w-4 text-right">{idxO + 1}.</span>
-                          <input
-                            type="text"
-                            value={op}
+                          <input type="text" value={op}
                             onChange={(e) => actualizarOpcion(idx, idxO, e.target.value)}
                             placeholder={`Opción ${idxO + 1}`}
-                            className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white
-                                       focus:outline-none focus:ring-2 focus:ring-green-500"
+                            className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
                           />
-                          <button
-                            type="button"
-                            onClick={() => eliminarOpcion(idx, idxO)}
-                            className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0"
-                          >
+                          <button type="button" onClick={() => eliminarOpcion(idx, idxO)}
+                            className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0">
                             <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                               <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                             </svg>
@@ -320,21 +322,17 @@ export default function CrearCuestionario() {
                   </div>
                 )}
 
-                {/* Preview escala */}
                 {pregunta.tipo === "escala" && (
                   <div className="border-t border-gray-200 pt-3">
                     <p className="text-xs text-gray-400 mb-2">Vista previa:</p>
                     <div className="flex gap-1.5">
                       {[1, 2, 3, 4, 5].map((n) => (
-                        <span key={n} className="w-8 h-8 rounded-lg border-2 border-gray-200 flex items-center justify-center text-xs font-medium text-gray-400">
-                          {n}
-                        </span>
+                        <span key={n} className="w-8 h-8 rounded-lg border-2 border-gray-200 flex items-center justify-center text-xs font-medium text-gray-400">{n}</span>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* Preview sí/no */}
                 {pregunta.tipo === "siNo" && (
                   <div className="border-t border-gray-200 pt-3">
                     <p className="text-xs text-gray-400 mb-2">Vista previa:</p>
@@ -350,20 +348,17 @@ export default function CrearCuestionario() {
         </div>
       </div>
 
-      {/* Botones */}
       <div className="flex gap-3 pb-4">
         <button
           onClick={() => navegar(`/app/proyectos/${id}/requerimientos/cuestionarios`)}
-          className="flex-1 border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg
-                     text-sm font-medium hover:bg-gray-50 transition"
+          className="flex-1 border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
         >
           Cancelar
         </button>
         <button
           onClick={handleGuardar}
           disabled={guardando}
-          className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400
-                     text-white px-4 py-2.5 rounded-lg text-sm font-medium transition"
+          className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition"
         >
           {guardando ? "Guardando..." : "Crear Cuestionario"}
         </button>

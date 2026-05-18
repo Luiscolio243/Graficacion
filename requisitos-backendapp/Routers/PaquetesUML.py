@@ -34,7 +34,7 @@ def serializar_arista(arista: ClaseArista) -> dict:
     }
 
 
-# ─── GET /diagramas/<id>/paquetes ─────────────────────────────────────────────
+# GET /diagramas/<id>/paquetes 
 @paquetes_uml_bp.route('/diagramas/<int:id_diagrama>/paquetes', methods=['GET'])
 def cargar_diagrama_paquetes(id_diagrama):
     try:
@@ -65,7 +65,7 @@ def cargar_diagrama_paquetes(id_diagrama):
         return jsonify({"error": str(e)}), 500
 
 
-# ─── PUT /diagramas/<id>/paquetes ─────────────────────────────────────────────
+# PUT /diagramas/<id>/paquetes 
 # Body: { nombre?, nodos: [...], aristas: [...] }
 @paquetes_uml_bp.route('/diagramas/<int:id_diagrama>/paquetes', methods=['PUT'])
 def guardar_diagrama_paquetes(id_diagrama):

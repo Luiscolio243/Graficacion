@@ -43,7 +43,7 @@ from Models.SeqMensaje import SeqMensaje
 specs_bp = Blueprint('specs', __name__)
 
 
-# ─── HELPERS ─────────────────────────────────────────────────────────────────
+# HELPERS 
 
 def get_nombre_stakeholder(session, id_stakeholder):
     if not id_stakeholder:
@@ -64,13 +64,13 @@ def get_nombre_subproceso(session, id_subproceso):
     return sp.nombre if sp else None
 
 
-# ─── GET /proyectos/<id>/specs ────────────────────────────────────────────────
+#  GET /proyectos/<id>/specs 
 @specs_bp.route('/proyectos/<int:id_proyecto>/specs', methods=['GET'])
 def generar_specs(id_proyecto):
     try:
         with Session(engine) as session:
 
-            # ── 1. PROYECTO ──────────────────────────────────────────────────
+            # 1. PROYECTO 
             proyecto = session.get(Proyecto, id_proyecto)
             if not proyecto:
                 return jsonify({"error": "Proyecto no encontrado"}), 404
@@ -86,13 +86,13 @@ def generar_specs(id_proyecto):
                     "estado": proyecto.estado,
                 },
 
-                # ── 2. STAKEHOLDERS ──────────────────────────────────────────
+                # 2. STAKEHOLDERS 
                 "stakeholders": [],
 
-                # ── 3. PROCESOS ──────────────────────────────────────────────
+                # 3. PROCESOS 
                 "procesos": [],
 
-                # ── 4. RECOPILACION ──────────────────────────────────────────
+                #  4. RECOPILACION 
                 "entrevistas": [],
                 "cuestionarios": [],
                 "observaciones": [],
@@ -100,10 +100,10 @@ def generar_specs(id_proyecto):
                 "analisis_documentos": [],
                 "seguimientos": [],
 
-                # ── 5. HISTORIAS DE USUARIO ──────────────────────────────────
+                #  5. HISTORIAS DE USUARIO 
                 "historias_usuario": [],
 
-                # ── 6. DIAGRAMAS ─────────────────────────────────────────────
+                #  6. DIAGRAMAS 
                 "diagramas": {
                     "clases": [],
                     "casos_uso": [],
@@ -112,7 +112,7 @@ def generar_specs(id_proyecto):
                 },
             }
 
-            # ── 2. STAKEHOLDERS ──────────────────────────────────────────────
+            #  2. STAKEHOLDERS 
             stakeholders = session.scalars(
                 select(Stakeholders).where(Stakeholders.id_proyecto == id_proyecto)
             ).all()
@@ -124,7 +124,7 @@ def generar_specs(id_proyecto):
                     "email": sh.email if hasattr(sh, 'email') else None,
                 })
 
-            # ── 3. PROCESOS Y SUBPROCESOS ────────────────────────────────────
+            #  3. PROCESOS Y SUBPROCESOS 
             procesos = session.scalars(
                 select(Proceso).where(Proceso.id_proyecto == id_proyecto)
             ).all()
@@ -141,7 +141,7 @@ def generar_specs(id_proyecto):
                     ],
                 })
 
-            # ── 4a. ENTREVISTAS ──────────────────────────────────────────────
+            # 4a. ENTREVISTAS 
             entrevistas = session.scalars(
                 select(Entrevistas).where(Entrevistas.id_proyecto == id_proyecto)
             ).all()
@@ -169,7 +169,7 @@ def generar_specs(id_proyecto):
                     ],
                 })
 
-            # ── 4b. CUESTIONARIOS ────────────────────────────────────────────
+            #  4b. CUESTIONARIOS 
             encuestas = session.scalars(
                 select(Encuestas).where(Encuestas.id_proyecto == id_proyecto)
             ).all()
@@ -235,7 +235,7 @@ def generar_specs(id_proyecto):
                     "preguntas": preguntas_data,
                 })
 
-            # ── 4c. OBSERVACIONES ────────────────────────────────────────────
+            #  4c. OBSERVACIONES 
             observaciones = session.scalars(
                 select(Observaciones).where(Observaciones.id_proyecto == id_proyecto)
             ).all()
@@ -250,7 +250,7 @@ def generar_specs(id_proyecto):
                     "contexto": ob.contexto,
                 })
 
-            # ── 4d. FOCUS GROUPS ─────────────────────────────────────────────
+            #  4d. FOCUS GROUPS 
             focus_groups = session.scalars(
                 select(FocusGroup).where(FocusGroup.id_proyecto == id_proyecto)
             ).all()
@@ -283,7 +283,7 @@ def generar_specs(id_proyecto):
                     ],
                 })
 
-            # ── 4e. ANALISIS DE DOCUMENTOS ───────────────────────────────────
+            #  4e. ANALISIS DE DOCUMENTOS 
             analisis = session.scalars(
                 select(AnalisisDocumento).where(AnalisisDocumento.id_proyecto == id_proyecto)
             ).all()
@@ -312,7 +312,7 @@ def generar_specs(id_proyecto):
                     "hallazgos": [h.descripcion for h in hallazgos],
                 })
 
-            # ── 4f. SEGUIMIENTO TRANSACCIONAL ────────────────────────────────
+            #  4f. SEGUIMIENTO TRANSACCIONAL 
             seguimientos = session.scalars(
                 select(Seguimiento).where(Seguimiento.id_proyecto == id_proyecto)
             ).all()
@@ -347,7 +347,7 @@ def generar_specs(id_proyecto):
                     ],
                 })
 
-            # ── 5. HISTORIAS DE USUARIO ──────────────────────────────────────
+            #  5. HISTORIAS DE USUARIO 
             historias = session.scalars(
                 select(HistoriaUsuario).where(HistoriaUsuario.id_proyecto == id_proyecto)
             ).all()
@@ -363,12 +363,12 @@ def generar_specs(id_proyecto):
                     "subproceso": get_nombre_subproceso(session, h.id_subproceso),
                 })
 
-            # ── 6. DIAGRAMAS ─────────────────────────────────────────────────
+            #  6. DIAGRAMAS 
             diagramas = session.scalars(select(Diagrama)).all()
 
             for diag in diagramas:
 
-                # ── Clases ───────────────────────────────────────────────────
+                #  Clases 
                 if diag.tipo == 'clases':
                     nodos = session.scalars(
                         select(ClaseNodo).where(ClaseNodo.id_diagrama == diag.id_diagrama)
@@ -400,7 +400,7 @@ def generar_specs(id_proyecto):
                         ],
                     })
 
-                # ── Casos de uso ─────────────────────────────────────────────
+                #  Casos de uso 
                 elif diag.tipo == 'casos_uso':
                     nodos = session.scalars(
                         select(CasoUsoNodo).where(CasoUsoNodo.id_diagrama == diag.id_diagrama)
@@ -429,7 +429,7 @@ def generar_specs(id_proyecto):
                         ],
                     })
 
-                # ── Paquetes ─────────────────────────────────────────────────
+                #  Paquetes 
                 elif diag.tipo == 'paquetes':
                     nodos = session.scalars(
                         select(PaqueteNodo).where(PaqueteNodo.id_diagrama == diag.id_diagrama)
@@ -454,7 +454,7 @@ def generar_specs(id_proyecto):
                         "paquetes": paquetes_data,
                     })
 
-                # ── Secuencias ───────────────────────────────────────────────
+                #  Secuencias 
                 elif diag.tipo == 'secuencias':
                     participantes = session.scalars(
                         select(SeqParticipante)

@@ -44,7 +44,7 @@ def serializar_arista(arista: ClaseArista) -> dict:
     }
 
 
-# ─── GET /diagramas/<id>/clases ───────────────────────────────────────────────
+#  GET /diagramas/<id>/clases 
 @clases_uml_bp.route('/diagramas/<int:id_diagrama>/clases', methods=['GET'])
 def cargar_diagrama_clases(id_diagrama):
     try:
@@ -75,7 +75,7 @@ def cargar_diagrama_clases(id_diagrama):
         return jsonify({"error": str(e)}), 500
 
 
-# ─── PUT /diagramas/<id>/clases ───────────────────────────────────────────────
+# PUT /diagramas/<id>/clases 
 # Recibe exactamente el estado de ReactFlow: { nombre?, descripcion?, nodos:[], aristas:[] }
 @clases_uml_bp.route('/diagramas/<int:id_diagrama>/clases', methods=['PUT'])
 def guardar_diagrama_clases(id_diagrama):

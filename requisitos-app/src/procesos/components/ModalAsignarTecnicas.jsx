@@ -8,6 +8,7 @@ const TECNICAS_DISPONIBLES = [
   "Observación",
   "Focus Group",
   "Historias de Usuario",
+  "Análisis de Documentos",
   "Seguimiento Transaccional",
 ];
 

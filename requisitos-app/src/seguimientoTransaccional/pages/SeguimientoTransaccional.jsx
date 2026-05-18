@@ -138,6 +138,7 @@ export default function SeguimientoTransaccional() {
               proceso={proceso}
               seguimientos={items}
               onVer={verDetalle}
+              onEditar={(s) => navegar(`/app/proyectos/${id}/requerimientos/seguimiento-transaccional/${s.id_seguimiento}/editar`)}
               onEliminar={setModalEliminar}
             />
           ))}
@@ -151,6 +152,10 @@ export default function SeguimientoTransaccional() {
           detalle={detalle}
           cargando={cargandoDet}
           onClose={cerrarDetalle}
+          onEditar={(sid) => {
+            cerrarDetalle();
+            navegar(`/app/proyectos/${id}/requerimientos/seguimiento-transaccional/editar/${sid}`);
+          }}
           onEliminar={(sid) => { setModalEliminar(sid); cerrarDetalle(); }}
         />
       )}
@@ -190,7 +195,7 @@ export default function SeguimientoTransaccional() {
   );
 }
 
-/* ── Stat Card ──────────────────────────────────────── */
+/* StatCard */
 function StatCard({ titulo, valor, color }) {
   const colors = {
     gray:   "text-gray-700",
@@ -204,8 +209,8 @@ function StatCard({ titulo, valor, color }) {
   );
 }
 
-/* ── Grupo por proceso ──────────────────────────────── */
-function GrupoProceso({ proceso, seguimientos, onVer, onEliminar }) {
+/* Grupo por proceso */
+function GrupoProceso({ proceso, seguimientos, onVer, onEditar, onEliminar }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 px-1">
@@ -219,6 +224,7 @@ function GrupoProceso({ proceso, seguimientos, onVer, onEliminar }) {
             key={s.id_seguimiento}
             seguimiento={s}
             onVer={() => onVer(s)}
+            onEditar={() => onEditar(s)}
             onEliminar={() => onEliminar(s.id_seguimiento)}
           />
         ))}
@@ -227,8 +233,8 @@ function GrupoProceso({ proceso, seguimientos, onVer, onEliminar }) {
   );
 }
 
-/* ── Tarjeta Seguimiento ────────────────────────────── */
-function TarjetaSeguimiento({ seguimiento, onVer, onEliminar }) {
+/* Tarjeta Seguimiento */
+function TarjetaSeguimiento({ seguimiento, onVer, onEditar, onEliminar }) {
   const fecha = seguimiento.fecha_creacion
     ? new Date(seguimiento.fecha_creacion).toLocaleDateString("es-MX", {
         day: "2-digit", month: "short", year: "numeric",
@@ -250,6 +256,9 @@ function TarjetaSeguimiento({ seguimiento, onVer, onEliminar }) {
         <button onClick={onVer} className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors">
           Ver
         </button>
+        <button onClick={onEditar} className="text-xs font-medium text-indigo-500 hover:text-indigo-700 transition-colors">
+          Editar
+        </button>
         <button onClick={onEliminar} className="text-xs font-medium text-gray-400 hover:text-red-500 transition-colors">
           Eliminar
         </button>
@@ -258,8 +267,8 @@ function TarjetaSeguimiento({ seguimiento, onVer, onEliminar }) {
   );
 }
 
-/* ── Modal Detalle ──────────────────────────────────── */
-function ModalDetalle({ seguimiento, detalle, cargando, onClose, onEliminar }) {
+/* Modal Detalle */
+function ModalDetalle({ seguimiento, detalle, cargando, onClose, onEditar, onEliminar }) {
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -368,6 +377,12 @@ function ModalDetalle({ seguimiento, detalle, cargando, onClose, onEliminar }) {
             className="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition text-sm"
           >
             Cerrar
+          </button>
+          <button
+            onClick={() => onEditar(seguimiento.id_seguimiento)}
+            className="flex-1 border border-indigo-300 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded-lg font-medium transition text-sm"
+          >
+            Editar
           </button>
           <button
             onClick={() => onEliminar(seguimiento.id_seguimiento)}

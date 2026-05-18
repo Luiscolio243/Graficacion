@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 
-/* ── Icons ──────────────────────────────────────────────────────── */
+/* Icons */
 function IconFile()  { return <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M9 1H4a1 1 0 00-1 1v12a1 1 0 001 1h8a1 1 0 001-1V6L9 1z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M9 1v5h5" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>; }
 function IconCal()   { return <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3" width="13" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.3"/><path d="M5 1.5v3M11 1.5v3M1.5 7h13" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>; }
 function IconOrg()   { return <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 14V6l6-4 6 4v8" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M6 14v-4h4v4" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>; }
@@ -17,7 +17,7 @@ function IconDoc()   { return <svg width="20" height="20" viewBox="0 0 20 20" fi
 function IconUML()   { return <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="1" y="1" width="6" height="4" rx="1" stroke="currentColor" strokeWidth="1.4"/><rect x="13" y="1" width="6" height="4" rx="1" stroke="currentColor" strokeWidth="1.4"/><rect x="13" y="15" width="6" height="4" rx="1" stroke="currentColor" strokeWidth="1.4"/><path d="M7 3h3.5v8H13M13 17h-2.5V11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>; }
 function IconSpecs() { return <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 2h8l4 4v12a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/><path d="M12 2v4h4M7 9h6M7 12h6M7 15h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>; }
 
-/* ── Configuración de estado ────────────────────────── */
+/* Configuración de estado */
 const STATUS_STYLE = {
   "En Progreso":   "bg-blue-500/20 text-blue-100 border border-blue-400/30",
   "En progreso":   "bg-blue-500/20 text-blue-100 border border-blue-400/30",
@@ -25,7 +25,7 @@ const STATUS_STYLE = {
   "Completado":    "bg-emerald-500/20 text-emerald-100 border border-emerald-400/30",
 };
 
-/* ── Configuración de módulos ───────────────────────── */
+/* Configuración de módulos */
 const MODULO_CONFIG = {
   blue:    { icon: <IconUsers />, iconBg: "bg-blue-50",    iconText: "text-blue-600",    border: "border-blue-100",    cta: "text-blue-600"    },
   indigo:  { icon: <IconCode />,  iconBg: "bg-indigo-50",  iconText: "text-indigo-600",  border: "border-indigo-100",  cta: "text-indigo-600"  },
@@ -35,7 +35,7 @@ const MODULO_CONFIG = {
   amber:   { icon: <IconSpecs />, iconBg: "bg-amber-50",   iconText: "text-amber-600",   border: "border-amber-100",   cta: "text-amber-600"   },
 };
 
-/* ── Componente principal ───────────────────────────── */
+/* Componente principal */
 export default function ProyectoDashboard() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -106,7 +106,7 @@ export default function ProyectoDashboard() {
   return (
     <div className="space-y-7 max-w-7xl mx-auto">
 
-      {/* ── Botón de regreso ────────────────────────────── */}
+      {/* Botón de regreso */}
       <button
         onClick={() => navigate("/app/proyectos")}
         className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors duration-150"
@@ -117,7 +117,7 @@ export default function ProyectoDashboard() {
         Volver a proyectos
       </button>
 
-      {/* ── Banner ─────────────────────────────────────── */}
+      {/*  Banner */}
       <div className="bg-indigo-600 rounded-2xl px-7 py-6">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -159,7 +159,7 @@ export default function ProyectoDashboard() {
         </div>
       </div>
 
-      {/* ── Información general ─────────────────────────── */}
+      {/* Información general */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <InfoCard titulo="Descripción" icon={<IconFile />}>
           {proyecto.descripcion || "Sin descripción"}
@@ -172,13 +172,13 @@ export default function ProyectoDashboard() {
         </InfoCard>
       </div>
 
-      {/* ── Personas ────────────────────────────────────── */}
+      {/* Personas */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <PersonaCard titulo="Product Owner" persona={productOwner} accentColor="#4F46E5" />
         <PersonaCard titulo="Tech Leader"   persona={techLeader}   accentColor="#0D9488" />
       </div>
 
-      {/* ── Módulos ─────────────────────────────────────── */}
+      {/* Módulos */}
       <div>
         <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
           Módulos del proyecto
@@ -226,7 +226,7 @@ export default function ProyectoDashboard() {
   );
 }
 
-/* ── Sub-componentes ────────────────────────────────── */
+/* Sub-componentes */
 
 function InfoCard({ titulo, icon, children }) {
   return (

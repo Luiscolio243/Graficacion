@@ -13,82 +13,99 @@ const PRIORIDADES = [
   { value: "baja",  label: "Baja"  },
 ];
 
-export default function CrearHistoriaDeUsuario() {
-  const { id } = useParams();
+export default function EditarHistoriaDeUsuario() {
+  const { id, id_historia } = useParams();
   const navegar = useNavigate();
 
   const [procesos,            setProcesos]            = useState([]);
   const [subprocesosDisp,     setSubprocesosDisp]     = useState([]);
   const [cargandoSubprocesos, setCargandoSubprocesos] = useState(false);
+  const [cargando,            setCargando]            = useState(true);
   const [guardando,           setGuardando]           = useState(false);
 
   const [form, setForm] = useState({
-    titulo:       "",
-    rol:          "",
-    accion:       "",
-    beneficio:    "",
-    id_proceso:   "",
-    id_subproceso:"",
-    prioridad:    "media",
-    estimacion:   "",
-    criterios:    [""],
+    titulo:        "",
+    rol:           "",
+    accion:        "",
+    beneficio:     "",
+    id_proceso:    "",
+    id_subproceso: "",
+    prioridad:     "media",
+    estimacion:    "",
+    criterios:     [""],
   });
 
+  // Carga inicial 
   useEffect(() => {
-    fetch(`${BASE_URL}/procesos/${id}`)
-      .then((r) => r.ok ? r.json() : [])
-      .then(setProcesos)
-      .catch(() => {});
-  }, [id]);
+    Promise.all([
+      fetch(`${BASE_URL}/historias-usuario/detalle/${id_historia}`).then(r => r.ok ? r.json() : null),
+      fetch(`${BASE_URL}/procesos/${id}`).then(r => r.ok ? r.json() : []),
+    ]).then(([historia, procs]) => {
+      if (historia) {
+        setForm({
+          titulo:        historia.titulo        || "",
+          rol:           historia.rol           || "",
+          accion:        historia.accion        || "",
+          beneficio:     historia.beneficio     || "",
+          id_proceso:    "",
+          id_subproceso: String(historia.id_subproceso || ""),
+          prioridad:     historia.prioridad     || "media",
+          estimacion:    historia.estimacion    || "",
+          criterios:     historia.criterios?.length > 0 ? historia.criterios : [""],
+        });
+      }
+      setProcesos(procs);
+    }).finally(() => setCargando(false));
+  }, [id, id_historia]);
 
-  // Filtrar subprocesos por técnica al cambiar proceso
+  // Filtrar subprocesos por técnica 
   useEffect(() => {
     if (!form.id_proceso) { setSubprocesosDisp([]); return; }
     setCargandoSubprocesos(true);
     fetch(`${BASE_URL}/subprocesos/por-tecnica?id_proceso=${form.id_proceso}&tecnica=${encodeURIComponent(TECNICA)}`)
-      .then((r) => r.ok ? r.json() : [])
+      .then(r => r.ok ? r.json() : [])
       .then(setSubprocesosDisp)
       .catch(() => setSubprocesosDisp([]))
       .finally(() => setCargandoSubprocesos(false));
   }, [form.id_proceso]);
 
-  const set = (campo, valor) => setForm((prev) => ({ ...prev, [campo]: valor }));
+  const set = (campo, valor) => setForm(prev => ({ ...prev, [campo]: valor }));
 
   const handleCambiarProceso = (e) =>
-    setForm((prev) => ({ ...prev, id_proceso: e.target.value, id_subproceso: "" }));
+    setForm(prev => ({ ...prev, id_proceso: e.target.value, id_subproceso: "" }));
 
-  const agregarCriterio   = () => set("criterios", [...form.criterios, ""]);
+  const agregarCriterio    = () => set("criterios", [...form.criterios, ""]);
   const actualizarCriterio = (idx, valor) =>
     set("criterios", form.criterios.map((c, i) => i === idx ? valor : c));
-  const eliminarCriterio  = (idx) => {
+  const eliminarCriterio   = (idx) => {
     if (form.criterios.length > 1)
       set("criterios", form.criterios.filter((_, i) => i !== idx));
   };
 
+  // Guardar 
   const handleGuardar = async () => {
     if (!form.titulo.trim() || !form.rol.trim() || !form.accion.trim() || !form.beneficio.trim())
       return alert("Completa los campos obligatorios: título, rol, acción y beneficio.");
 
     setGuardando(true);
     try {
-      const res = await fetch(`${BASE_URL}/historias-usuario/crear`, {
-        method: "POST",
+      const res = await fetch(`${BASE_URL}/historias-usuario/actualizar/${id_historia}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id_proyecto:   parseInt(id),
-          id_subproceso: form.id_subproceso ? parseInt(form.id_subproceso) : null,
           titulo:        form.titulo,
           rol:           form.rol,
           accion:        form.accion,
           beneficio:     form.beneficio,
           prioridad:     form.prioridad,
           estimacion:    form.estimacion || null,
-          criterios:     form.criterios.filter((c) => c.trim()),
+          id_subproceso: form.id_subproceso ? parseInt(form.id_subproceso) : null,
+          criterios:     form.criterios.filter(c => c.trim()),
         }),
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error || "Error al crear");
+        throw new Error(err.error || "Error al actualizar");
       }
       navegar(`/app/proyectos/${id}/requerimientos/historias-usuario`);
     } catch (e) {
@@ -105,6 +122,13 @@ export default function CrearHistoriaDeUsuario() {
     return "Sin subproceso";
   };
 
+  if (cargando) return (
+    <div className="flex items-center gap-2 py-8 text-sm text-gray-400">
+      <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-200 border-t-green-500 animate-spin" />
+      Cargando historia...
+    </div>
+  );
+
   return (
     <div className="space-y-7 max-w-3xl mx-auto">
 
@@ -119,8 +143,8 @@ export default function CrearHistoriaDeUsuario() {
       </button>
 
       <div className="pb-5 border-b border-gray-200">
-        <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Nueva Historia de Usuario</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Formato: Como [rol], quiero [acción], para que [beneficio]</p>
+        <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Editar Historia de Usuario</h1>
+        <p className="text-sm text-gray-500 mt-0.5">Modifica los campos y criterios de aceptación</p>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm divide-y divide-gray-100">
@@ -131,15 +155,14 @@ export default function CrearHistoriaDeUsuario() {
 
           <div>
             <label className={labelCls}>Título <span className="text-red-500">*</span></label>
-            <input type="text" value={form.titulo} onChange={(e) => set("titulo", e.target.value)}
-              placeholder="Ej: Registro de usuario en el sistema" className={inputCls} />
+            <input type="text" value={form.titulo} onChange={e => set("titulo", e.target.value)} className={inputCls} />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Prioridad <span className="text-red-500">*</span></label>
               <div className="flex gap-2">
-                {PRIORIDADES.map((p) => (
+                {PRIORIDADES.map(p => (
                   <button key={p.value} type="button" onClick={() => set("prioridad", p.value)}
                     className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-colors ${
                       form.prioridad === p.value
@@ -155,7 +178,7 @@ export default function CrearHistoriaDeUsuario() {
             </div>
             <div>
               <label className={labelCls}>Estimación <span className="text-gray-400 font-normal normal-case">(opcional)</span></label>
-              <input type="text" value={form.estimacion} onChange={(e) => set("estimacion", e.target.value)}
+              <input type="text" value={form.estimacion} onChange={e => set("estimacion", e.target.value)}
                 placeholder="Ej: 5, 8, 13" className={inputCls} />
             </div>
           </div>
@@ -167,17 +190,17 @@ export default function CrearHistoriaDeUsuario() {
 
           <div>
             <label className={labelCls}>Como... (rol) <span className="text-red-500">*</span></label>
-            <input type="text" value={form.rol} onChange={(e) => set("rol", e.target.value)}
+            <input type="text" value={form.rol} onChange={e => set("rol", e.target.value)}
               placeholder="Ej: usuario del sistema, administrador" className={inputCls} />
           </div>
           <div>
             <label className={labelCls}>Quiero... (acción) <span className="text-red-500">*</span></label>
-            <input type="text" value={form.accion} onChange={(e) => set("accion", e.target.value)}
+            <input type="text" value={form.accion} onChange={e => set("accion", e.target.value)}
               placeholder="Ej: restablecer mi contraseña desde el correo" className={inputCls} />
           </div>
           <div>
             <label className={labelCls}>Para que... (beneficio) <span className="text-red-500">*</span></label>
-            <input type="text" value={form.beneficio} onChange={(e) => set("beneficio", e.target.value)}
+            <input type="text" value={form.beneficio} onChange={e => set("beneficio", e.target.value)}
               placeholder="Ej: pueda acceder nuevamente sin contactar soporte" className={inputCls} />
           </div>
 
@@ -205,7 +228,7 @@ export default function CrearHistoriaDeUsuario() {
                 <svg className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" viewBox="0 0 16 16" fill="none">
                   <path d="M3 8l4 4 6-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                <input type="text" value={criterio} onChange={(e) => actualizarCriterio(idx, e.target.value)}
+                <input type="text" value={criterio} onChange={e => actualizarCriterio(idx, e.target.value)}
                   placeholder={`Criterio ${idx + 1}`}
                   className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-500" />
                 {form.criterios.length > 1 && (
@@ -229,7 +252,7 @@ export default function CrearHistoriaDeUsuario() {
               <label className={labelCls}>Proceso</label>
               <select value={form.id_proceso} onChange={handleCambiarProceso} className={inputCls}>
                 <option value="">Sin proceso</option>
-                {procesos.map((p) => (
+                {procesos.map(p => (
                   <option key={p.id_proceso} value={p.id_proceso}>{p.nombre}</option>
                 ))}
               </select>
@@ -238,12 +261,12 @@ export default function CrearHistoriaDeUsuario() {
               <label className={labelCls}>Subproceso</label>
               <select
                 value={form.id_subproceso}
-                onChange={(e) => set("id_subproceso", e.target.value)}
+                onChange={e => set("id_subproceso", e.target.value)}
                 disabled={!form.id_proceso || cargandoSubprocesos || subprocesosDisp.length === 0}
                 className={inputCls + " disabled:opacity-50"}
               >
                 <option value="">{subprocesoPlaceholder()}</option>
-                {subprocesosDisp.map((sp) => (
+                {subprocesosDisp.map(sp => (
                   <option key={sp.id_subproceso} value={sp.id_subproceso}>{sp.nombre}</option>
                 ))}
               </select>
@@ -253,11 +276,7 @@ export default function CrearHistoriaDeUsuario() {
                     <path d="M8 2a6 6 0 100 12A6 6 0 008 2zm0 4v3m0 2.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                   </svg>
                   Ningún subproceso tiene asignada la técnica <strong className="ml-0.5">Historias de Usuario</strong>.
-                  Asígnala desde el módulo de Procesos.
                 </p>
-              )}
-              {form.id_proceso && !cargandoSubprocesos && subprocesosDisp.length > 0 && (
-                <p className="mt-1.5 text-xs text-gray-400">Solo subprocesos con técnica <strong>Historias de Usuario</strong> asignada</p>
               )}
             </div>
           </div>
@@ -271,7 +290,7 @@ export default function CrearHistoriaDeUsuario() {
         </button>
         <button onClick={handleGuardar} disabled={guardando}
           className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition">
-          {guardando ? "Guardando..." : "Crear Historia"}
+          {guardando ? "Guardando..." : "Guardar cambios"}
         </button>
       </div>
     </div>

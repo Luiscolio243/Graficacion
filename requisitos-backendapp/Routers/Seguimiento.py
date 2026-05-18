@@ -12,14 +12,13 @@ from datetime import datetime
 seguimiento_bp = Blueprint('seguimiento', __name__)
 
 def serializar_seguimiento_lista(s):
-    # Para la pantalla de lista (solo datos principales)
     return {
         "id_seguimiento":   s.id_seguimiento,
-        "titulo":         s.titulo,
-        "id_transaccion": s.id_transaccion,
-        "nombre_proceso": s.nombre_proceso,
+        "titulo":           s.titulo,
+        "id_transaccion":   s.id_transaccion,
+        "nombre_proceso":   s.nombre_proceso,
         "id_responsable":   s.id_responsable,
-        "fecha_creacion": str(s.fecha_creacion) if s.fecha_creacion else None,
+        "fecha_creacion":   str(s.fecha_creacion) if s.fecha_creacion else None,
     }
 
 
@@ -62,21 +61,6 @@ def serializar_seguimiento_detalle(s):
     }
 
 
-
-def obtener_seguimientos(id_proyecto):
-    try:
-        with Session(engine) as session:
-            seguimientos = session.query(Seguimiento).filter(
-                Seguimiento.id_proyecto == id_proyecto
-            ).all()
-
-            return jsonify([serializar_seguimiento_lista(s) for s in seguimientos]), 200
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-
 @seguimiento_bp.route('/seguimientos/obtener/<int:id_proyecto>', methods=['GET'])
 def obtener_seguimientos(id_proyecto):
     try:
@@ -90,6 +74,7 @@ def obtener_seguimientos(id_proyecto):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @seguimiento_bp.route('/seguimientos/detalle/<int:id_seguimiento>', methods=['GET'])
 def obtener_seguimiento(id_seguimiento):
     try:
@@ -100,6 +85,7 @@ def obtener_seguimiento(id_seguimiento):
             return jsonify(serializar_seguimiento_detalle(s)), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @seguimiento_bp.route('/seguimientos/crear/<int:id_proyecto>', methods=['POST'])
 def crear_seguimiento(id_proyecto):
@@ -118,9 +104,8 @@ def crear_seguimiento(id_proyecto):
                 fecha_creacion = datetime.now(),
             )
             session.add(nuevo)
-            session.flush()  # obtener id_seguimiento
+            session.flush()
 
-            # Generar ID de transacción automático
             anio = datetime.now().year
             nuevo.id_transaccion = f"TXN-{anio}-{str(nuevo.id_seguimiento).zfill(3)}"
 
@@ -155,6 +140,69 @@ def crear_seguimiento(id_proyecto):
     except Exception as e:
         print("ERROR DETALLADO:", str(e))
         return jsonify({"error": str(e)}), 500
+
+
+@seguimiento_bp.route('/seguimientos/editar/<int:id_seguimiento>', methods=['PUT'])
+def editar_seguimiento(id_seguimiento):
+    try:
+        data = request.get_json()
+
+        with Session(engine) as session:
+            s = session.get(Seguimiento, id_seguimiento)
+            if not s:
+                return jsonify({"error": "Seguimiento no encontrado"}), 404
+
+            # Actualizar campos principales
+            s.titulo         = data.get('titulo', s.titulo)
+            s.nombre_proceso = data.get('nombre_proceso', s.nombre_proceso)
+            s.id_proceso     = data.get('id_proceso', s.id_proceso)
+            s.id_subproceso  = data.get('id_subproceso', s.id_subproceso)
+            s.id_responsable = data.get('id_responsable', s.id_responsable)
+
+            # Reemplazar pasos: borrar los existentes e insertar los nuevos
+            for paso in s.pasos:
+                session.delete(paso)
+            session.flush()
+            for i, paso in enumerate(data.get('pasos', []), start=1):
+                if paso.get('nombre', '').strip():
+                    session.add(SeguimientoPaso(
+                        id_seguimiento = id_seguimiento,
+                        nombre         = paso['nombre'],
+                        duracion_min   = paso.get('duracion_min'),
+                        orden          = i,
+                    ))
+
+            # Reemplazar problemas
+            for problema in s.problemas:
+                session.delete(problema)
+            session.flush()
+            for problema in data.get('problemas', []):
+                if problema.get('descripcion', '').strip():
+                    session.add(SeguimientoProblema(
+                        id_seguimiento = id_seguimiento,
+                        descripcion    = problema['descripcion'],
+                    ))
+
+            # Reemplazar métricas
+            for metrica in s.metricas:
+                session.delete(metrica)
+            session.flush()
+            for metrica in data.get('metricas', []):
+                if metrica.get('nombre', '').strip():
+                    session.add(SeguimientoMetrica(
+                        id_seguimiento = id_seguimiento,
+                        nombre         = metrica['nombre'],
+                        valor          = metrica.get('valor'),
+                    ))
+
+            session.commit()
+            session.refresh(s)
+            return jsonify(serializar_seguimiento_lista(s)), 200
+
+    except Exception as e:
+        print("ERROR DETALLADO:", str(e))
+        return jsonify({"error": str(e)}), 500
+
 
 @seguimiento_bp.route('/seguimientos/eliminar/<int:id_seguimiento>', methods=['DELETE'])
 def eliminar_seguimiento(id_seguimiento):

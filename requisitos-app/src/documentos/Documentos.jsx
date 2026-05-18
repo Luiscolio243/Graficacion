@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
-const API = 'http://localhost:5000';
+const API     = 'http://localhost:5000';
+const TECNICA = 'Análisis de Documentos';
 
 const hdrs = () => ({
   'Content-Type': 'application/json',
@@ -19,11 +20,11 @@ const FORM_VACIO = {
 };
 
 const TIPO_CONFIG = {
-  manual:    { color: "border-l-blue-400",    badge: "bg-blue-50 text-blue-700 border-blue-200"    },
+  manual:    { color: "border-l-blue-400",    badge: "bg-blue-50 text-blue-700 border-blue-200"       },
   reporte:   { color: "border-l-violet-400",  badge: "bg-violet-50 text-violet-700 border-violet-200" },
-  contrato:  { color: "border-l-amber-400",   badge: "bg-amber-50 text-amber-700 border-amber-200"  },
-  normativa: { color: "border-l-red-400",     badge: "bg-red-50 text-red-700 border-red-200"       },
-  diagrama:  { color: "border-l-cyan-400",    badge: "bg-cyan-50 text-cyan-700 border-cyan-200"    },
+  contrato:  { color: "border-l-amber-400",   badge: "bg-amber-50 text-amber-700 border-amber-200"    },
+  normativa: { color: "border-l-red-400",     badge: "bg-red-50 text-red-700 border-red-200"          },
+  diagrama:  { color: "border-l-cyan-400",    badge: "bg-cyan-50 text-cyan-700 border-cyan-200"       },
   encuesta:  { color: "border-l-emerald-400", badge: "bg-emerald-50 text-emerald-700 border-emerald-200" },
   politica:  { color: "border-l-orange-400",  badge: "bg-orange-50 text-orange-700 border-orange-200" },
 };
@@ -36,17 +37,20 @@ export default function Documentos() {
   const { id: idProyecto } = useParams();
   const navegar = useNavigate();
 
-  const [analisis,     setAnalisis]     = useState([]);
-  const [vista,        setVista]        = useState('lista');
-  const [form,         setForm]         = useState(FORM_VACIO);
-  const [procesos,     setProcesos]     = useState([]);
-  const [subFiltrados, setSubFiltrados] = useState([]);
-  const [expandidos,   setExpandidos]   = useState({});
-  const [modalEliminar,setModalEliminar]= useState(null);
-  const [detalle,      setDetalle]      = useState(null);
-  const [cargando,     setCargando]     = useState(true);
-  const [guardando,    setGuardando]    = useState(false);
-  const [error,        setError]        = useState('');
+  const [analisis,            setAnalisis]        = useState([]);
+  // vista: 'lista' | 'form' | 'editar'
+  const [vista,               setVista]           = useState('lista');
+  const [analisisEditando,    setAnalisisEditando]= useState(null);
+  const [form,                setForm]            = useState(FORM_VACIO);
+  const [procesos,            setProcesos]        = useState([]);
+  const [subFiltrados,        setSubFiltrados]    = useState([]);
+  const [cargandoSub,         setCargandoSub]     = useState(false);
+  const [expandidos,          setExpandidos]      = useState({});
+  const [modalEliminar,       setModalEliminar]   = useState(null);
+  const [detalle,             setDetalle]         = useState(null);
+  const [cargando,            setCargando]        = useState(true);
+  const [guardando,           setGuardando]       = useState(false);
+  const [error,               setError]           = useState('');
 
   useEffect(() => {
     if (!idProyecto) return;
@@ -59,68 +63,129 @@ export default function Documentos() {
     }).finally(() => setCargando(false));
   }, [idProyecto]);
 
-  const subprocesosGlobal = procesos.flatMap(p =>
-    (p.subprocesos || []).map(s => ({ ...s, id_proceso: p.id_proceso }))
-  );
-
-  function handleProceso(id_proceso) {
+  // Cambia proceso y resetea subproceso (para crear/cuando el usuario elige manualmente)
+  async function handleProceso(id_proceso) {
     setForm(f => ({ ...f, id_proceso, id_subproceso: '' }));
-    setSubFiltrados(subprocesosGlobal.filter(s => String(s.id_proceso) === String(id_proceso)));
+    await fetchSubprocesos(id_proceso);
+  }
+
+  // Carga subprocesos sin tocar el form (para edición inicial)
+  async function fetchSubprocesos(id_proceso) {
+    setSubFiltrados([]);
+    if (!id_proceso) return;
+    setCargandoSub(true);
+    try {
+      const res = await fetch(
+        `${API}/subprocesos/por-tecnica?id_proceso=${id_proceso}&tecnica=${encodeURIComponent(TECNICA)}`,
+        { headers: hdrs() }
+      );
+      setSubFiltrados(res.ok ? await res.json() : []);
+    } catch { setSubFiltrados([]); }
+    finally { setCargandoSub(false); }
   }
 
   const setF = (campo, valor) => setForm(f => ({ ...f, [campo]: valor }));
 
-  function agregarDocumento() {
-    setF('documentos', [...form.documentos, { nombre: '', tipo: '', url: '', descripcion: '' }]);
-  }
-  function actualizarDocumento(idx, campo, valor) {
-    const docs = [...form.documentos];
-    docs[idx] = { ...docs[idx], [campo]: valor };
-    setF('documentos', docs);
-  }
-  function eliminarDocumento(idx) {
-    setF('documentos', form.documentos.filter((_, i) => i !== idx));
-  }
+  // Documentos 
+  const agregarDocumento    = () => setF('documentos', [...form.documentos, { nombre: '', tipo: '', url: '', descripcion: '' }]);
+  const actualizarDocumento = (idx, campo, valor) => {
+    const docs = [...form.documentos]; docs[idx] = { ...docs[idx], [campo]: valor }; setF('documentos', docs);
+  };
+  const eliminarDocumento   = (idx) => {
+    if (form.documentos.length > 1) setF('documentos', form.documentos.filter((_, i) => i !== idx));
+  };
 
-  function agregarHallazgo() { setF('hallazgos', [...form.hallazgos, '']); }
-  function actualizarHallazgo(idx, valor) {
+  // Hallazgos 
+  const agregarHallazgo    = () => setF('hallazgos', [...form.hallazgos, '']);
+  const actualizarHallazgo = (idx, valor) => {
     const h = [...form.hallazgos]; h[idx] = valor; setF('hallazgos', h);
-  }
-  function eliminarHallazgo(idx) {
+  };
+  const eliminarHallazgo   = (idx) => {
     if (form.hallazgos.length > 1) setF('hallazgos', form.hallazgos.filter((_, i) => i !== idx));
+  };
+
+  // Iniciar edición 
+  async function iniciarEdicion(a) {
+    setError('');
+    setForm({
+      titulo:          a.titulo          || '',
+      tipo_documento:  a.tipo_documento  || '',
+      fuente:          a.fuente          || '',
+      id_proceso:      String(a.id_proceso    || ''),
+      id_subproceso:   String(a.id_subproceso || ''),
+      recomendaciones: a.recomendaciones || '',
+      documentos: a.documentos?.length > 0
+        ? a.documentos.map(d => ({ nombre: d.nombre || '', tipo: d.tipo || '', url: d.url || '', descripcion: d.descripcion || '' }))
+        : [{ nombre: '', tipo: '', url: '', descripcion: '' }],
+      hallazgos: a.hallazgos?.length > 0 ? a.hallazgos : [''],
+    });
+    setAnalisisEditando(a.id_analisis);
+    // Cargar subprocesos sin resetear la selección
+    await fetchSubprocesos(String(a.id_proceso || ''));
+    setVista('editar');
   }
 
-  async function handleSubmit() {
-    setError('');
-    if (!form.titulo.trim() || !form.tipo_documento.trim() || !form.fuente.trim())
-      return setError('Título, Tipo de Documento y Fuente son obligatorios.');
-    const docsValidos = form.documentos.filter(d => d.nombre.trim());
-    if (!docsValidos.length) return setError('Agrega al menos un documento analizado.');
-    const hallazgosValidos = form.hallazgos.filter(h => h.trim());
-    if (!hallazgosValidos.length) return setError('Agrega al menos un hallazgo.');
+  function cancelarEdicion() {
+    setVista('lista'); setForm(FORM_VACIO); setSubFiltrados([]);
+    setAnalisisEditando(null); setError('');
+  }
 
+  // Validación compartida 
+  function validar() {
+    if (!form.titulo.trim() || !form.tipo_documento.trim() || !form.fuente.trim())
+      return 'Título, Tipo de Documento y Fuente son obligatorios.';
+    if (!form.documentos.some(d => d.nombre.trim()))
+      return 'Agrega al menos un documento analizado.';
+    if (!form.hallazgos.some(h => h.trim()))
+      return 'Agrega al menos un hallazgo.';
+    return null;
+  }
+
+  // Crear 
+  async function handleSubmit() {
+    const err = validar(); if (err) return setError(err); setError('');
     setGuardando(true);
     try {
       const res = await fetch(`${API}/documentos/crear`, {
-        method: 'POST',
-        headers: hdrs(),
+        method: 'POST', headers: hdrs(),
         body: JSON.stringify({
           id_proyecto: idProyecto, titulo: form.titulo,
           tipo_documento: form.tipo_documento, fuente: form.fuente,
           id_proceso: form.id_proceso || null, id_subproceso: form.id_subproceso || null,
           recomendaciones: form.recomendaciones,
-          documentos: docsValidos, hallazgos: hallazgosValidos,
+          documentos: form.documentos.filter(d => d.nombre.trim()),
+          hallazgos:  form.hallazgos.filter(h => h.trim()),
         }),
       });
       if (!res.ok) throw new Error('Error al crear el análisis');
       const data = await res.json();
       setAnalisis(prev => [data.analisis, ...prev]);
-      setForm(FORM_VACIO); setVista('lista');
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setGuardando(false);
-    }
+      setForm(FORM_VACIO); setSubFiltrados([]); setVista('lista');
+    } catch (e) { setError(e.message); }
+    finally { setGuardando(false); }
+  }
+
+  // Actualizar 
+  async function handleSubmitEditar() {
+    const err = validar(); if (err) return setError(err); setError('');
+    setGuardando(true);
+    try {
+      const res = await fetch(`${API}/documentos/actualizar/${analisisEditando}`, {
+        method: 'PATCH', headers: hdrs(),
+        body: JSON.stringify({
+          titulo: form.titulo, tipo_documento: form.tipo_documento, fuente: form.fuente,
+          id_proceso: form.id_proceso || null, id_subproceso: form.id_subproceso || null,
+          recomendaciones: form.recomendaciones,
+          documentos: form.documentos.filter(d => d.nombre.trim()),
+          hallazgos:  form.hallazgos.filter(h => h.trim()),
+        }),
+      });
+      if (!res.ok) throw new Error('Error al actualizar el análisis');
+      const data = await res.json();
+      setAnalisis(prev => prev.map(a => a.id_analisis === analisisEditando ? data.analisis : a));
+      cancelarEdicion();
+    } catch (e) { setError(e.message); }
+    finally { setGuardando(false); }
   }
 
   async function ejecutarEliminar() {
@@ -133,13 +198,22 @@ export default function Documentos() {
     } catch { alert('Error al eliminar'); }
   }
 
-  /* ── VISTA FORMULARIO ─────────────────────────────────── */
-  if (vista === 'form') {
+  const subprocesoPlaceholder = () => {
+    if (!form.id_proceso)          return 'Elige un proceso primero';
+    if (cargandoSub)               return 'Cargando...';
+    if (subFiltrados.length === 0) return 'Sin subprocesos disponibles';
+    return 'Sin subproceso';
+  };
+
+  /* FORMULARIO (crear y editar) */
+  const esEditar = vista === 'editar';
+
+  if (vista === 'form' || vista === 'editar') {
     return (
       <div className="space-y-7 max-w-3xl mx-auto">
 
         <button
-          onClick={() => { setVista('lista'); setForm(FORM_VACIO); setError(''); }}
+          onClick={esEditar ? cancelarEdicion : () => { setVista('lista'); setForm(FORM_VACIO); setSubFiltrados([]); setError(''); }}
           className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors duration-150"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -149,8 +223,12 @@ export default function Documentos() {
         </button>
 
         <div className="pb-5 border-b border-gray-200">
-          <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Nuevo Análisis de Documentos</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Registra el análisis y los hallazgos del documento revisado</p>
+          <h1 className="text-xl font-semibold text-gray-900 tracking-tight">
+            {esEditar ? 'Editar Análisis de Documentos' : 'Nuevo Análisis de Documentos'}
+          </h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {esEditar ? 'Modifica los datos, documentos y hallazgos' : 'Registra el análisis y los hallazgos del documento revisado'}
+          </p>
         </div>
 
         {error && (
@@ -159,7 +237,7 @@ export default function Documentos() {
 
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm divide-y divide-gray-100">
 
-          {/* Información general */}
+          {/* Info general */}
           <div className="px-6 py-5 space-y-4">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Información general</p>
             <div>
@@ -181,6 +259,40 @@ export default function Documentos() {
             </div>
           </div>
 
+          {/* Proceso */}
+          <div className="px-6 py-5 space-y-4">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Proceso relacionado</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>Proceso</label>
+                <select value={form.id_proceso} onChange={e => handleProceso(e.target.value)} className={inputCls}>
+                  <option value="">Sin proceso</option>
+                  {procesos.map(p => <option key={p.id_proceso} value={p.id_proceso}>{p.nombre}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelCls}>Subproceso</label>
+                <select
+                  value={form.id_subproceso}
+                  onChange={e => setF('id_subproceso', e.target.value)}
+                  disabled={!form.id_proceso || cargandoSub || subFiltrados.length === 0}
+                  className={inputCls + " disabled:opacity-50"}
+                >
+                  <option value="">{subprocesoPlaceholder()}</option>
+                  {subFiltrados.map(s => <option key={s.id_subproceso} value={s.id_subproceso}>{s.nombre}</option>)}
+                </select>
+                {form.id_proceso && !cargandoSub && subFiltrados.length === 0 && (
+                  <p className="mt-1.5 text-xs text-amber-600 flex items-center gap-1">
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" className="flex-shrink-0">
+                      <path d="M8 2a6 6 0 100 12A6 6 0 008 2zm0 4v3m0 2.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                    Ningún subproceso tiene asignada la técnica <strong className="ml-0.5">Análisis de Documentos</strong>.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Documentos analizados */}
           <div className="px-6 py-5 space-y-3">
             <div className="flex items-center justify-between">
@@ -188,9 +300,7 @@ export default function Documentos() {
                 Documentos analizados <span className="text-red-500">*</span>
               </p>
               <button type="button" onClick={agregarDocumento}
-                className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors">
-                + Agregar
-              </button>
+                className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors">+ Agregar</button>
             </div>
             <div className="space-y-3">
               {form.documentos.map((doc, idx) => (
@@ -211,10 +321,10 @@ export default function Documentos() {
                     className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-500" />
                   <div className="grid grid-cols-2 gap-2">
                     <input value={doc.tipo} onChange={e => actualizarDocumento(idx, 'tipo', e.target.value)}
-                      placeholder="Tipo (PDF, Word, Excel...)"
+                      placeholder="Tipo (PDF, Word...)"
                       className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-500" />
                     <input value={doc.url} onChange={e => actualizarDocumento(idx, 'url', e.target.value)}
-                      placeholder="URL o ubicación (opcional)"
+                      placeholder="URL (opcional)"
                       className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-500" />
                   </div>
                   <input value={doc.descripcion} onChange={e => actualizarDocumento(idx, 'descripcion', e.target.value)}
@@ -232,9 +342,7 @@ export default function Documentos() {
                 Hallazgos <span className="text-red-500">*</span>
               </p>
               <button type="button" onClick={agregarHallazgo}
-                className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors">
-                + Agregar
-              </button>
+                className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors">+ Agregar</button>
             </div>
             <div className="space-y-2">
               {form.hallazgos.map((h, idx) => (
@@ -260,52 +368,33 @@ export default function Documentos() {
           <div className="px-6 py-5 space-y-3">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Recomendaciones</p>
             <textarea value={form.recomendaciones} onChange={e => setF('recomendaciones', e.target.value)}
-              placeholder="Recomendaciones basadas en el análisis..."
-              rows={3} className={inputCls} />
-          </div>
-
-          {/* Proceso */}
-          <div className="px-6 py-5 space-y-4">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Proceso relacionado</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className={labelCls}>Proceso</label>
-                <select value={form.id_proceso} onChange={e => handleProceso(e.target.value)} className={inputCls}>
-                  <option value="">Sin proceso</option>
-                  {procesos.map(p => <option key={p.id_proceso} value={p.id_proceso}>{p.nombre}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className={labelCls}>Subproceso</label>
-                <select value={form.id_subproceso} onChange={e => setF('id_subproceso', e.target.value)}
-                  disabled={!form.id_proceso} className={inputCls + " disabled:opacity-50"}>
-                  <option value="">{form.id_proceso ? 'Sin subproceso' : 'Elige un proceso primero'}</option>
-                  {subFiltrados.map(s => <option key={s.id_subproceso} value={s.id_subproceso}>{s.nombre}</option>)}
-                </select>
-              </div>
-            </div>
+              placeholder="Recomendaciones basadas en el análisis..." rows={3} className={inputCls} />
           </div>
         </div>
 
         <div className="flex gap-3 pb-4">
-          <button onClick={() => { setVista('lista'); setForm(FORM_VACIO); setError(''); }}
-            className="flex-1 border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
+          <button
+            onClick={esEditar ? cancelarEdicion : () => { setVista('lista'); setForm(FORM_VACIO); setSubFiltrados([]); setError(''); }}
+            className="flex-1 border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
+          >
             Cancelar
           </button>
-          <button onClick={handleSubmit} disabled={guardando}
-            className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition">
-            {guardando ? 'Guardando…' : 'Crear Análisis'}
+          <button
+            onClick={esEditar ? handleSubmitEditar : handleSubmit}
+            disabled={guardando}
+            className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition"
+          >
+            {guardando ? 'Guardando...' : esEditar ? 'Guardar cambios' : 'Crear Análisis'}
           </button>
         </div>
       </div>
     );
   }
 
-  /* ── VISTA LISTA ──────────────────────────────────────── */
+  /* VISTA LISTA */
   return (
     <div className="space-y-7 max-w-4xl mx-auto">
 
-      {/* Botón regreso */}
       <button
         onClick={() => navegar(`/app/proyectos/${idProyecto}/requerimientos`)}
         className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors duration-150"
@@ -316,16 +405,13 @@ export default function Documentos() {
         Volver a Requerimientos
       </button>
 
-      {/* Encabezado */}
       <div className="flex items-end justify-between pb-5 border-b border-gray-200">
         <div>
           <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Análisis de Documentos</h1>
           <p className="text-sm text-gray-500 mt-0.5">Revisión y hallazgos de documentos del proyecto</p>
         </div>
-        <button
-          onClick={() => { setVista('form'); setError(''); }}
-          className="inline-flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
-        >
+        <button onClick={() => { setVista('form'); setError(''); }}
+          className="inline-flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
             <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
           </svg>
@@ -333,14 +419,12 @@ export default function Documentos() {
         </button>
       </div>
 
-      {/* StatCards */}
       <div className="grid grid-cols-3 gap-4">
-        <StatCard titulo="Total" valor={analisis.length} color="gray" />
-        <StatCard titulo="Con hallazgos"      valor={analisis.filter(a => a.hallazgos?.length > 0).length}  color="amber"   />
-        <StatCard titulo="Con recomendaciones" valor={analisis.filter(a => a.recomendaciones?.trim()).length} color="emerald" />
+        <StatCard titulo="Total"                valor={analisis.length}                                        color="gray"    />
+        <StatCard titulo="Con hallazgos"        valor={analisis.filter(a => a.hallazgos?.length > 0).length}  color="amber"   />
+        <StatCard titulo="Con recomendaciones"  valor={analisis.filter(a => a.recomendaciones?.trim()).length} color="emerald" />
       </div>
 
-      {/* Cargando */}
       {cargando && (
         <div className="flex items-center gap-2 py-8 text-sm text-gray-400">
           <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-200 border-t-amber-500 animate-spin" />
@@ -348,22 +432,18 @@ export default function Documentos() {
         </div>
       )}
 
-      {/* Vacío */}
       {!cargando && analisis.length === 0 && (
         <div className="bg-white border border-dashed border-gray-300 rounded-xl py-16 text-center">
           <p className="text-sm text-gray-400">No hay análisis registrados.</p>
           <button onClick={() => setVista('form')}
-            className="mt-3 text-sm text-green-600 hover:text-green-800 font-medium">
-            Crear el primero
-          </button>
+            className="mt-3 text-sm text-green-600 hover:text-green-800 font-medium">Crear el primero</button>
         </div>
       )}
 
-      {/* Lista */}
       <div className="space-y-3">
         {analisis.map(a => {
-          const cfg = tipoCfg(a.tipo_documento);
-          const LIMITE = 3;
+          const cfg      = tipoCfg(a.tipo_documento);
+          const LIMITE   = 3;
           const expandido = expandidos[a.id_analisis];
           const hallazgosMostrados = expandido ? a.hallazgos : a.hallazgos.slice(0, LIMITE);
 
@@ -371,7 +451,6 @@ export default function Documentos() {
             <div key={a.id_analisis}
               className={`bg-white border border-gray-200 rounded-xl shadow-sm border-l-4 ${cfg.color} overflow-hidden`}>
 
-              {/* Cabecera de tarjeta */}
               <div className="flex items-start justify-between gap-4 px-5 py-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -380,20 +459,21 @@ export default function Documentos() {
                       {a.tipo_documento}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500">
-                    {a.fuente}
-                    {a.fecha_creacion ? ` · ${a.fecha_creacion}` : ''}
-                  </p>
+                  <p className="text-xs text-gray-500">{a.fuente}{a.fecha_creacion ? ` · ${a.fecha_creacion}` : ''}</p>
                   {(a.proceso_nombre || a.subproceso_nombre) && (
                     <p className="text-[11px] text-gray-400 mt-0.5">
                       {[a.proceso_nombre, a.subproceso_nombre].filter(Boolean).join(' → ')}
                     </p>
                   )}
                 </div>
-                <div className="flex items-center gap-4 flex-shrink-0 pt-0.5">
+                <div className="flex items-center gap-3 flex-shrink-0 pt-0.5">
                   <button onClick={() => setDetalle(detalle?.id_analisis === a.id_analisis ? null : a)}
-                    className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors">
+                    className="text-xs font-medium text-gray-500 hover:text-gray-800 transition-colors">
                     {detalle?.id_analisis === a.id_analisis ? 'Cerrar' : 'Ver'}
+                  </button>
+                  <button onClick={() => iniciarEdicion(a)}
+                    className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors">
+                    Editar
                   </button>
                   <button onClick={() => setModalEliminar(a.id_analisis)}
                     className="text-xs font-medium text-gray-400 hover:text-red-500 transition-colors">
@@ -402,11 +482,8 @@ export default function Documentos() {
                 </div>
               </div>
 
-              {/* Detalle expandible */}
               {detalle?.id_analisis === a.id_analisis && (
                 <div className="px-5 pb-5 space-y-4 border-t border-gray-100 pt-4">
-
-                  {/* Documentos */}
                   {a.documentos?.length > 0 && (
                     <div>
                       <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">
@@ -431,7 +508,6 @@ export default function Documentos() {
                     </div>
                   )}
 
-                  {/* Hallazgos */}
                   {a.hallazgos?.length > 0 && (
                     <div>
                       <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">
@@ -456,7 +532,6 @@ export default function Documentos() {
                     </div>
                   )}
 
-                  {/* Recomendaciones */}
                   {a.recomendaciones && (
                     <div>
                       <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Recomendaciones</p>
@@ -470,7 +545,6 @@ export default function Documentos() {
         })}
       </div>
 
-      {/* Modal eliminar */}
       {modalEliminar && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full mx-4 space-y-4">

@@ -163,31 +163,33 @@ def actualizar_entrevista(id_entrevista):
         data = request.get_json()
         if not data:
             return jsonify({"error": "JSON inválido o vacío"}), 400
-
+ 
         campos_editables = [
             "titulo", "lugar", "objetivo", "estado",
-            "audio_url", "procesado_ia", "fecha_programada", "fecha_realizada"
+            "audio_url", "procesado_ia",
+            "fecha_programada", "fecha_realizada",
+            "id_entrevistador", "id_stakeholder", "id_subproceso",  # ← agregados
         ]
-
+ 
         with Session(engine) as session:
             entrevista = session.get(Entrevistas, id_entrevista)
             if not entrevista:
                 return jsonify({"error": "Entrevista no encontrada"}), 404
-
+ 
             for campo in campos_editables:
                 if campo in data:
                     if campo in ("fecha_programada", "fecha_realizada"):
                         setattr(entrevista, campo, parsear_fecha(data[campo]))
                     else:
                         setattr(entrevista, campo, data[campo])
-
+ 
             session.commit()
             session.refresh(entrevista)
             return jsonify({
                 "mensaje": "Entrevista actualizada",
                 "entrevista": serializar_entrevista(entrevista)
             }), 200
-
+ 
     except SQLAlchemyError as e:
         return jsonify({"error": str(e)}), 500
 

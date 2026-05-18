@@ -173,7 +173,7 @@ export default function Observaciones() {
   );
 }
 
-/* ── Stat Card ──────────────────────────────────────── */
+/* Stat Card  */
 function StatCard({ titulo, valor, color }) {
   const colors = {
     violet: { bg: "bg-violet-50",  icon: "bg-violet-100", num: "text-violet-700" },
@@ -189,7 +189,7 @@ function StatCard({ titulo, valor, color }) {
   );
 }
 
-/* ── Grupo ──────────────────────────────────────────── */
+/* Grupo */
 function Grupo({ titulo, color, observaciones, proyectoId, navegar, onEliminar }) {
   const dots = { orange: "bg-orange-400", violet: "bg-violet-400" };
   return (
@@ -214,7 +214,7 @@ function Grupo({ titulo, color, observaciones, proyectoId, navegar, onEliminar }
   );
 }
 
-/* ── Tarjeta Observacion ────────────────────────────── */
+/* Tarjeta Observacion */
 function TarjetaObservacion({ obs, color, onVer, onEliminar }) {
   const accents = { orange: "border-l-orange-400", violet: "border-l-violet-400" };
   const fecha = obs.fecha_observacion

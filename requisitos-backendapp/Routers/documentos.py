@@ -138,6 +138,75 @@ def crear_analisis():
         return jsonify({'error': str(e)}), 500
 
 
+# PATCH /documentos/actualizar/<id_analisis> 
+@documentos_router.route('/documentos/actualizar/<int:id_analisis>', methods=['PATCH'])
+def actualizar_analisis(id_analisis):
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'JSON inválido o vacío'}), 400
+
+        with Session(engine) as session:
+            analisis = session.get(AnalisisDocumento, id_analisis)
+            if not analisis:
+                return jsonify({'error': 'Análisis no encontrado'}), 404
+
+            # Actualizar campos principales
+            for campo in ['titulo', 'tipo_documento', 'fuente', 'recomendaciones']:
+                if campo in data:
+                    setattr(analisis, campo, data[campo])
+
+            if 'id_proceso' in data:
+                analisis.id_proceso = data['id_proceso'] or None
+            if 'id_subproceso' in data:
+                analisis.id_subproceso = data['id_subproceso'] or None
+
+            # Reemplazar documentos: borrar los anteriores e insertar los nuevos
+            if 'documentos' in data:
+                for d in session.scalars(
+                    select(DocumentoAnalizado).where(DocumentoAnalizado.id_analisis == id_analisis)
+                ).all():
+                    session.delete(d)
+                session.flush()
+
+                for i, doc in enumerate(data['documentos'], start=1):
+                    if doc.get('nombre', '').strip():
+                        session.add(DocumentoAnalizado(
+                            id_analisis = id_analisis,
+                            nombre      = doc['nombre'],
+                            tipo        = doc.get('tipo', ''),
+                            url         = doc.get('url', ''),
+                            descripcion = doc.get('descripcion', ''),
+                            orden       = i,
+                        ))
+
+            # Reemplazar hallazgos: borrar los anteriores e insertar los nuevos
+            if 'hallazgos' in data:
+                for h in session.scalars(
+                    select(HallazgoAnalisis).where(HallazgoAnalisis.id_analisis == id_analisis)
+                ).all():
+                    session.delete(h)
+                session.flush()
+
+                for i, h in enumerate(data['hallazgos'], start=1):
+                    if h.strip():
+                        session.add(HallazgoAnalisis(
+                            id_analisis = id_analisis,
+                            descripcion = h,
+                            orden       = i,
+                        ))
+
+            session.commit()
+            session.refresh(analisis)
+            return jsonify({
+                'mensaje':  'Análisis actualizado correctamente',
+                'analisis': serializar_analisis(analisis, session)
+            }), 200
+
+    except SQLAlchemyError as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @documentos_router.route('/documentos/eliminar/<int:id_analisis>', methods=['DELETE'])
 def eliminar_analisis(id_analisis):
     try:
