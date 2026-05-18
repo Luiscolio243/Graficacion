@@ -37,6 +37,20 @@ def obtener_historias(id_proyecto):
     except SQLAlchemyError as e:
         return jsonify({"error": str(e)}), 500
 
+
+# Obtener una historia por ID
+@historias_bp.route('/historias-usuario/detalle/<int:id_historia>', methods=['GET'])
+def obtener_historia(id_historia):
+    try:
+        with Session(engine) as session:
+            historia = session.get(HistoriaUsuario, id_historia)
+            if not historia:
+                return jsonify({"error": "Historia no encontrada"}), 404
+            return jsonify(serializar_historia(historia)), 200
+    except SQLAlchemyError as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # Crear historia
 @historias_bp.route('/historias-usuario/crear', methods=['POST'])
 def crear_historia():
@@ -76,6 +90,39 @@ def crear_historia():
 
     except SQLAlchemyError as e:
         return jsonify({"error": str(e)}), 500
+
+
+@historias_bp.route('/historias-usuario/actualizar/<int:id_historia>', methods=['PATCH'])
+def actualizar_historia(id_historia):
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "JSON inválido o vacío"}), 400
+ 
+        with Session(engine) as session:
+            historia = session.get(HistoriaUsuario, id_historia)
+            if not historia:
+                return jsonify({"error": "Historia no encontrada"}), 404
+ 
+            campos = ["titulo", "rol", "accion", "beneficio", "prioridad", "estimacion", "id_subproceso"]
+            for campo in campos:
+                if campo in data:
+                    setattr(historia, campo, data[campo])
+ 
+            # Criterios: reemplaza el array completo filtrando vacíos
+            if "criterios" in data:
+                historia.criterios = [c for c in data["criterios"] if c and c.strip()]
+ 
+            session.commit()
+            session.refresh(historia)
+            return jsonify({
+                "mensaje": "Historia actualizada correctamente",
+                "historia": serializar_historia(historia)
+            }), 200
+ 
+    except SQLAlchemyError as e:
+        return jsonify({"error": str(e)}), 500
+        
 
 # Eliminar historia
 @historias_bp.route('/historias-usuario/eliminar/<int:id_historia>', methods=['DELETE'])

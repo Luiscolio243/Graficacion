@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 
 const BASE_URL = "http://127.0.0.1:5000";
 
-/* ── Icons ──────────────────────────────────────────── */
+/* Icons */
 function IconTotal() {
   return (
     <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
@@ -224,7 +224,7 @@ export default function Cuestionarios() {
   );
 }
 
-/* ── Stat Card ──────────────────────────────────────── */
+/* Stat Card  */
 function StatCard({ titulo, cantidad, icon, color }) {
   const colors = {
     green:   { bg: "bg-green-50",   text: "text-green-600",   num: "text-green-700"   },
@@ -244,7 +244,7 @@ function StatCard({ titulo, cantidad, icon, color }) {
   );
 }
 
-/* ── Tarjeta Cuestionario ───────────────────────────── */
+/* Tarjeta Cuestionario */
 function TarjetaCuestionario({ cuestionario, idProyecto, onEliminar }) {
   const navegar = useNavigate();
   const estado  = cuestionario.estado ?? "borrador";
@@ -309,6 +309,13 @@ function TarjetaCuestionario({ cuestionario, idProyecto, onEliminar }) {
                        px-2.5 py-1.5 rounded-md transition-colors"
           >
             Ver
+          </button>
+          <button
+            onClick={() => navegar(`${base}/editar`)}
+            className="text-xs font-medium text-green-500 hover:text-green-700 hover:bg-green-50
+                      px-2.5 py-1.5 rounded-md transition-colors"
+          >
+            Editar
           </button>
           <button
             onClick={() => onEliminar(cuestionario.id_encuesta)}

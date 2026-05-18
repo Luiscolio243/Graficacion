@@ -3,107 +3,57 @@ import { useParams, useNavigate } from "react-router-dom";
 
 const API = "http://127.0.0.1:5000";
 
-const OPCIONES = {
-  frontend_framework: ["React", "Vue", "Angular", "Next.js", "Svelte", "Otro"],
-  frontend_libreria_ui: ["Tailwind CSS", "Material UI", "Ant Design", "Bootstrap", "Chakra UI", "Otro"],
-  frontend_manejo_estado: ["useState/useContext", "Redux", "Zustand", "Pinia", "NgRx", "Otro"],
-  backend_lenguaje: ["Python", "JavaScript/Node.js", "Java", "C#", "PHP", "Go", "Otro"],
-  backend_framework: ["Flask", "FastAPI", "Django", "Express", "Spring Boot", "ASP.NET", "Otro"],
-  backend_tipo_api: ["REST", "GraphQL", "gRPC", "SOAP", "Otro"],
-  bd_motor: ["PostgreSQL", "MySQL", "SQLite", "MongoDB", "SQL Server", "Oracle", "Otro"],
-  bd_orm: ["SQLAlchemy", "Prisma", "Sequelize", "Hibernate", "Entity Framework", "Mongoose", "Ninguno", "Otro"],
-  seg_autenticacion: ["JWT", "OAuth 2.0", "Session/Cookies", "API Key", "Auth0", "Otro"],
-  seg_cifrado: ["bcrypt", "Argon2", "SHA-256", "AES", "Otro"],
-  infra_despliegue: ["VPS/Servidor propio", "AWS", "Google Cloud", "Azure", "Heroku", "Railway", "Vercel", "Otro"],
-  infra_contenedores: ["Docker", "Docker Compose", "Kubernetes", "Ninguno", "Otro"],
-};
-
-const SECCIONES = [
-  {
-    titulo: "Frontend",
-    color: "blue",
-    campos: [
-      { key: "frontend_framework",      label: "Framework" },
-      { key: "frontend_libreria_ui",    label: "Librería UI" },
-      { key: "frontend_manejo_estado",  label: "Manejo de estado" },
-    ],
-  },
-  {
-    titulo: "Backend",
-    color: "indigo",
-    campos: [
-      { key: "backend_lenguaje",   label: "Lenguaje" },
-      { key: "backend_framework",  label: "Framework" },
-      { key: "backend_tipo_api",   label: "Tipo de API" },
-    ],
-  },
-  {
-    titulo: "Base de datos",
-    color: "emerald",
-    campos: [
-      { key: "bd_motor", label: "Motor" },
-      { key: "bd_orm",   label: "ORM" },
-    ],
-  },
-  {
-    titulo: "Seguridad",
-    color: "rose",
-    campos: [
-      { key: "seg_autenticacion", label: "Autenticación" },
-      { key: "seg_cifrado",       label: "Cifrado de contraseñas" },
-    ],
-  },
-  {
-    titulo: "Infraestructura",
-    color: "amber",
-    campos: [
-      { key: "infra_despliegue",    label: "Despliegue" },
-      { key: "infra_contenedores",  label: "Contenedores" },
-    ],
-  },
-];
-
-const estilosPorColor = {
-  blue:    { borde: "border-blue-200",    titulo: "text-blue-700",    fondo: "bg-blue-50" },
-  indigo:  { borde: "border-indigo-200",  titulo: "text-indigo-700",  fondo: "bg-indigo-50" },
-  emerald: { borde: "border-emerald-200", titulo: "text-emerald-700", fondo: "bg-emerald-50" },
-  rose:    { borde: "border-rose-200",    titulo: "text-rose-700",    fondo: "bg-rose-50" },
-  amber:   { borde: "border-amber-200",   titulo: "text-amber-700",   fondo: "bg-amber-50" },
+// Stack fijo — no editable por el usuario
+const STACK_PREDETERMINADO = {
+  frontend_framework:     "React",
+  frontend_libreria_ui:   "Tailwind CSS",
+  frontend_manejo_estado: "useState/useContext",
+  backend_lenguaje:       "Python",
+  backend_framework:      "Flask",
+  backend_tipo_api:       "REST",
+  bd_motor:               "PostgreSQL",
+  bd_orm:                 "SQLAlchemy",
+  seg_autenticacion:      "JWT",
+  seg_cifrado:            "bcrypt",
+  infra_despliegue:       "VPS/Servidor propio",
+  infra_contenedores:     "Ninguno",
 };
 
 const FORM_VACIO = {
-  frontend_framework: "",
-  frontend_libreria_ui: "",
-  frontend_manejo_estado: "",
-  backend_lenguaje: "",
-  backend_framework: "",
-  backend_tipo_api: "",
-  bd_motor: "",
-  bd_orm: "",
-  seg_autenticacion: "",
-  seg_roles: "",
-  seg_cifrado: "",
-  infra_despliegue: "",
-  infra_contenedores: "",
+  ...STACK_PREDETERMINADO,
+  seg_roles:                 "",
   restricciones_adicionales: "",
 };
+
+const STACK_INFO = [
+  { label: "Frontend",        valor: "React + Tailwind CSS + useState/useContext" },
+  { label: "Backend",         valor: "Python + Flask + API REST" },
+  { label: "Base de datos",   valor: "PostgreSQL + SQLAlchemy" },
+  { label: "Seguridad",       valor: "JWT + bcrypt" },
+  { label: "Infraestructura", valor: "VPS/Servidor propio" },
+];
 
 export default function SpecsTecnicas() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [form, setForm] = useState(FORM_VACIO);
-  const [cargando, setCargando] = useState(true);
+  const [form, setForm]           = useState(FORM_VACIO);
+  const [cargando, setCargando]   = useState(true);
   const [guardando, setGuardando] = useState(false);
-  const [guardado, setGuardado] = useState(false);
-  const [error, setError] = useState(null);
+  const [guardado, setGuardado]   = useState(false);
+  const [error, setError]         = useState(null);
 
   useEffect(() => {
     fetch(`${API}/proyectos/${id}/specs-tecnicas`)
       .then((r) => r.json())
       .then((data) => {
         if (data) {
-          setForm({ ...FORM_VACIO, ...data });
+          // Mantener stack predeterminado, solo tomar roles y restricciones de la BD
+          setForm({
+            ...STACK_PREDETERMINADO,
+            seg_roles:               data.seg_roles || "",
+            restricciones_adicionales: data.restricciones_adicionales || "",
+          });
         }
         setCargando(false);
       })
@@ -152,64 +102,65 @@ export default function SpecsTecnicas() {
         <div>
           <h1 className="text-3xl font-semibold text-gray-900">Especificaciones Técnicas</h1>
           <p className="text-gray-500 mt-1 text-sm">
-            Define el stack tecnológico y requisitos técnicos para la generación del sistema
+            Define los roles y restricciones del sistema para la generación del código
           </p>
         </div>
       </div>
 
-      {/* Secciones */}
-      {SECCIONES.map((sec) => {
-        const est = estilosPorColor[sec.color];
-        return (
-          <div key={sec.titulo} className={`rounded-xl border ${est.borde} ${est.fondo} p-5`}>
-            <h2 className={`font-semibold ${est.titulo} mb-4`}>{sec.titulo}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {sec.campos.map((campo) => (
-                <Campo
-                  key={campo.key}
-                  label={campo.label}
-                  value={form[campo.key] || ""}
-                  opciones={OPCIONES[campo.key] || []}
-                  onChange={(v) => onChange(campo.key, v)}
-                />
-              ))}
+      {/* Stack fijo — solo informativo */}
+      <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <h2 className="font-semibold text-indigo-700">Stack tecnológico</h2>
+          <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full font-medium">
+            Predeterminado
+          </span>
+        </div>
+        <p className="text-xs text-indigo-500 mb-4">
+          El stack tecnológico está fijo para garantizar compatibilidad con los specs generados.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {STACK_INFO.map((item) => (
+            <div key={item.label} className="bg-white rounded-lg px-4 py-3 border border-indigo-100">
+              <p className="text-xs font-semibold text-indigo-400 uppercase tracking-wide mb-0.5">
+                {item.label}
+              </p>
+              <p className="text-sm text-gray-800 font-medium">{item.valor}</p>
             </div>
-          </div>
-        );
-      })}
-
-      {/* Roles (campo especial - texto libre) */}
-      <div className="rounded-xl border border-rose-200 bg-rose-50 p-5">
-        <h2 className="font-semibold text-rose-700 mb-4">Roles del sistema</h2>
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-gray-600">
-            Lista los roles de usuario del sistema (ej: Administrador, Cliente, Vendedor)
-          </label>
-          <textarea
-            value={form.seg_roles || ""}
-            onChange={(e) => onChange("seg_roles", e.target.value)}
-            rows={3}
-            placeholder="Ej: Administrador — acceso total al sistema&#10;Cliente — puede ver y comprar productos&#10;Vendedor — gestiona su inventario"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-400 bg-white resize-none"
-          />
+          ))}
         </div>
       </div>
 
-      {/* Restricciones adicionales */}
+      {/* Roles — editable */}
+      <div className="rounded-xl border border-rose-200 bg-rose-50 p-5">
+        <h2 className="font-semibold text-rose-700 mb-1">Roles del sistema</h2>
+        <p className="text-xs text-rose-400 mb-3">
+          Define quiénes van a usar el sistema y qué puede hacer cada uno
+        </p>
+        <label className="text-xs font-medium text-gray-600">
+          Un rol por línea — incluye nombre y descripción breve
+        </label>
+        <textarea
+          value={form.seg_roles || ""}
+          onChange={(e) => onChange("seg_roles", e.target.value)}
+          rows={4}
+          placeholder={"Ej:\nAdministrador — acceso total al sistema\nCliente — puede ver y comprar productos\nVendedor — gestiona su inventario"}
+          className="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-rose-400 bg-white resize-none"
+        />
+      </div>
+
+      {/* Restricciones adicionales — editable */}
       <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
-        <h2 className="font-semibold text-gray-700 mb-4">Restricciones y notas adicionales</h2>
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-gray-600">
-            Cualquier restricción técnica, de negocio o nota importante para el desarrollo
-          </label>
-          <textarea
-            value={form.restricciones_adicionales || ""}
-            onChange={(e) => onChange("restricciones_adicionales", e.target.value)}
-            rows={4}
-            placeholder="Ej: El sistema debe soportar múltiples idiomas. Las contraseñas deben tener mínimo 8 caracteres. El sistema debe funcionar en dispositivos móviles..."
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-400 bg-white resize-none"
-          />
-        </div>
+        <h2 className="font-semibold text-gray-700 mb-1">Restricciones y notas adicionales</h2>
+        <p className="text-xs text-gray-400 mb-3">
+          Reglas de negocio, restricciones técnicas o cualquier nota importante para el desarrollo
+        </p>
+        <textarea
+          value={form.restricciones_adicionales || ""}
+          onChange={(e) => onChange("restricciones_adicionales", e.target.value)}
+          rows={5}
+          placeholder={"Ej:\nLas contraseñas deben tener mínimo 8 caracteres.\nEl sistema debe funcionar en dispositivos móviles.\nUn vendedor solo puede ver sus propios pedidos."}
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-400 bg-white resize-none"
+        />
       </div>
 
       {/* Botón guardar */}
@@ -225,57 +176,6 @@ export default function SpecsTecnicas() {
           <span className="text-sm text-green-600 font-medium">✓ Guardado correctamente</span>
         )}
       </div>
-    </div>
-  );
-}
-
-function Campo({ label, value, opciones, onChange }) {
-  const [esOtro, setEsOtro] = useState(
-    value !== "" && !opciones.includes(value) && value !== "Otro"
-  );
-  const [valorOtro, setValorOtro] = useState(
-    value !== "" && !opciones.includes(value) ? value : ""
-  );
-
-  function handleSelect(v) {
-    if (v === "Otro") {
-      setEsOtro(true);
-      onChange(valorOtro);
-    } else {
-      setEsOtro(false);
-      onChange(v);
-    }
-  }
-
-  function handleOtro(v) {
-    setValorOtro(v);
-    onChange(v);
-  }
-
-  const valorSelect = esOtro ? "Otro" : (opciones.includes(value) ? value : "");
-
-  return (
-    <div className="space-y-1">
-      <label className="text-xs font-medium text-gray-600">{label}</label>
-      <select
-        value={valorSelect}
-        onChange={(e) => handleSelect(e.target.value)}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-400 bg-white"
-      >
-        <option value="">Seleccionar...</option>
-        {opciones.map((op) => (
-          <option key={op} value={op}>{op}</option>
-        ))}
-      </select>
-      {esOtro && (
-        <input
-          type="text"
-          value={valorOtro}
-          onChange={(e) => handleOtro(e.target.value)}
-          placeholder={`Especifica el ${label.toLowerCase()}`}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-400 bg-white mt-1"
-        />
-      )}
     </div>
   );
 }

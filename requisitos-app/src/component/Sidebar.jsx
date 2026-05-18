@@ -44,7 +44,7 @@ export default function Sidebar() {
   return (
     <aside className="w-64 bg-white border-r border-gray-200 min-h-screen flex flex-col select-none">
 
-      {/* ── Logo ────────────────────────────────── */}
+      {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5 border-b border-gray-100">
         <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-base flex-shrink-0">
           R
@@ -55,7 +55,7 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* ── Navegación ──────────────────────────── */}
+      {/* Navegación */}
       <div className="flex-1 px-3 py-4 space-y-6 overflow-y-auto">
 
         <div>
@@ -93,7 +93,7 @@ export default function Sidebar() {
 
       </div>
 
-      {/* ── Usuario ─────────────────────────────── */}
+      {/* Usuario */}
       <div className="px-3 py-4 border-t border-gray-100">
         <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-gray-50 transition group">
           {/* Avatar */}

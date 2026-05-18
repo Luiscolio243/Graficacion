@@ -122,7 +122,7 @@ export default function Login() {
         <p className="text-indigo-300 text-xs relative z-10">© 2025 Req · Todos los derechos reservados</p>
       </div>
 
-      {/* ── Panel derecho (formulario) ── */}
+      {/*  Panel derecho (formulario)  */}
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm space-y-8">
 

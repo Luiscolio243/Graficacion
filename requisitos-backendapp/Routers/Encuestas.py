@@ -99,6 +99,34 @@ def crear_encuesta():
         return jsonify({"error": str(e)}), 500
 
 
+@encuestas_bp.route('/encuestas/actualizar/<int:id_encuesta>', methods=['PATCH'])
+def actualizar_encuesta(id_encuesta):
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "JSON inválido o vacío"}), 400
+ 
+        campos_editables = ["titulo", "descripcion", "num_participantes", "estado", "id_subproceso"]
+ 
+        with Session(engine) as session:
+            encuesta = session.get(Encuestas, id_encuesta)
+            if not encuesta:
+                return jsonify({"error": "Encuesta no encontrada"}), 404
+ 
+            for campo in campos_editables:
+                if campo in data:
+                    setattr(encuesta, campo, data[campo])
+ 
+            session.commit()
+            session.refresh(encuesta)
+            return jsonify({
+                "message": "Encuesta actualizada",
+                "encuesta": serializar_encuesta(encuesta)
+            }), 200
+ 
+    except SQLAlchemyError as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @encuestas_bp.route('/encuestas/obtener/<int:id_proyecto>', methods=['GET'])
 def obtener_todas_encuestas(id_proyecto):

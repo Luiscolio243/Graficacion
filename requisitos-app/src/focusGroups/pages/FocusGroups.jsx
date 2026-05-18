@@ -4,10 +4,10 @@ import { useParams, useNavigate } from "react-router-dom";
 const BASE_URL = "http://127.0.0.1:5000";
 
 const ESTADO_CONFIG = {
-  planificado: { dot: "bg-blue-400",    border: "border-l-blue-400",    badge: "bg-blue-50 text-blue-700 border-blue-200",       label: "Planificado"  },
-  en_progreso: { dot: "bg-amber-400",   border: "border-l-amber-400",   badge: "bg-amber-50 text-amber-700 border-amber-200",    label: "En progreso"  },
-  realizado:   { dot: "bg-emerald-400", border: "border-l-emerald-400", badge: "bg-emerald-50 text-emerald-700 border-emerald-200", label: "Realizado"  },
-  cancelado:   { dot: "bg-red-400",     border: "border-l-red-400",     badge: "bg-red-50 text-red-700 border-red-200",          label: "Cancelado"    },
+  planificado: { dot: "bg-blue-400",    border: "border-l-blue-400",    badge: "bg-blue-50 text-blue-700 border-blue-200",         label: "Planificado" },
+  en_progreso: { dot: "bg-amber-400",   border: "border-l-amber-400",   badge: "bg-amber-50 text-amber-700 border-amber-200",      label: "En progreso" },
+  realizado:   { dot: "bg-emerald-400", border: "border-l-emerald-400", badge: "bg-emerald-50 text-emerald-700 border-emerald-200", label: "Realizado"   },
+  cancelado:   { dot: "bg-red-400",     border: "border-l-red-400",     badge: "bg-red-50 text-red-700 border-red-200",            label: "Cancelado"   },
 };
 
 export default function FocusGroups() {
@@ -125,6 +125,7 @@ export default function FocusGroups() {
                 key={estado}
                 estado={estado}
                 focusGroups={porEstado[estado]}
+                idProyecto={id}
                 onVer={setDetalle}
                 onEliminar={setModalEliminar}
               />
@@ -137,8 +138,10 @@ export default function FocusGroups() {
       {detalle && (
         <ModalDetalle
           fg={detalle}
+          idProyecto={id}
           onClose={() => setDetalle(null)}
           onEliminar={(id_fg) => { setModalEliminar(id_fg); setDetalle(null); }}
+          onEditar={(id_fg) => navegar(`/app/proyectos/${id}/requerimientos/focus-groups/${id_fg}/editar`)}
         />
       )}
 
@@ -173,7 +176,7 @@ export default function FocusGroups() {
   );
 }
 
-/* ── Stat Card ──────────────────────────────────────── */
+/* Stat Card */
 function StatCard({ titulo, valor, color }) {
   const nums = { gray: "text-gray-700", blue: "text-blue-700", amber: "text-amber-700", emerald: "text-emerald-700" };
   return (
@@ -184,8 +187,8 @@ function StatCard({ titulo, valor, color }) {
   );
 }
 
-/* ── Grupo por estado ───────────────────────────────── */
-function Grupo({ estado, focusGroups, onVer, onEliminar }) {
+/* Grupo por estado  */
+function Grupo({ estado, focusGroups, idProyecto, onVer, onEliminar }) {
   const cfg = ESTADO_CONFIG[estado] ?? ESTADO_CONFIG.planificado;
   return (
     <div className="space-y-2">
@@ -199,6 +202,7 @@ function Grupo({ estado, focusGroups, onVer, onEliminar }) {
           <TarjetaFG
             key={fg.id_focus_group}
             fg={fg}
+            idProyecto={idProyecto}
             onVer={() => onVer(fg)}
             onEliminar={() => onEliminar(fg.id_focus_group)}
           />
@@ -208,8 +212,9 @@ function Grupo({ estado, focusGroups, onVer, onEliminar }) {
   );
 }
 
-/* ── Tarjeta FG ─────────────────────────────────────── */
-function TarjetaFG({ fg, onVer, onEliminar }) {
+/* Tarjeta FG  */
+function TarjetaFG({ fg, idProyecto, onVer, onEliminar }) {
+  const navegar = useNavigate();
   const cfg = ESTADO_CONFIG[fg.estado] ?? ESTADO_CONFIG.planificado;
   const fecha = fg.fecha
     ? new Date(fg.fecha).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" })
@@ -234,11 +239,19 @@ function TarjetaFG({ fg, onVer, onEliminar }) {
           {fecha && <span className="text-[11px] text-gray-400">{fecha}</span>}
         </div>
       </div>
-      <div className="flex items-center gap-4 flex-shrink-0 pt-0.5">
-        <button onClick={onVer} className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors">
+      <div className="flex items-center gap-3 flex-shrink-0 pt-0.5">
+        <button onClick={onVer}
+          className="text-xs font-medium text-gray-500 hover:text-gray-800 transition-colors">
           Ver
         </button>
-        <button onClick={onEliminar} className="text-xs font-medium text-gray-400 hover:text-red-500 transition-colors">
+        <button
+          onClick={() => navegar(`/app/proyectos/${idProyecto}/requerimientos/focus-groups/${fg.id_focus_group}/editar`)}
+          className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors"
+        >
+          Editar
+        </button>
+        <button onClick={onEliminar}
+          className="text-xs font-medium text-gray-400 hover:text-red-500 transition-colors">
           Eliminar
         </button>
       </div>
@@ -246,8 +259,8 @@ function TarjetaFG({ fg, onVer, onEliminar }) {
   );
 }
 
-/* ── Modal Detalle ──────────────────────────────────── */
-function ModalDetalle({ fg, onClose, onEliminar }) {
+/* Modal Detalle  */
+function ModalDetalle({ fg, onClose, onEliminar, onEditar }) {
   const cfg = ESTADO_CONFIG[fg.estado] ?? ESTADO_CONFIG.planificado;
   const fecha = fg.fecha
     ? new Date(fg.fecha).toLocaleDateString("es-MX", { day: "2-digit", month: "long", year: "numeric" })
@@ -279,8 +292,6 @@ function ModalDetalle({ fg, onClose, onEliminar }) {
         </div>
 
         <div className="p-6 space-y-5">
-
-          {/* Stats */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-gray-50 rounded-lg px-4 py-3 text-center">
               <p className="text-2xl font-bold text-gray-900">{fg.total_participantes}</p>
@@ -292,7 +303,6 @@ function ModalDetalle({ fg, onClose, onEliminar }) {
             </div>
           </div>
 
-          {/* Objetivo */}
           {fg.objetivo && (
             <div>
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Objetivo</p>
@@ -300,7 +310,6 @@ function ModalDetalle({ fg, onClose, onEliminar }) {
             </div>
           )}
 
-          {/* Conclusiones */}
           {fg.conclusiones?.length > 0 && (
             <div>
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Conclusiones</p>
@@ -317,7 +326,6 @@ function ModalDetalle({ fg, onClose, onEliminar }) {
             </div>
           )}
 
-          {/* Transcripción */}
           {fg.transcripcion && (
             <div>
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Transcripción / Notas</p>
@@ -333,6 +341,10 @@ function ModalDetalle({ fg, onClose, onEliminar }) {
           <button onClick={onClose}
             className="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition text-sm">
             Cerrar
+          </button>
+          <button onClick={() => onEditar(fg.id_focus_group)}
+            className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">
+            Editar
           </button>
           <button onClick={() => onEliminar(fg.id_focus_group)}
             className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">

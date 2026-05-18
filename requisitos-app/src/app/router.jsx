@@ -11,18 +11,23 @@ import Procesos from "../procesos/pages/Procesos";
 import Requerimientos from "../requerimientos/pages/Requerimientos";
 import Entrevistas from "../entrevistas/pages/Entrevistas";
 import CrearEntrevista from "../entrevistas/pages/CrearEntrevista";
+import EditarEntrevista from "../entrevistas/pages/EditarEntrevista";
 import AnotarRespuestas from "../entrevistas/pages/AnotarRespuestas";
 import Cuestionarios from "../cuestionarios/pages/Cuestionarios";
 import CrearCuestionario from "../cuestionarios/pages/CrearCuestionario";
 import VerResultados from "../cuestionarios/pages/VerResultados";
+import EditarCuestionario from "../cuestionarios/pages/EditarCuestionario";
 import Observaciones from "../observaciones/pages/Observaciones";
 import CrearObservacion from "../observaciones/pages/CrearObservacion";
 import HistoriasDeUsuario from "../historiasUsuario/pages/HistoriasDeUsuario";
 import CrearHistoriaDeUsuario from "../historiasUsuario/pages/CrearHistoriaDeUsuario";
+import EditarHistoriaDeUsuario from "../historiasUsuario/pages/EditarHistoriaDeUsuario";
 import FocusGroups from "../focusGroups/pages/FocusGroups";
 import CrearFocusGroup from "../focusGroups/pages/CrearFocusGroup";
+import EditarFocusGroup from "../focusGroups/pages/EditarFocusGroup";
 import SeguimientoTransaccional from "../seguimientoTransaccional/pages/SeguimientoTransaccional";
 import CrearSeguimientoTransaccional from "../seguimientoTransaccional/pages/CrearSeguimientoTransaccional";
+import EditarSeguimientoTransaccional from "../seguimientoTransaccional/pages/EditarSeguimientoTransaccional";
 import SubirAudio from "../entrevistas/pages/SubirAudio";
 import DetalleEntrevista from "../entrevistas/pages/DetalleEntrevista";
 import DetalleObservacion from "../observaciones/pages/DetalleObservacion";
@@ -140,6 +145,10 @@ export const router = createBrowserRouter([
                 element: <AnotarRespuestas />
             },
             {
+                path: "proyectos/:id/entrevistas/:id_entrevista/editar",
+                element: <EditarEntrevista />
+            },
+            {
                 //Cuestionarios de cada proyecto
                 path: "proyectos/:id/requerimientos/cuestionarios",
                 element: <Cuestionarios />
@@ -153,6 +162,10 @@ export const router = createBrowserRouter([
                 //Ver resultados de cuestionario
                 path: "proyectos/:id/requerimientos/cuestionarios/:idEncuesta/resultados",
                 element: <VerResultados />
+            },
+            { 
+                path: "proyectos/:id/requerimientos/cuestionarios/:idEncuesta/editar", 
+                element: <EditarCuestionario /> 
             },
             {
                 //Observaciones de cada proyecto
@@ -182,6 +195,10 @@ export const router = createBrowserRouter([
                 path: "proyectos/:id/requerimientos/historias-usuario/crear",
                 element: <CrearHistoriaDeUsuario />
             },
+            { 
+                path: "proyectos/:id/requerimientos/historias-usuario/:id_historia/editar", 
+                element: <EditarHistoriaDeUsuario /> 
+            },
             {
                 //Focus Groups de cada proyecto
                 path: "proyectos/:id/requerimientos/focus-groups",
@@ -192,6 +209,10 @@ export const router = createBrowserRouter([
                 path: "proyectos/:id/requerimientos/focus-groups/crear",
                 element: <CrearFocusGroup />
             },
+            { 
+                path: "proyectos/:id/requerimientos/focus-groups/:id_focus_group/editar", 
+                element: <EditarFocusGroup /> 
+            },
             {
                 //Seguimiento Transaccional de cada proyecto
                 path: "proyectos/:id/requerimientos/seguimiento-transaccional",
@@ -201,6 +222,10 @@ export const router = createBrowserRouter([
                 //Crear nuevo seguimiento transaccional
                 path: "proyectos/:id/requerimientos/seguimiento-transaccional/crear",
                 element: <CrearSeguimientoTransaccional />
+            },
+            {
+                path: "proyectos/:id/requerimientos/seguimiento-transaccional/:idSeguimiento/editar",
+                element: <EditarSeguimientoTransaccional />
             },
             {
                 //Documentos de cada proyecto

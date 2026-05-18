@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
  
 const API = "http://localhost:5000";
  
-// ─── ESTILOS ──────────────────────────────────────────────────────────────────
+// ESTILOS 
 const styles = `
   .seq-wrap { display:flex; flex-direction:column; height:100vh; background:#0f1117; font-family:'Courier New',monospace; overflow:hidden; }
  
@@ -99,7 +99,7 @@ const styles = `
   .leg-line { width:24px; height:1.5px; }
 `;
  
-// ─── COLORES POR TIPO DE MENSAJE ──────────────────────────────────────────────
+// COLORES POR TIPO DE MENSAJE 
 const MSG_COLORS = {
   sync:    '#378ADD',
   async:   '#68d391',
@@ -108,7 +108,7 @@ const MSG_COLORS = {
   destroy: '#fc8181',
 };
  
-// ─── UTILIDADES ───────────────────────────────────────────────────────────────
+// UTILIDADES 
 function genId() { return 'p' + Date.now() + Math.random().toString(36).slice(2, 6); }
 function genMsgId() { return 'm' + Date.now() + Math.random().toString(36).slice(2, 6); }
  
@@ -124,7 +124,7 @@ function loadScript(src) {
 const COL_WIDTH = 160;   // ancho de columna por participante
 const COL_PAD   = 40;    // padding izquierdo del canvas
  
-// ─── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
+// COMPONENTE PRINCIPAL 
 export default function SequenceDiagram() {
   const [searchParams] = useSearchParams();
   const id          = searchParams.get('id');
@@ -163,7 +163,7 @@ export default function SequenceDiagram() {
   return <DiagramEditor initData={initData} diagramaId={id} tipo={tipo} />;
 }
  
-// ─── EDITOR ───────────────────────────────────────────────────────────────────
+// EDITOR 
 function DiagramEditor({ initData, diagramaId, tipo }) {
   const navigate = useNavigate();
  
@@ -193,7 +193,7 @@ function DiagramEditor({ initData, diagramaId, tipo }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [participantes, mensajes, nombre]);
  
-  // ─── GUARDAR ──────────────────────────────────────────────────────────────
+  // GUARDAR 
   async function guardar() {
     if (!diagramaId) return;
     setGuardando(true);
@@ -210,7 +210,7 @@ function DiagramEditor({ initData, diagramaId, tipo }) {
     finally { setGuardando(false); }
   }
  
-  // ─── EXPORTAR PDF (render programático en canvas) ────────────────────────
+  // EXPORTAR PDF (render programático en canvas) 
   async function exportPDF() {
     setExporting(true);
     try {
@@ -322,7 +322,7 @@ function DiagramEditor({ initData, diagramaId, tipo }) {
     finally { setExporting(false); }
   }
  
-  // ─── PARTICIPANTES ────────────────────────────────────────────────────────
+  // PARTICIPANTES 
   function addParticipante(tipo_p) {
     const id = genId();
     const nombres = { actor:'Actor', object:'Objeto', boundary:'Boundary', control:'Control', entity:'Entity' };
@@ -360,7 +360,7 @@ function DiagramEditor({ initData, diagramaId, tipo }) {
     });
   }
  
-  // ─── MENSAJES ─────────────────────────────────────────────────────────────
+  // MENSAJES 
   function addMensaje() {
     if (participantes.length < 2) { alert('Necesitas al menos 2 participantes'); return; }
     const id = genMsgId();
@@ -398,7 +398,7 @@ function DiagramEditor({ initData, diagramaId, tipo }) {
     });
   }
  
-  // ─── RENDER CANVAS ────────────────────────────────────────────────────────
+  // RENDER CANVAS 
   // Centro X de cada participante
   function centerX(participanteId) {
     const idx = participantes.findIndex(p=>p.id===participanteId);

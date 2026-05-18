@@ -16,7 +16,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
-// ─── ESTILOS (idénticos al diagrama de clases + forma de carpeta) ─────────────
+//  ESTILOS (idénticos al diagrama de clases + forma de carpeta) 
 const styles = `
   .class-node { background:#1e2030; border:1.5px solid #3a3f5c; border-radius:6px;
     min-width:200px; font-family:'Courier New',monospace; font-size:11px; }
@@ -87,7 +87,7 @@ const styles = `
   .p-del:hover { background:rgba(252,129,129,0.1); }
 `;
 
-// ─── NODO PAQUETE ─────────────────────────────────────────────────────────────
+// NODO PAQUETE 
 function PackageNode({ data, selected }) {
   const { name, classes = [] } = data;
   const hStyle = { background: '#378ADD', width: 8, height: 8 };
@@ -128,7 +128,7 @@ function PackageNode({ data, selected }) {
 
 const nodeTypes = { packageNode: PackageNode };
 
-// ─── ESTILOS DE DEPENDENCIAS (flechas punteadas UML) ─────────────────────────
+// ESTILOS DE DEPENDENCIAS (flechas punteadas UML) 
 const edgeStyleMap = {
   use:    { style: { stroke: '#63b3ed', strokeWidth: 1.5, strokeDasharray: '7,4' }, markerEnd: { type: 'arrowclosed', color: '#63b3ed' }, label: '«use»' },
   import: { style: { stroke: '#68d391', strokeWidth: 1.5, strokeDasharray: '7,4' }, markerEnd: { type: 'arrowclosed', color: '#68d391' }, label: '«import»' },
@@ -136,7 +136,7 @@ const edgeStyleMap = {
   access: { style: { stroke: '#f6ad55', strokeWidth: 1.5, strokeDasharray: '7,4' }, markerEnd: { type: 'arrowclosed', color: '#f6ad55' }, label: '«access»' },
 };
 
-// ─── CARGAR SCRIPT EXTERNO ────────────────────────────────────────────────────
+// CARGAR SCRIPT EXTERNO 
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     if (document.querySelector(`script[src="${src}"]`)) return resolve();
@@ -150,7 +150,7 @@ function loadScript(src) {
 
 const API = 'http://localhost:5000';
 
-// ─── EDITOR INTERNO ───────────────────────────────────────────────────────────
+// EDITOR INTERNO 
 function PaquetesEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo }) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initEdges);
@@ -170,7 +170,7 @@ function PaquetesEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo 
     return () => document.head.removeChild(tag);
   }, []);
 
-  // ─── AUTOGUARDADO EN POSTGRESQL ──────────────────────────────────────────────
+  // AUTOGUARDADO EN POSTGRESQL 
   useEffect(() => {
     if (!diagramaId) return;
     clearTimeout(saveTimer.current);
@@ -198,7 +198,7 @@ function PaquetesEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo 
     }, 800);
   }, [nodes, edges, nombre]);
 
-  // ─── EXPORTAR PDF (usa html-to-image para capturar el SVG de las flechas) ──
+  //  EXPORTAR PDF (usa html-to-image para capturar el SVG de las flechas) 
   async function exportPDF() {
     setExporting(true);
     setSelectedId(null);
@@ -238,7 +238,7 @@ function PaquetesEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo 
     }
   }
 
-  // ─── LÓGICA ──────────────────────────────────────────────────────────────────
+  // LÓGICA 
   const onConnect = useCallback((params) => {
     const extra = edgeStyleMap[edgeType] || edgeStyleMap.use;
     setEdges((eds) => addEdge({ ...params, type: 'smoothstep', ...extra }, eds));
@@ -349,7 +349,7 @@ function PaquetesEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo 
   );
 }
 
-// ─── EXPORT PRINCIPAL ─────────────────────────────────────────────────────────
+// EXPORT PRINCIPAL 
 export default function DiagramaPaquetes() {
   const [searchParams] = useSearchParams();
   const id          = searchParams.get('id');

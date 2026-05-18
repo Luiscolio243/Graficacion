@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 const BASE_URL = "http://127.0.0.1:5000";
+const TECNICA  = "Focus Group";
 
 const inputCls = "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white";
 const labelCls = "block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5";
@@ -12,13 +13,15 @@ export default function CrearFocusGroup() {
   const { id } = useParams();
   const navegar = useNavigate();
 
-  const [procesos,    setProcesos]    = useState([]);
-  const [equipoTI,    setEquipoTI]    = useState([]);
-  const [stakeholders,setStakeholders]= useState([]);
-  const [guardando,   setGuardando]   = useState(false);
-  const [archivo,     setArchivo]     = useState(null);
-  const [paso,        setPaso]        = useState(PASOS.IDLE);
-  const [resultadoIA, setResultadoIA] = useState(null);
+  const [procesos,            setProcesos]            = useState([]);
+  const [equipoTI,            setEquipoTI]            = useState([]);
+  const [stakeholders,        setStakeholders]        = useState([]);
+  const [subprocesosDisp,     setSubprocesosDisp]     = useState([]);
+  const [cargandoSubprocesos, setCargandoSubprocesos] = useState(false);
+  const [guardando,           setGuardando]           = useState(false);
+  const [archivo,             setArchivo]             = useState(null);
+  const [paso,                setPaso]                = useState(PASOS.IDLE);
+  const [resultadoIA,         setResultadoIA]         = useState(null);
 
   const [form, setForm] = useState({
     titulo:        "",
@@ -40,8 +43,20 @@ export default function CrearFocusGroup() {
     fetch(`${BASE_URL}/stakeholders/${id}`, { headers: h }).then((r) => r.ok ? r.json() : []).then(setStakeholders).catch(() => {});
   }, [id]);
 
-  const subprocesosFiltrados =
-    procesos.find((p) => String(p.id_proceso) === String(form.id_proceso))?.subprocesos || [];
+  // Filtrar subprocesos por técnica al cambiar proceso
+  useEffect(() => {
+    if (!form.id_proceso) { setSubprocesosDisp([]); return; }
+    setCargandoSubprocesos(true);
+    const token = localStorage.getItem("token");
+    fetch(
+      `${BASE_URL}/subprocesos/por-tecnica?id_proceso=${form.id_proceso}&tecnica=${encodeURIComponent(TECNICA)}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    )
+      .then((r) => r.ok ? r.json() : [])
+      .then(setSubprocesosDisp)
+      .catch(() => setSubprocesosDisp([]))
+      .finally(() => setCargandoSubprocesos(false));
+  }, [form.id_proceso]);
 
   const set = (campo, valor) => setForm((prev) => ({ ...prev, [campo]: valor }));
 
@@ -53,10 +68,10 @@ export default function CrearFocusGroup() {
       ? form.participantes.filter((p) => p !== id_sh)
       : [...form.participantes, id_sh]);
 
-  const agregarConclusion  = () => set("conclusiones", [...form.conclusiones, ""]);
+  const agregarConclusion    = () => set("conclusiones", [...form.conclusiones, ""]);
   const actualizarConclusion = (idx, val) =>
     set("conclusiones", form.conclusiones.map((c, i) => i === idx ? val : c));
-  const eliminarConclusion = (idx) => {
+  const eliminarConclusion   = (idx) => {
     if (form.conclusiones.length > 1)
       set("conclusiones", form.conclusiones.filter((_, i) => i !== idx));
   };
@@ -128,10 +143,16 @@ export default function CrearFocusGroup() {
     }
   };
 
+  const subprocesoPlaceholder = () => {
+    if (!form.id_proceso)             return "Elige un proceso primero";
+    if (cargandoSubprocesos)          return "Cargando...";
+    if (subprocesosDisp.length === 0) return "Sin subprocesos disponibles";
+    return "Sin subproceso";
+  };
+
   return (
     <div className="space-y-7 max-w-3xl mx-auto">
 
-      {/* Botón de regreso */}
       <button
         onClick={() => navegar(`/app/proyectos/${id}/requerimientos/focus-groups`)}
         className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors duration-150"
@@ -142,13 +163,11 @@ export default function CrearFocusGroup() {
         Volver a Focus Groups
       </button>
 
-      {/* Encabezado */}
       <div className="pb-5 border-b border-gray-200">
         <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Nuevo Focus Group</h1>
         <p className="text-sm text-gray-500 mt-0.5">Documenta los resultados de la sesión grupal</p>
       </div>
 
-      {/* Formulario */}
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm divide-y divide-gray-100">
 
         {/* Información general */}
@@ -157,13 +176,8 @@ export default function CrearFocusGroup() {
 
           <div>
             <label className={labelCls}>Título <span className="text-red-500">*</span></label>
-            <input
-              type="text"
-              value={form.titulo}
-              onChange={(e) => set("titulo", e.target.value)}
-              placeholder="Ej: Sesión de descubrimiento de necesidades"
-              className={inputCls}
-            />
+            <input type="text" value={form.titulo} onChange={(e) => set("titulo", e.target.value)}
+              placeholder="Ej: Sesión de descubrimiento de necesidades" className={inputCls} />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -179,25 +193,20 @@ export default function CrearFocusGroup() {
               </select>
             </div>
             <div>
-              <label className={labelCls}>Tipo de sesión</label>
+              <label className={labelCls}>Tipo de media <span className="text-gray-400 font-normal normal-case">(opcional)</span></label>
               <select value={form.tipo_media} onChange={(e) => set("tipo_media", e.target.value)} className={inputCls}>
-                <option value="">Sin especificar</option>
-                <option value="presencial">Presencial</option>
-                <option value="virtual">Virtual</option>
-                <option value="hibrido">Híbrido</option>
+                <option value="">Sin media</option>
+                <option value="audio">Audio</option>
+                <option value="video">Video</option>
+                <option value="notas">Solo notas</option>
               </select>
             </div>
           </div>
 
           <div>
             <label className={labelCls}>Objetivo <span className="text-red-500">*</span></label>
-            <textarea
-              value={form.objetivo}
-              onChange={(e) => set("objetivo", e.target.value)}
-              placeholder="¿Qué se busca obtener de esta sesión?"
-              rows={3}
-              className={inputCls}
-            />
+            <textarea value={form.objetivo} onChange={(e) => set("objetivo", e.target.value)}
+              placeholder="¿Qué se busca obtener de esta sesión?" rows={3} className={inputCls} />
           </div>
         </div>
 
@@ -216,18 +225,11 @@ export default function CrearFocusGroup() {
               {stakeholders.map((s) => {
                 const activo = form.participantes.includes(s.id_stakeholder);
                 return (
-                  <label
-                    key={s.id_stakeholder}
+                  <label key={s.id_stakeholder}
                     className={`flex items-center gap-3 px-3 py-2.5 border rounded-lg cursor-pointer transition-colors ${
                       activo ? "border-green-400 bg-green-50" : "border-gray-200 hover:bg-gray-50"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={activo}
-                      onChange={() => toggleParticipante(s.id_stakeholder)}
-                      className="accent-green-600 w-4 h-4"
-                    />
+                    }`}>
+                    <input type="checkbox" checked={activo} onChange={() => toggleParticipante(s.id_stakeholder)} className="accent-green-600 w-4 h-4" />
                     <span className="text-sm text-gray-700">{s.nombre}</span>
                   </label>
                 );
@@ -241,9 +243,7 @@ export default function CrearFocusGroup() {
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Conclusiones</p>
             <button type="button" onClick={agregarConclusion}
-              className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors">
-              + Añadir
-            </button>
+              className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors">+ Añadir</button>
           </div>
           <div className="space-y-2">
             {form.conclusiones.map((c, idx) => (
@@ -251,13 +251,9 @@ export default function CrearFocusGroup() {
                 <svg className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" viewBox="0 0 16 16" fill="none">
                   <path d="M3 8l4 4 6-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                <input
-                  type="text"
-                  value={c}
-                  onChange={(e) => actualizarConclusion(idx, e.target.value)}
+                <input type="text" value={c} onChange={(e) => actualizarConclusion(idx, e.target.value)}
                   placeholder={`Conclusión ${idx + 1}`}
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
+                  className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-500" />
                 {form.conclusiones.length > 1 && (
                   <button type="button" onClick={() => eliminarConclusion(idx)}
                     className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0">
@@ -277,16 +273,12 @@ export default function CrearFocusGroup() {
             Transcripción / Notas
             {resultadoIA && <span className="ml-2 text-emerald-600 normal-case font-normal">completada por IA</span>}
           </p>
-          <textarea
-            value={form.transcripcion}
-            onChange={(e) => set("transcripcion", e.target.value)}
-            placeholder="Transcripción de la sesión o notas principales..."
-            rows={4}
-            className={inputCls + (resultadoIA ? " border-emerald-300 bg-emerald-50" : "")}
-          />
+          <textarea value={form.transcripcion} onChange={(e) => set("transcripcion", e.target.value)}
+            placeholder="Transcripción de la sesión o notas principales..." rows={4}
+            className={inputCls + (resultadoIA ? " border-emerald-300 bg-emerald-50" : "")} />
         </div>
 
-        {/* Proceso */}
+        {/* Proceso relacionado */}
         <div className="px-6 py-5 space-y-4">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Proceso relacionado</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -304,25 +296,36 @@ export default function CrearFocusGroup() {
               <select
                 value={form.id_subproceso}
                 onChange={(e) => set("id_subproceso", e.target.value)}
-                disabled={!form.id_proceso}
+                disabled={!form.id_proceso || cargandoSubprocesos || subprocesosDisp.length === 0}
                 className={inputCls + " disabled:opacity-50"}
               >
-                <option value="">{form.id_proceso ? "Sin subproceso" : "Elige un proceso primero"}</option>
-                {subprocesosFiltrados.map((sp) => (
+                <option value="">{subprocesoPlaceholder()}</option>
+                {subprocesosDisp.map((sp) => (
                   <option key={sp.id_subproceso} value={sp.id_subproceso}>{sp.nombre}</option>
                 ))}
               </select>
+              {form.id_proceso && !cargandoSubprocesos && subprocesosDisp.length === 0 && (
+                <p className="mt-1.5 text-xs text-amber-600 flex items-center gap-1">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" className="flex-shrink-0">
+                    <path d="M8 2a6 6 0 100 12A6 6 0 008 2zm0 4v3m0 2.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                  Ningún subproceso tiene asignada la técnica <strong className="ml-0.5">Focus Group</strong>.
+                  Asígnala desde el módulo de Procesos.
+                </p>
+              )}
+              {form.id_proceso && !cargandoSubprocesos && subprocesosDisp.length > 0 && (
+                <p className="mt-1.5 text-xs text-gray-400">Solo subprocesos con técnica <strong>Focus Group</strong> asignada</p>
+              )}
             </div>
           </div>
         </div>
 
-        {/* IA — procesar audio */}
+        {/* IA */}
         <div className="px-6 py-5 space-y-3">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Procesar con IA</p>
           <p className="text-xs text-gray-500">
             Sube la grabación de la sesión y Gemini completará automáticamente la transcripción y conclusiones.
           </p>
-
           {[PASOS.IDLE, PASOS.ERROR].includes(paso) && (
             <div className="flex items-center gap-3">
               <label className="cursor-pointer inline-flex items-center gap-2 border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium transition">
@@ -335,7 +338,6 @@ export default function CrearFocusGroup() {
               {archivo && <span className="text-xs text-gray-500 truncate max-w-[180px]">{archivo.name}</span>}
             </div>
           )}
-
           {paso === PASOS.SUBIENDO   && <p className="text-sm text-gray-500 animate-pulse">Subiendo audio...</p>}
           {paso === PASOS.PROCESANDO && <p className="text-sm text-emerald-600 animate-pulse">Gemini analizando la sesión...</p>}
           {paso === PASOS.LISTO && (
@@ -347,19 +349,13 @@ export default function CrearFocusGroup() {
         </div>
       </div>
 
-      {/* Botones */}
       <div className="flex gap-3 pb-4">
-        <button
-          onClick={() => navegar(`/app/proyectos/${id}/requerimientos/focus-groups`)}
-          className="flex-1 border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
-        >
+        <button onClick={() => navegar(`/app/proyectos/${id}/requerimientos/focus-groups`)}
+          className="flex-1 border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
           Cancelar
         </button>
-        <button
-          onClick={handleGuardar}
-          disabled={guardando}
-          className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition"
-        >
+        <button onClick={handleGuardar} disabled={guardando}
+          className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition">
           {guardando ? "Guardando..." : "Guardar Focus Group"}
         </button>
       </div>

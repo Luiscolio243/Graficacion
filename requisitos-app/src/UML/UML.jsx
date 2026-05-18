@@ -302,7 +302,7 @@ function DiagramEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo }
             />
             {console.log("render boton guardar")}
             <button className="tb-btn save-btn" onClick={guardar} disabled={guardando}>
-              {guardando ? '...' : '💾 Guardar'}
+              {guardando ? '...' : ' Guardar'}
             </button>
             {guardado && <span className="tb-saved">✓ Guardado</span>}
             <div className="tb-sep" />
@@ -321,7 +321,7 @@ function DiagramEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo }
             </select>
             <div className="tb-sep" />
             <button className="tb-btn export-btn" onClick={exportPDF} disabled={exporting}>
-              {exporting ? '⏳ Exportando...' : '⬇ PDF'}
+              {exporting ? ' Exportando...' : '⬇ PDF'}
             </button>
           </div>
         </Panel>
@@ -394,7 +394,7 @@ export default function ClassDiagram() {
  
   useEffect(() => {
   if (!id) {
-    // ← envuelve en setTimeout para que no sea síncrono
+    // envuelve en setTimeout para que no sea síncrono
     setTimeout(() => setInitData({ nodes: [], edges: [], nombre: 'Nuevo diagrama' }), 0);
     return;
   }

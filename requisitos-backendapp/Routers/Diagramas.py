@@ -19,7 +19,7 @@ def serializar_diagrama(d: Diagrama) -> dict:
     }
 
 
-# ─── GET /diagramas ───────────────────────────────────────────────────────────
+# GET /diagramas 
 @diagramas_bp.route('/diagramas', methods=['GET'])
 def listar_diagramas():
     try:
@@ -40,7 +40,7 @@ def listar_diagramas():
         return jsonify({"error": str(e)}), 500
 
 
-# ─── POST /diagramas/crear ────────────────────────────────────────────────────
+# POST /diagramas/crear 
 @diagramas_bp.route('/diagramas/crear', methods=['POST'])
 def crear_diagrama():
     try:
@@ -78,7 +78,7 @@ def crear_diagrama():
         return jsonify({"error": str(e)}), 500
 
 
-# ─── DELETE /diagramas/<id> ───────────────────────────────────────────────────
+# DELETE /diagramas/<id> 
 @diagramas_bp.route('/diagramas/<int:id_diagrama>', methods=['DELETE'])
 def eliminar_diagrama(id_diagrama):
     try:

@@ -123,6 +123,7 @@ export default function HistoriasDeUsuario() {
                 key={prioridad}
                 prioridad={prioridad}
                 historias={porPrioridad[prioridad]}
+                idProyecto={id}
                 onVer={setHistoriaDetalle}
                 onEliminar={setModalEliminar}
               />
@@ -175,7 +176,7 @@ export default function HistoriasDeUsuario() {
   );
 }
 
-/* ── Stat Card ──────────────────────────────────────── */
+/* Stat Card */
 function StatCard({ titulo, valor, color }) {
   const colors = {
     gray:  { num: "text-gray-700"  },
@@ -191,8 +192,8 @@ function StatCard({ titulo, valor, color }) {
   );
 }
 
-/* ── Grupo por prioridad ────────────────────────────── */
-function Grupo({ prioridad, historias, onVer, onEliminar }) {
+/* Grupo por prioridad */
+function Grupo({ prioridad, historias, idProyecto, onVer, onEliminar }) {
   const cfg = PRIORIDAD_CONFIG[prioridad];
   return (
     <div className="space-y-2">
@@ -205,11 +206,12 @@ function Grupo({ prioridad, historias, onVer, onEliminar }) {
       </div>
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm divide-y divide-gray-100">
         {historias.map((h) => (
-          <TarjetaHistoria
-            key={h.id_historia}
-            historia={h}
-            onVer={() => onVer(h)}
-            onEliminar={() => onEliminar(h.id_historia)}
+          <TarjetaHistoria 
+            key={h.id_historia} 
+            historia={h} 
+            idProyecto={idProyecto} 
+            onVer={() => onVer(h)} 
+            onEliminar={() => onEliminar(h.id_historia)} 
           />
         ))}
       </div>
@@ -217,8 +219,9 @@ function Grupo({ prioridad, historias, onVer, onEliminar }) {
   );
 }
 
-/* ── Tarjeta Historia ───────────────────────────────── */
-function TarjetaHistoria({ historia, onVer, onEliminar }) {
+/* Tarjeta Historia */
+function TarjetaHistoria({ historia, idProyecto, onVer, onEliminar }) {
+  const navegar = useNavigate(); 
   const cfg = PRIORIDAD_CONFIG[historia.prioridad] ?? PRIORIDAD_CONFIG.media;
   return (
     <div className={`flex items-start justify-between gap-4 px-5 py-4 border-l-4 ${cfg.border}`}>
@@ -243,6 +246,12 @@ function TarjetaHistoria({ historia, onVer, onEliminar }) {
         <button onClick={onVer} className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors">
           Ver
         </button>
+        <button
+          onClick={() => navegar(`/app/proyectos/${idProyecto}/requerimientos/historias-usuario/${historia.id_historia}/editar`)}
+          className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors"
+        >
+          Editar
+        </button>
         <button onClick={onEliminar} className="text-xs font-medium text-gray-400 hover:text-red-500 transition-colors">
           Eliminar
         </button>
@@ -251,7 +260,7 @@ function TarjetaHistoria({ historia, onVer, onEliminar }) {
   );
 }
 
-/* ── Modal Detalle ──────────────────────────────────── */
+/* Modal Detalle */
 function ModalDetalle({ historia, onClose, onEliminar }) {
   const cfg = PRIORIDAD_CONFIG[historia.prioridad] ?? PRIORIDAD_CONFIG.media;
   return (
@@ -317,6 +326,12 @@ function ModalDetalle({ historia, onClose, onEliminar }) {
 
         {/* Footer */}
         <div className="flex gap-3 p-6 border-t border-gray-200">
+          <button
+            onClick={() => onEditar(historia.id_historia)}
+            className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm"
+          >
+            Editar
+          </button>
           <button
             onClick={onClose}
             className="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition text-sm"

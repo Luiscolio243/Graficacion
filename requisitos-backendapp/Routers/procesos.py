@@ -357,3 +357,40 @@ def eliminar_subproceso(id_subproceso):
             return jsonify({"mensaje": "Subproceso eliminado correctamente"}), 200
     except SQLAlchemyError as e:
         return jsonify({"error": str(e)}), 500
+
+
+@procesos_bp.route('/subprocesos/por-tecnica', methods=['GET'])
+def subprocesos_por_tecnica():
+    id_proceso = request.args.get('id_proceso', type=int)
+    tecnica    = request.args.get('tecnica', '').strip()
+
+    if not id_proceso or not tecnica:
+        return jsonify({"error": "id_proceso y tecnica son obligatorios"}), 400
+
+    try:
+        with Session(engine) as session:
+            tec = session.scalars(
+                select(Tecnica).where(Tecnica.nombre == tecnica)
+            ).first()
+
+            if not tec:
+                return jsonify([]), 200  # técnica desconocida → lista vacía
+
+            subprocesos = session.scalars(
+                select(Subproceso)
+                .join(SubprocesoTecnica,
+                      SubprocesoTecnica.id_subproceso == Subproceso.id_subproceso)
+                .where(
+                    Subproceso.id_proceso == id_proceso,
+                    SubprocesoTecnica.id_tecnica == tec.id_tecnica
+                )
+                .order_by(Subproceso.nombre)
+            ).all()
+
+            return jsonify([
+                {"id_subproceso": sp.id_subproceso, "nombre": sp.nombre}
+                for sp in subprocesos
+            ]), 200
+
+    except SQLAlchemyError as e:
+        return jsonify({"error": str(e)}), 500

@@ -7,52 +7,67 @@ const TECNICA  = "Seguimiento Transaccional";
 const inputCls = "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white";
 const labelCls = "block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5";
 
-export default function CrearSeguimientoTransaccional() {
-  const { id } = useParams();
+export default function EditarSeguimientoTransaccional() {
+  const { id, idSeguimiento } = useParams();
   const navegar = useNavigate();
 
   const [procesos,            setProcesos]            = useState([]);
   const [equipoTI,            setEquipoTI]            = useState([]);
   const [subprocesosDisp,     setSubprocesosDisp]     = useState([]);
   const [cargandoSubprocesos, setCargandoSubprocesos] = useState(false);
+  const [cargandoDatos,       setCargandoDatos]       = useState(true);
   const [guardando,           setGuardando]           = useState(false);
 
-  const [form, setForm] = useState({
-    titulo:         "",
-    id_proceso:     "",
-    id_subproceso:  "",
-    nombre_proceso: "",
-    id_responsable: "",
-    pasos:          [{ nombre: "", duracion_min: "" }],
-    problemas:      [""],
-    metricas:       [{ nombre: "", valor: "" }],
-  });
+  const [form, setForm] = useState(null); // null mientras carga
 
   const set = (campo, valor) => setForm((prev) => ({ ...prev, [campo]: valor }));
 
+  // Cargar catálogos y detalle en paralelo
   useEffect(() => {
-    fetch(`${BASE_URL}/procesos/${id}`)
-      .then((r) => r.ok ? r.json() : [])
-      .then(setProcesos)
-      .catch(() => {});
-
     const token = localStorage.getItem("token");
-    fetch(`${BASE_URL}/ti/${id}`, { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => r.ok ? r.json() : [])
-      .then(setEquipoTI)
-      .catch(() => {});
-  }, [id]);
 
-  // Filtrar subprocesos por técnica al cambiar proceso
+    Promise.all([
+      fetch(`${BASE_URL}/procesos/${id}`).then((r) => r.ok ? r.json() : []),
+      fetch(`${BASE_URL}/ti/${id}`, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.ok ? r.json() : []),
+      fetch(`${BASE_URL}/seguimientos/detalle/${idSeguimiento}`).then((r) => r.ok ? r.json() : null),
+    ])
+      .then(([procs, ti, detalle]) => {
+        setProcesos(procs);
+        setEquipoTI(ti);
+
+        if (detalle) {
+          setForm({
+            titulo:         detalle.titulo || "",
+            id_proceso:     detalle.id_proceso ? String(detalle.id_proceso) : "",
+            id_subproceso:  detalle.id_subproceso ? String(detalle.id_subproceso) : "",
+            nombre_proceso: detalle.nombre_proceso || "",
+            id_responsable: detalle.id_responsable ? String(detalle.id_responsable) : "",
+            pasos:     detalle.pasos?.length > 0
+              ? detalle.pasos.map((p) => ({ nombre: p.nombre, duracion_min: p.duracion_min ?? "" }))
+              : [{ nombre: "", duracion_min: "" }],
+            problemas: detalle.problemas?.length > 0
+              ? detalle.problemas.map((p) => p.descripcion)
+              : [""],
+            metricas:  detalle.metricas?.length > 0
+              ? detalle.metricas.map((m) => ({ nombre: m.nombre, valor: m.valor ?? "" }))
+              : [{ nombre: "", valor: "" }],
+          });
+        }
+      })
+      .catch(() => {})
+      .finally(() => setCargandoDatos(false));
+  }, [id, idSeguimiento]);
+
+  // Cargar subprocesos cuando cambia el proceso
   useEffect(() => {
-    if (!form.id_proceso) { setSubprocesosDisp([]); return; }
+    if (!form?.id_proceso) { setSubprocesosDisp([]); return; }
     setCargandoSubprocesos(true);
     fetch(`${BASE_URL}/subprocesos/por-tecnica?id_proceso=${form.id_proceso}&tecnica=${encodeURIComponent(TECNICA)}`)
       .then((r) => r.ok ? r.json() : [])
       .then(setSubprocesosDisp)
       .catch(() => setSubprocesosDisp([]))
       .finally(() => setCargandoSubprocesos(false));
-  }, [form.id_proceso]);
+  }, [form?.id_proceso]);
 
   const handleCambiarProceso = (e) => {
     const proc = procesos.find((p) => String(p.id_proceso) === e.target.value);
@@ -93,8 +108,8 @@ export default function CrearSeguimientoTransaccional() {
     setGuardando(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${BASE_URL}/seguimientos/crear/${id}`, {
-        method: "POST",
+      const res = await fetch(`${BASE_URL}/seguimientos/editar/${idSeguimiento}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           titulo:         form.titulo,
@@ -111,7 +126,7 @@ export default function CrearSeguimientoTransaccional() {
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error || "Error al crear");
+        throw new Error(err.error || "Error al guardar");
       }
       navegar(`/app/proyectos/${id}/requerimientos/seguimiento-transaccional`);
     } catch (e) {
@@ -122,11 +137,29 @@ export default function CrearSeguimientoTransaccional() {
   };
 
   const subprocesoPlaceholder = () => {
-    if (!form.id_proceso)             return "Elige un proceso primero";
-    if (cargandoSubprocesos)          return "Cargando...";
+    if (!form?.id_proceso)         return "Elige un proceso primero";
+    if (cargandoSubprocesos)       return "Cargando...";
     if (subprocesosDisp.length === 0) return "Sin subprocesos disponibles";
     return "Sin subproceso";
   };
+
+  // Estado de carga inicial
+  if (cargandoDatos) return (
+    <div className="space-y-7 max-w-3xl mx-auto">
+      <div className="flex items-center gap-2 py-8 text-sm text-gray-400">
+        <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-200 border-t-indigo-500 animate-spin" />
+        Cargando datos...
+      </div>
+    </div>
+  );
+
+  if (!form) return (
+    <div className="space-y-7 max-w-3xl mx-auto">
+      <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+        No se pudo cargar el seguimiento.
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-7 max-w-3xl mx-auto">
@@ -142,8 +175,8 @@ export default function CrearSeguimientoTransaccional() {
       </button>
 
       <div className="pb-5 border-b border-gray-200">
-        <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Nuevo Seguimiento Transaccional</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Registra los pasos, métricas y problemas de un proceso</p>
+        <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Editar Seguimiento Transaccional</h1>
+        <p className="text-sm text-gray-500 mt-0.5">Modifica los pasos, métricas y problemas del proceso</p>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm divide-y divide-gray-100">
@@ -154,19 +187,17 @@ export default function CrearSeguimientoTransaccional() {
 
           <div>
             <label className={labelCls}>Título <span className="text-red-500">*</span></label>
-            <input type="text" value={form.titulo} onChange={(e) => set("titulo", e.target.value)}
-              placeholder="Ej: Seguimiento de salida de merma" className={inputCls} />
-          </div>
-
-          <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3">
-            <p className="text-xs font-medium text-indigo-700">ID de Transacción</p>
-            <p className="text-sm text-indigo-600 mt-0.5">
-              Se generará automáticamente — <span className="font-mono font-bold">TXN-{new Date().getFullYear()}-XXX</span>
-            </p>
+            <input
+              type="text"
+              value={form.titulo}
+              onChange={(e) => set("titulo", e.target.value)}
+              placeholder="Ej: Registro de pedido en sistema de ventas"
+              className={inputCls}
+            />
           </div>
 
           <div>
-            <label className={labelCls}>Responsable <span className="text-gray-400 font-normal normal-case">(opcional)</span></label>
+            <label className={labelCls}>Responsable</label>
             <select value={form.id_responsable} onChange={(e) => set("id_responsable", e.target.value)} className={inputCls}>
               <option value="">Sin responsable</option>
               {equipoTI.map((e) => (
@@ -207,7 +238,6 @@ export default function CrearSeguimientoTransaccional() {
                     <path d="M8 2a6 6 0 100 12A6 6 0 008 2zm0 4v3m0 2.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                   </svg>
                   Ningún subproceso tiene asignada la técnica <strong className="ml-0.5">Seguimiento Transaccional</strong>.
-                  Asígnala desde el módulo de Procesos.
                 </p>
               )}
               {form.id_proceso && !cargandoSubprocesos && subprocesosDisp.length > 0 && (
@@ -312,7 +342,7 @@ export default function CrearSeguimientoTransaccional() {
         </button>
         <button onClick={handleGuardar} disabled={guardando}
           className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition">
-          {guardando ? "Guardando..." : "Crear Seguimiento"}
+          {guardando ? "Guardando..." : "Guardar Cambios"}
         </button>
       </div>
     </div>

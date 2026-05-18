@@ -20,7 +20,7 @@ export default function TI() {
   const [tiActivo,      setTiActivo]      = useState(null);
   const [mostrarRol,    setMostrarRol]    = useState(false);
   const [modalEliminar, setModalEliminar] = useState(null);
-  const [passwordInfo,  setPasswordInfo]  = useState(null); // { email, password }
+  const [passwordInfo,  setPasswordInfo]  = useState(null); 
 
   useEffect(() => {
     const cargar = async () => {
