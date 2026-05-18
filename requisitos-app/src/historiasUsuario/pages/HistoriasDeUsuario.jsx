@@ -98,10 +98,10 @@ export default function HistoriasDeUsuario() {
 
       {/* Estadísticas */}
       <div className="grid grid-cols-4 gap-4">
-        <StatCard titulo="Total"         valor={historias.length}            color="gray"   />
-        <StatCard titulo="Prioridad alta" valor={porPrioridad.alta.length}   color="red"    />
-        <StatCard titulo="Prioridad media" valor={porPrioridad.media.length} color="amber"  />
-        <StatCard titulo="Prioridad baja" valor={porPrioridad.baja.length}   color="blue"   />
+        <StatCard titulo="Total"          valor={historias.length}            icon={<IconTotal />} color="gray"  />
+        <StatCard titulo="Prioridad alta" valor={porPrioridad.alta.length}   icon={<IconAlta />}  color="red"   />
+        <StatCard titulo="Prioridad media" valor={porPrioridad.media.length} icon={<IconMedia />} color="amber" />
+        <StatCard titulo="Prioridad baja" valor={porPrioridad.baja.length}   icon={<IconBaja />}  color="blue"  />
       </div>
 
       {/* Lista */}
@@ -175,18 +175,52 @@ export default function HistoriasDeUsuario() {
   );
 }
 
+/* ── Icons ──────────────────────────────────────────── */
+function IconTotal() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <path d="M4 4h12v2H4V4zm0 4h12v2H4V8zm0 4h8v2H4v-2z" fill="currentColor" opacity="0.8"/>
+    </svg>
+  );
+}
+function IconAlta() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <path d="M10 4v12M6 8l4-4 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+function IconMedia() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <path d="M5 10h10M5 7h10M5 13h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  );
+}
+function IconBaja() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <path d="M10 16V4M6 12l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
 /* ── Stat Card ──────────────────────────────────────── */
-function StatCard({ titulo, valor, color }) {
+function StatCard({ titulo, valor, icon, color }) {
   const colors = {
-    gray:  { num: "text-gray-700"  },
-    red:   { num: "text-red-700"   },
-    amber: { num: "text-amber-700" },
-    blue:  { num: "text-blue-700"  },
+    gray:  { bg: "bg-gray-100",   text: "text-gray-600",   num: "text-gray-700"   },
+    red:   { bg: "bg-red-50",     text: "text-red-600",    num: "text-red-700"    },
+    amber: { bg: "bg-amber-50",   text: "text-amber-600",  num: "text-amber-700"  },
+    blue:  { bg: "bg-blue-50",    text: "text-blue-600",   num: "text-blue-700"   },
   };
+  const c = colors[color];
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{titulo}</p>
-      <p className={`text-3xl font-bold ${colors[color].num}`}>{valor}</p>
+      <div className={`w-9 h-9 rounded-lg ${c.bg} ${c.text} flex items-center justify-center mb-3`}>
+        {icon}
+      </div>
+      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">{titulo}</p>
+      <p className={`text-3xl font-bold mt-1 ${c.num}`}>{valor}</p>
     </div>
   );
 }
@@ -195,24 +229,21 @@ function StatCard({ titulo, valor, color }) {
 function Grupo({ prioridad, historias, onVer, onEliminar }) {
   const cfg = PRIORIDAD_CONFIG[prioridad];
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2 px-1">
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
         <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
         <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
-          Prioridad {cfg.label}
+          Prioridad {cfg.label} ({historias.length})
         </span>
-        <span className="text-xs text-gray-400">({historias.length})</span>
       </div>
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm divide-y divide-gray-100">
-        {historias.map((h) => (
-          <TarjetaHistoria
-            key={h.id_historia}
-            historia={h}
-            onVer={() => onVer(h)}
-            onEliminar={() => onEliminar(h.id_historia)}
-          />
-        ))}
-      </div>
+      {historias.map((h) => (
+        <TarjetaHistoria
+          key={h.id_historia}
+          historia={h}
+          onVer={() => onVer(h)}
+          onEliminar={() => onEliminar(h.id_historia)}
+        />
+      ))}
     </div>
   );
 }
@@ -221,31 +252,39 @@ function Grupo({ prioridad, historias, onVer, onEliminar }) {
 function TarjetaHistoria({ historia, onVer, onEliminar }) {
   const cfg = PRIORIDAD_CONFIG[historia.prioridad] ?? PRIORIDAD_CONFIG.media;
   return (
-    <div className={`flex items-start justify-between gap-4 px-5 py-4 border-l-4 ${cfg.border}`}>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900 truncate">{historia.titulo}</p>
-        <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
-          Como <span className="font-medium">{historia.rol}</span>, quiero {historia.accion}
-        </p>
-        <div className="flex items-center gap-3 mt-1.5">
-          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ${cfg.badge}`}>
-            {cfg.label}
-          </span>
-          {historia.estimacion && (
-            <span className="text-[11px] text-gray-400">{historia.estimacion} pts</span>
-          )}
-          {historia.criterios?.length > 0 && (
-            <span className="text-[11px] text-gray-400">{historia.criterios.length} criterios</span>
-          )}
+    <div className={`bg-white border border-gray-200 border-l-4 ${cfg.border} rounded-xl p-5 shadow-sm`}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-900 truncate">{historia.titulo}</p>
+          <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
+            Como <span className="font-medium">{historia.rol}</span>, quiero {historia.accion}
+          </p>
+          <div className="flex items-center gap-3 mt-1.5">
+            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ${cfg.badge}`}>
+              {cfg.label}
+            </span>
+            {historia.estimacion && (
+              <span className="text-[11px] text-gray-400">{historia.estimacion} pts</span>
+            )}
+            {historia.criterios?.length > 0 && (
+              <span className="text-[11px] text-gray-400">{historia.criterios.length} criterios</span>
+            )}
+          </div>
         </div>
-      </div>
-      <div className="flex items-center gap-4 flex-shrink-0 pt-0.5">
-        <button onClick={onVer} className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors">
-          Ver
-        </button>
-        <button onClick={onEliminar} className="text-xs font-medium text-gray-400 hover:text-red-500 transition-colors">
-          Eliminar
-        </button>
+        <div className="flex items-center gap-1 flex-shrink-0 pt-0.5">
+          <button
+            onClick={onVer}
+            className="text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-2.5 py-1.5 rounded-md transition-colors"
+          >
+            Ver
+          </button>
+          <button
+            onClick={onEliminar}
+            className="text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 px-2.5 py-1.5 rounded-md transition-colors"
+          >
+            Eliminar
+          </button>
+        </div>
       </div>
     </div>
   );

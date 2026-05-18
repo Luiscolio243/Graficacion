@@ -335,9 +335,9 @@ export default function Documentos() {
 
       {/* StatCards */}
       <div className="grid grid-cols-3 gap-4">
-        <StatCard titulo="Total" valor={analisis.length} color="gray" />
-        <StatCard titulo="Con hallazgos"      valor={analisis.filter(a => a.hallazgos?.length > 0).length}  color="amber"   />
-        <StatCard titulo="Con recomendaciones" valor={analisis.filter(a => a.recomendaciones?.trim()).length} color="emerald" />
+        <StatCard titulo="Total"               valor={analisis.length}                                        icon={<IconTotal />}         color="gray"    />
+        <StatCard titulo="Con hallazgos"       valor={analisis.filter(a => a.hallazgos?.length > 0).length}  icon={<IconHallazgo />}      color="amber"   />
+        <StatCard titulo="Con recomendaciones" valor={analisis.filter(a => a.recomendaciones?.trim()).length} icon={<IconRecomendacion />} color="emerald" />
       </div>
 
       {/* Cargando */}
@@ -390,13 +390,13 @@ export default function Documentos() {
                     </p>
                   )}
                 </div>
-                <div className="flex items-center gap-4 flex-shrink-0 pt-0.5">
+                <div className="flex items-center gap-1 flex-shrink-0 pt-0.5">
                   <button onClick={() => setDetalle(detalle?.id_analisis === a.id_analisis ? null : a)}
-                    className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors">
+                    className="text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-2.5 py-1.5 rounded-md transition-colors">
                     {detalle?.id_analisis === a.id_analisis ? 'Cerrar' : 'Ver'}
                   </button>
                   <button onClick={() => setModalEliminar(a.id_analisis)}
-                    className="text-xs font-medium text-gray-400 hover:text-red-500 transition-colors">
+                    className="text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 px-2.5 py-1.5 rounded-md transition-colors">
                     Eliminar
                   </button>
                 </div>
@@ -501,12 +501,46 @@ export default function Documentos() {
   );
 }
 
-function StatCard({ titulo, valor, color }) {
-  const nums = { gray: "text-gray-700", amber: "text-amber-700", emerald: "text-emerald-700" };
+function IconTotal() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <path d="M4 4h12v2H4V4zm0 4h12v2H4V8zm0 4h8v2H4v-2z" fill="currentColor" opacity="0.8"/>
+    </svg>
+  );
+}
+function IconHallazgo() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <circle cx="9" cy="9" r="5.5" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M13 13l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M9 7v2M9 10.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  );
+}
+function IconRecomendacion() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <path d="M4 14V5a1 1 0 011-1h10a1 1 0 011 1v9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      <path d="M2 14h16" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      <path d="M8 10l1.5 1.5L12 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+function StatCard({ titulo, valor, icon, color }) {
+  const colors = {
+    gray:    { bg: "bg-gray-100",   text: "text-gray-600",    num: "text-gray-700"    },
+    amber:   { bg: "bg-amber-50",   text: "text-amber-600",   num: "text-amber-700"   },
+    emerald: { bg: "bg-emerald-50", text: "text-emerald-600", num: "text-emerald-700" },
+  };
+  const c = colors[color];
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{titulo}</p>
-      <p className={`text-3xl font-bold ${nums[color]}`}>{valor}</p>
+      <div className={`w-9 h-9 rounded-lg ${c.bg} ${c.text} flex items-center justify-center mb-3`}>
+        {icon}
+      </div>
+      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">{titulo}</p>
+      <p className={`text-3xl font-bold mt-1 ${c.num}`}>{valor}</p>
     </div>
   );
 }

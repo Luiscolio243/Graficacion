@@ -12,6 +12,9 @@ class Diagrama(Base):
     id_diagrama: Mapped[int] = mapped_column(
         Integer, primary_key=True
     )
+    id_proyecto: Mapped[int | None] = mapped_column(
+        Integer, nullable=True
+    )
     nombre: Mapped[str] = mapped_column(
         String(120), nullable=False
     )
@@ -28,14 +31,17 @@ class Diagrama(Base):
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
     )
 
-    clase_nodos: Mapped[ list["ClaseNodo"]] = relationship(
-        "ClaseNodo",
-        cascade="all, delete-orphan"
+    clase_nodos: Mapped[list["ClaseNodo"]] = relationship(
+        "ClaseNodo", cascade="all, delete-orphan"
     )
 
-    clase_aristas: Mapped[ list["ClaseArista"] ] = relationship('ClaseArista', backref='diagrama', cascade='all, delete-orphan', lazy=True)
+    clase_aristas: Mapped[list["ClaseArista"]] = relationship(
+        'ClaseArista', backref='diagrama', cascade='all, delete-orphan', lazy=True
+    )
 
-    seq_participantes: Mapped[list["SeqParticipante"]] = relationship("SeqParticipante", back_populates="diagrama",
-                                                                      cascade="all, delete-orphan")
-    seq_mensajes: Mapped[list["SeqMensaje"]] = relationship("SeqMensaje", back_populates="diagrama",
-                                                            cascade="all, delete-orphan")
+    seq_participantes: Mapped[list["SeqParticipante"]] = relationship(
+        "SeqParticipante", back_populates="diagrama", cascade="all, delete-orphan"
+    )
+    seq_mensajes: Mapped[list["SeqMensaje"]] = relationship(
+        "SeqMensaje", back_populates="diagrama", cascade="all, delete-orphan"
+    )

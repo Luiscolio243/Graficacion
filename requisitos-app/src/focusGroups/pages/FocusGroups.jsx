@@ -100,10 +100,10 @@ export default function FocusGroups() {
 
       {/* Estadísticas */}
       <div className="grid grid-cols-4 gap-4">
-        <StatCard titulo="Total"        valor={focusGroups.length}           color="gray"    />
-        <StatCard titulo="Planificados" valor={porEstado.planificado.length} color="blue"    />
-        <StatCard titulo="En progreso"  valor={porEstado.en_progreso.length} color="amber"   />
-        <StatCard titulo="Realizados"   valor={porEstado.realizado.length}   color="emerald" />
+        <StatCard titulo="Total"        valor={focusGroups.length}           icon={<IconTotal />}     color="gray"    />
+        <StatCard titulo="Planificados" valor={porEstado.planificado.length} icon={<IconCalendario />} color="blue"   />
+        <StatCard titulo="En progreso"  valor={porEstado.en_progreso.length} icon={<IconReloj />}     color="amber"   />
+        <StatCard titulo="Realizados"   valor={porEstado.realizado.length}   icon={<IconCheck />}     color="emerald" />
       </div>
 
       {/* Lista */}
@@ -173,13 +173,55 @@ export default function FocusGroups() {
   );
 }
 
+/* ── Icons ──────────────────────────────────────────── */
+function IconTotal() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <path d="M4 4h12v2H4V4zm0 4h12v2H4V8zm0 4h8v2H4v-2z" fill="currentColor" opacity="0.8"/>
+    </svg>
+  );
+}
+function IconCalendario() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M3 8h14M7 3v3M13 3v3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+    </svg>
+  );
+}
+function IconReloj() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M10 6v4l2.5 2.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+    </svg>
+  );
+}
+function IconCheck() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M7 10l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
 /* ── Stat Card ──────────────────────────────────────── */
-function StatCard({ titulo, valor, color }) {
-  const nums = { gray: "text-gray-700", blue: "text-blue-700", amber: "text-amber-700", emerald: "text-emerald-700" };
+function StatCard({ titulo, valor, icon, color }) {
+  const colors = {
+    gray:    { bg: "bg-gray-100",    text: "text-gray-600",    num: "text-gray-700"    },
+    blue:    { bg: "bg-blue-50",     text: "text-blue-600",    num: "text-blue-700"    },
+    amber:   { bg: "bg-amber-50",    text: "text-amber-600",   num: "text-amber-700"   },
+    emerald: { bg: "bg-emerald-50",  text: "text-emerald-600", num: "text-emerald-700" },
+  };
+  const c = colors[color];
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{titulo}</p>
-      <p className={`text-3xl font-bold ${nums[color]}`}>{valor}</p>
+      <div className={`w-9 h-9 rounded-lg ${c.bg} ${c.text} flex items-center justify-center mb-3`}>
+        {icon}
+      </div>
+      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">{titulo}</p>
+      <p className={`text-3xl font-bold mt-1 ${c.num}`}>{valor}</p>
     </div>
   );
 }
@@ -188,22 +230,21 @@ function StatCard({ titulo, valor, color }) {
 function Grupo({ estado, focusGroups, onVer, onEliminar }) {
   const cfg = ESTADO_CONFIG[estado] ?? ESTADO_CONFIG.planificado;
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2 px-1">
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
         <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
-        <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">{cfg.label}</span>
-        <span className="text-xs text-gray-400">({focusGroups.length})</span>
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
+          {cfg.label} ({focusGroups.length})
+        </span>
       </div>
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm divide-y divide-gray-100">
-        {focusGroups.map((fg) => (
-          <TarjetaFG
-            key={fg.id_focus_group}
-            fg={fg}
-            onVer={() => onVer(fg)}
-            onEliminar={() => onEliminar(fg.id_focus_group)}
-          />
-        ))}
-      </div>
+      {focusGroups.map((fg) => (
+        <TarjetaFG
+          key={fg.id_focus_group}
+          fg={fg}
+          onVer={() => onVer(fg)}
+          onEliminar={() => onEliminar(fg.id_focus_group)}
+        />
+      ))}
     </div>
   );
 }
@@ -216,31 +257,39 @@ function TarjetaFG({ fg, onVer, onEliminar }) {
     : null;
 
   return (
-    <div className={`flex items-start justify-between gap-4 px-5 py-4 border-l-4 ${cfg.border}`}>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900 truncate">{fg.titulo}</p>
-        {fg.objetivo && (
-          <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{fg.objetivo}</p>
-        )}
-        <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ${cfg.badge}`}>
-            {cfg.label}
-          </span>
-          {fg.tipo_media && (
-            <span className="text-[11px] text-gray-400 capitalize">{fg.tipo_media}</span>
+    <div className={`bg-white border border-gray-200 border-l-4 ${cfg.border} rounded-xl p-5 shadow-sm`}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-900 truncate">{fg.titulo}</p>
+          {fg.objetivo && (
+            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{fg.objetivo}</p>
           )}
-          <span className="text-[11px] text-gray-400">{fg.total_participantes} participantes</span>
-          <span className="text-[11px] text-gray-400">{fg.total_temas} temas</span>
-          {fecha && <span className="text-[11px] text-gray-400">{fecha}</span>}
+          <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ${cfg.badge}`}>
+              {cfg.label}
+            </span>
+            {fg.tipo_media && (
+              <span className="text-[11px] text-gray-400 capitalize">{fg.tipo_media}</span>
+            )}
+            <span className="text-[11px] text-gray-400">{fg.total_participantes} participantes</span>
+            <span className="text-[11px] text-gray-400">{fg.total_temas} temas</span>
+            {fecha && <span className="text-[11px] text-gray-400">{fecha}</span>}
+          </div>
         </div>
-      </div>
-      <div className="flex items-center gap-4 flex-shrink-0 pt-0.5">
-        <button onClick={onVer} className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors">
-          Ver
-        </button>
-        <button onClick={onEliminar} className="text-xs font-medium text-gray-400 hover:text-red-500 transition-colors">
-          Eliminar
-        </button>
+        <div className="flex items-center gap-1 flex-shrink-0 pt-0.5">
+          <button
+            onClick={onVer}
+            className="text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-2.5 py-1.5 rounded-md transition-colors"
+          >
+            Ver
+          </button>
+          <button
+            onClick={onEliminar}
+            className="text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 px-2.5 py-1.5 rounded-md transition-colors"
+          >
+            Eliminar
+          </button>
+        </div>
       </div>
     </div>
   );

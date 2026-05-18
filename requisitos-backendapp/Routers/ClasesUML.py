@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
+from datetime import datetime
 from db import engine
 from Models.Diagrama import Diagrama
 from Models.ClaseNodo import ClaseNodo
@@ -94,11 +95,11 @@ def guardar_diagrama_clases(id_diagrama):
             if diagrama.tipo != 'clases':
                 return jsonify({"error": "BAD REQUEST", "message": "Este diagrama no es de tipo clases"}), 400
 
-            # Actualizar metadata si vienen
             if "nombre" in data:
                 diagrama.nombre = data["nombre"]
             if "descripcion" in data:
                 diagrama.descripcion = data["descripcion"]
+            diagrama.editado_en = datetime.utcnow()
 
             # Borrar contenido anterior — la cascada elimina atributos y métodos
             stmt_del_nodos = select(ClaseNodo).where(ClaseNodo.id_diagrama == id_diagrama)

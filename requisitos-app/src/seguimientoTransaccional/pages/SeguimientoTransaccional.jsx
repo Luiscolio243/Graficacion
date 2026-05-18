@@ -115,8 +115,8 @@ export default function SeguimientoTransaccional() {
 
       {/* Estadísticas */}
       <div className="grid grid-cols-2 gap-4">
-        <StatCard titulo="Total" valor={seguimientos.length} color="gray" />
-        <StatCard titulo="Procesos monitoreados" valor={procesosUnicos} color="indigo" />
+        <StatCard titulo="Total"                 valor={seguimientos.length} icon={<IconTotal />}   color="gray"   />
+        <StatCard titulo="Procesos monitoreados" valor={procesosUnicos}      icon={<IconProceso />} color="indigo" />
       </div>
 
       {/* Lista */}
@@ -190,16 +190,40 @@ export default function SeguimientoTransaccional() {
   );
 }
 
+/* ── Icons ──────────────────────────────────────────── */
+function IconTotal() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <path d="M4 4h12v2H4V4zm0 4h12v2H4V8zm0 4h8v2H4v-2z" fill="currentColor" opacity="0.8"/>
+    </svg>
+  );
+}
+function IconProceso() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <rect x="2" y="6" width="5" height="4" rx="1" stroke="currentColor" strokeWidth="1.4"/>
+      <rect x="13" y="6" width="5" height="4" rx="1" stroke="currentColor" strokeWidth="1.4"/>
+      <rect x="7.5" y="9" width="5" height="4" rx="1" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M7 8h6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+      <path d="M10 8v1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
 /* ── Stat Card ──────────────────────────────────────── */
-function StatCard({ titulo, valor, color }) {
+function StatCard({ titulo, valor, icon, color }) {
   const colors = {
-    gray:   "text-gray-700",
-    indigo: "text-indigo-700",
+    gray:   { bg: "bg-gray-100",   text: "text-gray-600",   num: "text-gray-700"   },
+    indigo: { bg: "bg-indigo-50",  text: "text-indigo-600", num: "text-indigo-700" },
   };
+  const c = colors[color];
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{titulo}</p>
-      <p className={`text-3xl font-bold ${colors[color]}`}>{valor}</p>
+      <div className={`w-9 h-9 rounded-lg ${c.bg} ${c.text} flex items-center justify-center mb-3`}>
+        {icon}
+      </div>
+      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">{titulo}</p>
+      <p className={`text-3xl font-bold mt-1 ${c.num}`}>{valor}</p>
     </div>
   );
 }
@@ -207,22 +231,21 @@ function StatCard({ titulo, valor, color }) {
 /* ── Grupo por proceso ──────────────────────────────── */
 function GrupoProceso({ proceso, seguimientos, onVer, onEliminar }) {
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2 px-1">
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
         <span className="w-2 h-2 rounded-full bg-indigo-400" />
-        <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">{proceso}</span>
-        <span className="text-xs text-gray-400">({seguimientos.length})</span>
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
+          {proceso} ({seguimientos.length})
+        </span>
       </div>
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm divide-y divide-gray-100">
-        {seguimientos.map((s) => (
-          <TarjetaSeguimiento
-            key={s.id_seguimiento}
-            seguimiento={s}
-            onVer={() => onVer(s)}
-            onEliminar={() => onEliminar(s.id_seguimiento)}
-          />
-        ))}
-      </div>
+      {seguimientos.map((s) => (
+        <TarjetaSeguimiento
+          key={s.id_seguimiento}
+          seguimiento={s}
+          onVer={() => onVer(s)}
+          onEliminar={() => onEliminar(s.id_seguimiento)}
+        />
+      ))}
     </div>
   );
 }
@@ -236,23 +259,31 @@ function TarjetaSeguimiento({ seguimiento, onVer, onEliminar }) {
     : null;
 
   return (
-    <div className="flex items-start justify-between gap-4 px-5 py-4 border-l-4 border-l-indigo-400">
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900 truncate">{seguimiento.titulo}</p>
-        <div className="flex items-center gap-3 mt-1">
-          <span className="font-mono text-[11px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded">
-            {seguimiento.id_transaccion}
-          </span>
-          {fecha && <span className="text-[11px] text-gray-400">{fecha}</span>}
+    <div className="bg-white border border-gray-200 border-l-4 border-l-indigo-400 rounded-xl p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-900 truncate">{seguimiento.titulo}</p>
+          <div className="flex items-center gap-3 mt-1">
+            <span className="font-mono text-[11px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded">
+              {seguimiento.id_transaccion}
+            </span>
+            {fecha && <span className="text-[11px] text-gray-400">{fecha}</span>}
+          </div>
         </div>
-      </div>
-      <div className="flex items-center gap-4 flex-shrink-0 pt-0.5">
-        <button onClick={onVer} className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors">
-          Ver
-        </button>
-        <button onClick={onEliminar} className="text-xs font-medium text-gray-400 hover:text-red-500 transition-colors">
-          Eliminar
-        </button>
+        <div className="flex items-center gap-1 flex-shrink-0 pt-0.5">
+          <button
+            onClick={onVer}
+            className="text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-2.5 py-1.5 rounded-md transition-colors"
+          >
+            Ver
+          </button>
+          <button
+            onClick={onEliminar}
+            className="text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 px-2.5 py-1.5 rounded-md transition-colors"
+          >
+            Eliminar
+          </button>
+        </div>
       </div>
     </div>
   );

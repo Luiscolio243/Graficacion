@@ -45,22 +45,25 @@ const styles = `
 
   /* Toolbar */
   .toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center;
-    background:#161821; border:1px solid #3a3f5c; border-radius:8px;
-    padding:8px 12px; font-family:'Courier New',monospace; }
-  .tb-btn { font-size:11px; padding:5px 12px; border-radius:5px;
-    border:1px solid #3a3f5c; background:#1e2030; color:#e2e8f0; cursor:pointer; }
-  .tb-btn:hover { background:#2d3148; }
-  .tb-btn.back-btn { background:#1e2030; border-color:#3a3f5c; color:#a0aec0; }
-  .tb-btn.back-btn:hover { background:#2d3148; color:#e2e8f0; }
-  .tb-btn.export-btn { background:#0F6E56; border-color:#1D9E75; color:#9FE1CB; }
-  .tb-btn.export-btn:hover { background:#1D9E75; }
-  .tb-btn.export-btn:disabled { opacity:0.5; cursor:wait; }
-  .tb-label { font-size:10px; color:#718096; letter-spacing:.5px; }
-  .tb-sep { width:1px; height:18px; background:#3a3f5c; }
-  .tb-title { font-size:12px; padding:4px 8px; border-radius:5px;
-    border:1px solid #3a3f5c; background:#1e2030; color:#e2e8f0;
-    font-family:'Courier New',monospace; min-width:160px; }
-  .tb-title:focus { outline:none; border-color:#378ADD; }
+    background:#1a1d2e; border:1px solid #252840; border-radius:10px;
+    padding:7px 12px; font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+    box-shadow:0 4px 16px rgba(0,0,0,.4); }
+  .tb-btn { font-size:12px; font-weight:500; padding:5px 13px; border-radius:6px;
+    border:1px solid #3a3f5c; background:#252840; color:#cbd5e1; cursor:pointer;
+    font-family:inherit; transition:background .15s,color .15s; }
+  .tb-btn:hover { background:#2d3148; color:#e2e8f0; }
+  .tb-btn.back-btn { background:transparent; border-color:#2d3148; color:#94a3b8; }
+  .tb-btn.back-btn:hover { background:#1e2233; color:#e2e8f0; }
+  .tb-btn.export-btn { background:#065f46; border-color:#059669; color:#6ee7b7; }
+  .tb-btn.export-btn:hover { background:#047857; }
+  .tb-btn.export-btn:disabled { opacity:.5; cursor:wait; }
+  .tb-label { font-size:10px; color:#475569; letter-spacing:.8px; font-weight:600;
+    text-transform:uppercase; font-family:inherit; }
+  .tb-sep { width:1px; height:20px; background:#252840; flex-shrink:0; }
+  .tb-title { font-size:12px; font-weight:500; padding:5px 10px; border-radius:6px;
+    border:1px solid #3a3f5c; background:#252840; color:#e2e8f0;
+    font-family:inherit; min-width:140px; max-width:220px; }
+  .tb-title:focus { outline:none; border-color:#4f46e5; box-shadow:0 0 0 2px rgba(79,70,229,.2); }
 
   /* Panel lateral */
   .side-panel { background:#161821; border:1px solid #3a3f5c; border-radius:8px;
@@ -151,7 +154,7 @@ function loadScript(src) {
 const API = 'http://localhost:5000';
 
 // ─── EDITOR INTERNO ───────────────────────────────────────────────────────────
-function PaquetesEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo }) {
+function PaquetesEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo, idProyecto }) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initEdges);
   const [selectedId, setSelectedId] = useState(null);
@@ -314,7 +317,7 @@ function PaquetesEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo 
             </select>
             <div className="tb-sep" />
             <button className="tb-btn export-btn" onClick={exportPDF} disabled={exporting}>
-              {exporting ? '⏳ Exportando...' : '⬇ Exportar PDF'}
+              {exporting ? 'Exportando...' : 'Exportar PDF'}
             </button>
           </div>
         </Panel>
@@ -390,6 +393,7 @@ export default function DiagramaPaquetes() {
         nombreInicial={nombreInicial}
         diagramaId={diagramaId}
         tipo={tipo}
+        idProyecto={idProyecto}
       />
     </ReactFlowProvider>
   );
