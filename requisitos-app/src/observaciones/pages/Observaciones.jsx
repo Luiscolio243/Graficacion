@@ -97,9 +97,9 @@ export default function Observaciones() {
 
       {/* Estadísticas */}
       <div className="grid grid-cols-3 gap-4">
-        <StatCard titulo="Total" valor={observaciones.length} color="violet" />
-        <StatCard titulo="Con problema" valor={conProblema.length} color="orange" />
-        <StatCard titulo="Sin problema" valor={sinProblema.length} color="blue" />
+        <StatCard titulo="Total"        valor={observaciones.length} icon={<IconTotal />}  color="violet" />
+        <StatCard titulo="Con problema" valor={conProblema.length}   icon={<IconAlerta />} color="orange" />
+        <StatCard titulo="Sin problema" valor={sinProblema.length}   icon={<IconCheck />}  color="blue"   />
       </div>
 
       {/* Lista */}
@@ -173,48 +173,75 @@ export default function Observaciones() {
   );
 }
 
-/* Stat Card  */
-function StatCard({ titulo, valor, color }) {
+/* ── Icons ──────────────────────────────────────────── */
+function IconTotal() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <path d="M4 4h12v2H4V4zm0 4h12v2H4V8zm0 4h8v2H4v-2z" fill="currentColor" opacity="0.8"/>
+    </svg>
+  );
+}
+function IconAlerta() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <path d="M10 3L2 17h16L10 3z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+      <path d="M10 9v4M10 14.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  );
+}
+function IconCheck() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M7 10l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+/* ── Stat Card ──────────────────────────────────────── */
+function StatCard({ titulo, valor, icon, color }) {
   const colors = {
-    violet: { bg: "bg-violet-50",  icon: "bg-violet-100", num: "text-violet-700" },
-    orange: { bg: "bg-orange-50",  icon: "bg-orange-100", num: "text-orange-700" },
-    blue:   { bg: "bg-blue-50",    icon: "bg-blue-100",   num: "text-blue-700"   },
+    violet: { bg: "bg-violet-50", text: "text-violet-600", num: "text-violet-700" },
+    orange: { bg: "bg-orange-50", text: "text-orange-600", num: "text-orange-700" },
+    blue:   { bg: "bg-blue-50",   text: "text-blue-600",   num: "text-blue-700"   },
   };
   const c = colors[color];
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{titulo}</p>
-      <p className={`text-3xl font-bold ${c.num}`}>{valor}</p>
+      <div className={`w-9 h-9 rounded-lg ${c.bg} ${c.text} flex items-center justify-center mb-3`}>
+        {icon}
+      </div>
+      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">{titulo}</p>
+      <p className={`text-3xl font-bold mt-1 ${c.num}`}>{valor}</p>
     </div>
   );
 }
 
-/* Grupo */
+/* ── Grupo ──────────────────────────────────────────── */
 function Grupo({ titulo, color, observaciones, proyectoId, navegar, onEliminar }) {
   const dots = { orange: "bg-orange-400", violet: "bg-violet-400" };
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2 px-1">
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
         <span className={`w-2 h-2 rounded-full ${dots[color]}`} />
-        <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">{titulo}</span>
-        <span className="text-xs text-gray-400">({observaciones.length})</span>
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
+          {titulo} ({observaciones.length})
+        </span>
       </div>
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm divide-y divide-gray-100">
-        {observaciones.map((obs) => (
-          <TarjetaObservacion
-            key={obs.id_observacion}
-            obs={obs}
-            color={color}
-            onVer={() => navegar(`/app/proyectos/${proyectoId}/requerimientos/observaciones/${obs.id_observacion}`)}
-            onEliminar={() => onEliminar(obs.id_observacion)}
-          />
-        ))}
-      </div>
+      {observaciones.map((obs) => (
+        <TarjetaObservacion
+          key={obs.id_observacion}
+          obs={obs}
+          color={color}
+          onVer={() => navegar(`/app/proyectos/${proyectoId}/requerimientos/observaciones/${obs.id_observacion}`)}
+          onEliminar={() => onEliminar(obs.id_observacion)}
+        />
+      ))}
     </div>
   );
 }
 
-/* Tarjeta Observacion */
+/* ── Tarjeta Observacion ────────────────────────────── */
 function TarjetaObservacion({ obs, color, onVer, onEliminar }) {
   const accents = { orange: "border-l-orange-400", violet: "border-l-violet-400" };
   const fecha = obs.fecha_observacion
@@ -222,19 +249,27 @@ function TarjetaObservacion({ obs, color, onVer, onEliminar }) {
     : null;
 
   return (
-    <div className={`flex items-center justify-between gap-4 px-5 py-4 border-l-4 ${accents[color]}`}>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900 truncate">{obs.lugar}</p>
-        <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{obs.descripcion}</p>
-        {fecha && <p className="text-[11px] text-gray-400 mt-1">{fecha}{obs.duracion_minutos ? ` · ${obs.duracion_minutos} min` : ""}</p>}
-      </div>
-      <div className="flex items-center gap-4 flex-shrink-0">
-        <button onClick={onVer} className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors">
-          Ver detalle
-        </button>
-        <button onClick={onEliminar} className="text-xs font-medium text-gray-400 hover:text-red-500 transition-colors">
-          Eliminar
-        </button>
+    <div className={`bg-white border border-gray-200 border-l-4 ${accents[color]} rounded-xl p-5 shadow-sm`}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-900 truncate">{obs.lugar}</p>
+          <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{obs.descripcion}</p>
+          {fecha && <p className="text-[11px] text-gray-400 mt-1">{fecha}{obs.duracion_minutos ? ` · ${obs.duracion_minutos} min` : ""}</p>}
+        </div>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <button
+            onClick={onVer}
+            className="text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-2.5 py-1.5 rounded-md transition-colors"
+          >
+            Ver detalle
+          </button>
+          <button
+            onClick={onEliminar}
+            className="text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 px-2.5 py-1.5 rounded-md transition-colors"
+          >
+            Eliminar
+          </button>
+        </div>
       </div>
     </div>
   );

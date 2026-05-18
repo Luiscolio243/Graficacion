@@ -16,7 +16,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
-//  ESTILOS (idénticos al diagrama de clases + forma de carpeta) 
+// ─── ESTILOS (idénticos al diagrama de clases + forma de carpeta) ─────────────
 const styles = `
   .class-node { background:#1e2030; border:1.5px solid #3a3f5c; border-radius:6px;
     min-width:200px; font-family:'Courier New',monospace; font-size:11px; }
@@ -45,22 +45,25 @@ const styles = `
 
   /* Toolbar */
   .toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center;
-    background:#161821; border:1px solid #3a3f5c; border-radius:8px;
-    padding:8px 12px; font-family:'Courier New',monospace; }
-  .tb-btn { font-size:11px; padding:5px 12px; border-radius:5px;
-    border:1px solid #3a3f5c; background:#1e2030; color:#e2e8f0; cursor:pointer; }
-  .tb-btn:hover { background:#2d3148; }
-  .tb-btn.back-btn { background:#1e2030; border-color:#3a3f5c; color:#a0aec0; }
-  .tb-btn.back-btn:hover { background:#2d3148; color:#e2e8f0; }
-  .tb-btn.export-btn { background:#0F6E56; border-color:#1D9E75; color:#9FE1CB; }
-  .tb-btn.export-btn:hover { background:#1D9E75; }
-  .tb-btn.export-btn:disabled { opacity:0.5; cursor:wait; }
-  .tb-label { font-size:10px; color:#718096; letter-spacing:.5px; }
-  .tb-sep { width:1px; height:18px; background:#3a3f5c; }
-  .tb-title { font-size:12px; padding:4px 8px; border-radius:5px;
-    border:1px solid #3a3f5c; background:#1e2030; color:#e2e8f0;
-    font-family:'Courier New',monospace; min-width:160px; }
-  .tb-title:focus { outline:none; border-color:#378ADD; }
+    background:#1a1d2e; border:1px solid #252840; border-radius:10px;
+    padding:7px 12px; font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+    box-shadow:0 4px 16px rgba(0,0,0,.4); }
+  .tb-btn { font-size:12px; font-weight:500; padding:5px 13px; border-radius:6px;
+    border:1px solid #3a3f5c; background:#252840; color:#cbd5e1; cursor:pointer;
+    font-family:inherit; transition:background .15s,color .15s; }
+  .tb-btn:hover { background:#2d3148; color:#e2e8f0; }
+  .tb-btn.back-btn { background:transparent; border-color:#2d3148; color:#94a3b8; }
+  .tb-btn.back-btn:hover { background:#1e2233; color:#e2e8f0; }
+  .tb-btn.export-btn { background:#065f46; border-color:#059669; color:#6ee7b7; }
+  .tb-btn.export-btn:hover { background:#047857; }
+  .tb-btn.export-btn:disabled { opacity:.5; cursor:wait; }
+  .tb-label { font-size:10px; color:#475569; letter-spacing:.8px; font-weight:600;
+    text-transform:uppercase; font-family:inherit; }
+  .tb-sep { width:1px; height:20px; background:#252840; flex-shrink:0; }
+  .tb-title { font-size:12px; font-weight:500; padding:5px 10px; border-radius:6px;
+    border:1px solid #3a3f5c; background:#252840; color:#e2e8f0;
+    font-family:inherit; min-width:140px; max-width:220px; }
+  .tb-title:focus { outline:none; border-color:#4f46e5; box-shadow:0 0 0 2px rgba(79,70,229,.2); }
 
   /* Panel lateral */
   .side-panel { background:#161821; border:1px solid #3a3f5c; border-radius:8px;
@@ -87,7 +90,7 @@ const styles = `
   .p-del:hover { background:rgba(252,129,129,0.1); }
 `;
 
-// NODO PAQUETE 
+// ─── NODO PAQUETE ─────────────────────────────────────────────────────────────
 function PackageNode({ data, selected }) {
   const { name, classes = [] } = data;
   const hStyle = { background: '#378ADD', width: 8, height: 8 };
@@ -128,7 +131,7 @@ function PackageNode({ data, selected }) {
 
 const nodeTypes = { packageNode: PackageNode };
 
-// ESTILOS DE DEPENDENCIAS (flechas punteadas UML) 
+// ─── ESTILOS DE DEPENDENCIAS (flechas punteadas UML) ─────────────────────────
 const edgeStyleMap = {
   use:    { style: { stroke: '#63b3ed', strokeWidth: 1.5, strokeDasharray: '7,4' }, markerEnd: { type: 'arrowclosed', color: '#63b3ed' }, label: '«use»' },
   import: { style: { stroke: '#68d391', strokeWidth: 1.5, strokeDasharray: '7,4' }, markerEnd: { type: 'arrowclosed', color: '#68d391' }, label: '«import»' },
@@ -136,7 +139,7 @@ const edgeStyleMap = {
   access: { style: { stroke: '#f6ad55', strokeWidth: 1.5, strokeDasharray: '7,4' }, markerEnd: { type: 'arrowclosed', color: '#f6ad55' }, label: '«access»' },
 };
 
-// CARGAR SCRIPT EXTERNO 
+// ─── CARGAR SCRIPT EXTERNO ────────────────────────────────────────────────────
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     if (document.querySelector(`script[src="${src}"]`)) return resolve();
@@ -150,8 +153,8 @@ function loadScript(src) {
 
 const API = 'http://localhost:5000';
 
-// EDITOR INTERNO 
-function PaquetesEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo }) {
+// ─── EDITOR INTERNO ───────────────────────────────────────────────────────────
+function PaquetesEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo, idProyecto }) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initEdges);
   const [selectedId, setSelectedId] = useState(null);
@@ -170,7 +173,7 @@ function PaquetesEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo 
     return () => document.head.removeChild(tag);
   }, []);
 
-  // AUTOGUARDADO EN POSTGRESQL 
+  // ─── AUTOGUARDADO EN POSTGRESQL ──────────────────────────────────────────────
   useEffect(() => {
     if (!diagramaId) return;
     clearTimeout(saveTimer.current);
@@ -198,7 +201,7 @@ function PaquetesEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo 
     }, 800);
   }, [nodes, edges, nombre]);
 
-  //  EXPORTAR PDF (usa html-to-image para capturar el SVG de las flechas) 
+  // ─── EXPORTAR PDF (usa html-to-image para capturar el SVG de las flechas) ──
   async function exportPDF() {
     setExporting(true);
     setSelectedId(null);
@@ -238,7 +241,7 @@ function PaquetesEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo 
     }
   }
 
-  // LÓGICA 
+  // ─── LÓGICA ──────────────────────────────────────────────────────────────────
   const onConnect = useCallback((params) => {
     const extra = edgeStyleMap[edgeType] || edgeStyleMap.use;
     setEdges((eds) => addEdge({ ...params, type: 'smoothstep', ...extra }, eds));
@@ -314,7 +317,7 @@ function PaquetesEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo 
             </select>
             <div className="tb-sep" />
             <button className="tb-btn export-btn" onClick={exportPDF} disabled={exporting}>
-              {exporting ? '⏳ Exportando...' : '⬇ Exportar PDF'}
+              {exporting ? 'Exportando...' : 'Exportar PDF'}
             </button>
           </div>
         </Panel>
@@ -349,7 +352,7 @@ function PaquetesEditor({ initNodes, initEdges, nombreInicial, diagramaId, tipo 
   );
 }
 
-// EXPORT PRINCIPAL 
+// ─── EXPORT PRINCIPAL ─────────────────────────────────────────────────────────
 export default function DiagramaPaquetes() {
   const [searchParams] = useSearchParams();
   const id          = searchParams.get('id');
@@ -390,6 +393,7 @@ export default function DiagramaPaquetes() {
         nombreInicial={nombreInicial}
         diagramaId={diagramaId}
         tipo={tipo}
+        idProyecto={idProyecto}
       />
     </ReactFlowProvider>
   );
