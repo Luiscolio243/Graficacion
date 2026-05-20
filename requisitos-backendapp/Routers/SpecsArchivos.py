@@ -136,7 +136,7 @@ def gen_00_indice(proyecto, archivos_presentes):
     ]
     for i, (archivo, desc) in enumerate(orden, 1):
         presente = archivo in archivos_presentes
-        estado = "✓" if presente else "⚠ SIN DATOS"
+        estado = "" if presente else " SIN DATOS"
         L.append(f"{i}. **{archivo}** [{estado}]")
         L.append(f"   {desc}")
         L.append("")
@@ -196,10 +196,7 @@ def gen_00_indice(proyecto, archivos_presentes):
     L.append("")
     L.append("### Paso 3 — Instalar dependencias (script automático)")
     L.append("```bash")
-    L.append("# Windows:")
     L.append("setup.bat")
-    L.append("# Linux/Mac:")
-    L.append("bash setup.sh")
     L.append("```")
     L.append("")
     L.append("### Paso 4 — Crear tablas")
@@ -544,16 +541,17 @@ def gen_03_evidencia(session, id_proyecto):
     return "\n".join(L)
 
 
-def gen_04_diagrama_clases(session):
+def gen_04_diagrama_clases(session, id_proyecto=None):
     L = []
     L.append("# Diagrama de clases — Modelo de datos")
     L.append("")
     L.append("> **INSTRUCCIÓN PARA LA IA:** Usa estas clases como base para el modelo de la base de datos.")
     L.append("> Cada clase es una tabla. Los atributos son columnas. Las relaciones definen llaves foráneas.")
     L.append("")
-    diagramas = session.scalars(
-        select(Diagrama).where(Diagrama.tipo == 'clases')
-    ).all()
+    query = select(Diagrama).where(Diagrama.tipo == 'clases')
+    if id_proyecto:
+        query = query.where(Diagrama.id_proyecto == id_proyecto)
+    diagramas = session.scalars(query).all()
     if not diagramas:
         L.append("_Sin diagramas de clases registrados._")
         L.append("")
@@ -610,18 +608,21 @@ def gen_04_diagrama_clases(session):
                 L.append(f"- `{origen}` {rel} `{destino}`{etiqueta}")
             L.append("")
     return "\n".join(L)
-
-
-def gen_05_diagramas_uml(session):
+ 
+ 
+def gen_05_diagramas_uml(session, id_proyecto=None):
     L = []
     L.append("# Diagramas UML")
     L.append("")
-
+ 
     L.append("## Casos de uso")
     L.append("")
     L.append("> **INSTRUCCIÓN PARA LA IA:** Implementa TODOS los casos de uso listados.")
     L.append("")
-    diag_cu = session.scalars(select(Diagrama).where(Diagrama.tipo == 'casos_uso')).all()
+    query_cu = select(Diagrama).where(Diagrama.tipo == 'casos_uso')
+    if id_proyecto:
+        query_cu = query_cu.where(Diagrama.id_proyecto == id_proyecto)
+    diag_cu = session.scalars(query_cu).all()
     if not diag_cu:
         L.append("_Sin diagramas de casos de uso registrados._")
     else:
@@ -651,12 +652,15 @@ def gen_05_diagramas_uml(session):
                     tipo    = {'assoc': 'asociación', 'include': '«include»', 'extend': '«extend»', 'generalize': 'generalización'}.get(a.tipo, a.tipo)
                     L.append(f"- `{origen}` → [{tipo}] → `{destino}`")
             L.append("")
-
+ 
     L.append("## Diagramas de secuencia")
     L.append("")
     L.append("> **INSTRUCCIÓN PARA LA IA:** Implementa los flujos de mensajes exactamente como están definidos.")
     L.append("")
-    diag_seq = session.scalars(select(Diagrama).where(Diagrama.tipo == 'secuencia')).all()
+    query_seq = select(Diagrama).where(Diagrama.tipo == 'secuencia')
+    if id_proyecto:
+        query_seq = query_seq.where(Diagrama.id_proyecto == id_proyecto)
+    diag_seq = session.scalars(query_seq).all()
     if not diag_seq:
         L.append("_Sin diagramas de secuencia registrados._")
     else:
@@ -679,12 +683,15 @@ def gen_05_diagramas_uml(session):
                     self_msg = " _(self)_" if m.es_self else ""
                     L.append(f"{m.orden}. `{mapa.get(m.source_id, m.source_id)}` → `{mapa.get(m.target_id, m.target_id)}`: **{m.contenido}** [{m.tipo}]{self_msg}")
             L.append("")
-
+ 
     L.append("## Diagramas de paquetes")
     L.append("")
     L.append("> **INSTRUCCIÓN PARA LA IA:** Usa esta estructura para organizar los módulos del sistema.")
     L.append("")
-    diag_paq = session.scalars(select(Diagrama).where(Diagrama.tipo == 'paquetes')).all()
+    query_paq = select(Diagrama).where(Diagrama.tipo == 'paquetes')
+    if id_proyecto:
+        query_paq = query_paq.where(Diagrama.id_proyecto == id_proyecto)
+    diag_paq = session.scalars(query_paq).all()
     if not diag_paq:
         L.append("_Sin diagramas de paquetes registrados._")
     else:
@@ -1289,8 +1296,8 @@ def descargar_specs(id_proyecto):
                 "01_INFO_PROYECTO.md":   gen_01_info_proyecto(session, proyecto, id_proyecto),
                 "02_REQUERIMIENTOS.md":  gen_02_requerimientos(session, id_proyecto),
                 "03_EVIDENCIA.md":       gen_03_evidencia(session, id_proyecto),
-                "04_DIAGRAMA_CLASES.md": gen_04_diagrama_clases(session),
-                "05_DIAGRAMAS_UML.md":   gen_05_diagramas_uml(session),
+                "04_DIAGRAMA_CLASES.md": gen_04_diagrama_clases(session, id_proyecto),
+                "05_DIAGRAMAS_UML.md":   gen_05_diagramas_uml(session, id_proyecto),
                 "06_BACKEND_SPECS.md":   gen_06_backend(tecnicas, session, id_proyecto),
                 "07_FRONTEND_SPECS.md":  gen_07_frontend(tecnicas),
             }
