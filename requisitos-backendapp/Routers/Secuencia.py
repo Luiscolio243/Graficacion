@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
+from datetime import datetime
 from db import engine
 from Models.Diagrama import Diagrama
 from Models.SeqMensaje import SeqMensaje
@@ -87,6 +88,7 @@ def guardar_diagrama_secuencia(id_diagrama):
                 diagrama.nombre = data["nombre"]
             if "descripcion" in data:
                 diagrama.descripcion = data["descripcion"]
+            diagrama.editado_en = datetime.utcnow()
 
             # Borrar contenido anterior
             for p in session.scalars(select(SeqParticipante).where(SeqParticipante.id_diagrama == id_diagrama)).all():

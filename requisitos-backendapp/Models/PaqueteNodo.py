@@ -1,3 +1,4 @@
+from __future__ import annotations
 from Models.Base import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import Integer, String, Float, ForeignKey
@@ -21,3 +22,4 @@ class PaqueteNodo(Base):
         lazy=True,
         order_by='PaqueteNodoElemento.orden'
     )
+

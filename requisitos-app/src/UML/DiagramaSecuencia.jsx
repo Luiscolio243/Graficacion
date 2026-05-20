@@ -3,28 +3,33 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
  
 const API = "http://localhost:5000";
  
-// ESTILOS 
+// ─── ESTILOS ──────────────────────────────────────────────────────────────────
 const styles = `
   .seq-wrap { display:flex; flex-direction:column; height:100vh; background:#0f1117; font-family:'Courier New',monospace; overflow:hidden; }
  
-  .seq-toolbar { display:flex; gap:6px; flex-wrap:wrap; align-items:center;
-    background:#161821; border-bottom:1px solid #2d3148;
-    padding:8px 12px; flex-shrink:0; }
-  .tb { font-size:11px; padding:5px 12px; border-radius:5px;
-    border:1px solid #3a3f5c; background:#1e2030; color:#e2e8f0; cursor:pointer; }
-  .tb:hover { background:#2d3148; }
-  .tb.save-btn { background:#185FA5; border-color:#378ADD; color:#B5D4F4; }
-  .tb.save-btn:hover { background:#378ADD; }
+  .seq-toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+    background:#1a1d2e; border-bottom:1px solid #252840;
+    padding:7px 12px; flex-shrink:0; font-family:system-ui,-apple-system,'Segoe UI',sans-serif; }
+  .tb { font-size:12px; font-weight:500; padding:5px 13px; border-radius:6px;
+    border:1px solid #3a3f5c; background:#252840; color:#cbd5e1; cursor:pointer;
+    font-family:inherit; transition:background .15s,color .15s; }
+  .tb:hover { background:#2d3148; color:#e2e8f0; }
+  .tb.back-btn { background:transparent; border-color:#2d3148; color:#94a3b8; }
+  .tb.back-btn:hover { background:#1e2233; color:#e2e8f0; }
+  .tb.save-btn { background:#3730a3; border-color:#4338ca; color:#c7d2fe; }
+  .tb.save-btn:hover { background:#4338ca; color:#e0e7ff; }
   .tb.save-btn:disabled { opacity:.5; cursor:wait; }
-  .tb.export-btn { background:#0F6E56; border-color:#1D9E75; color:#9FE1CB; }
-  .tb.export-btn:hover { background:#1D9E75; }
-  .tb-sep { width:1px; height:18px; background:#3a3f5c; }
-  .tb-label { font-size:10px; color:#718096; letter-spacing:.5px; }
-  .tb-title { font-size:12px; padding:4px 8px; border-radius:5px;
-    border:1px solid #3a3f5c; background:#1e2030; color:#e2e8f0;
-    font-family:'Courier New',monospace; min-width:160px; }
-  .tb-title:focus { outline:none; border-color:#378ADD; }
-  .tb-saved { font-size:10px; color:#68d391; }
+  .tb.export-btn { background:#065f46; border-color:#059669; color:#6ee7b7; }
+  .tb.export-btn:hover { background:#047857; }
+  .tb.export-btn:disabled { opacity:.5; cursor:wait; }
+  .tb-sep { width:1px; height:20px; background:#252840; flex-shrink:0; }
+  .tb-label { font-size:10px; color:#475569; letter-spacing:.8px; font-weight:600;
+    text-transform:uppercase; font-family:inherit; }
+  .tb-title { font-size:12px; font-weight:500; padding:5px 10px; border-radius:6px;
+    border:1px solid #3a3f5c; background:#252840; color:#e2e8f0;
+    font-family:inherit; min-width:140px; max-width:220px; }
+  .tb-title:focus { outline:none; border-color:#4f46e5; box-shadow:0 0 0 2px rgba(79,70,229,.2); }
+  .tb-saved { font-size:11px; color:#34d399; font-weight:600; }
  
   .seq-body { display:flex; flex:1; overflow:hidden; }
  
@@ -99,7 +104,7 @@ const styles = `
   .leg-line { width:24px; height:1.5px; }
 `;
  
-// COLORES POR TIPO DE MENSAJE 
+// ─── COLORES POR TIPO DE MENSAJE ──────────────────────────────────────────────
 const MSG_COLORS = {
   sync:    '#378ADD',
   async:   '#68d391',
@@ -108,7 +113,7 @@ const MSG_COLORS = {
   destroy: '#fc8181',
 };
  
-// UTILIDADES 
+// ─── UTILIDADES ───────────────────────────────────────────────────────────────
 function genId() { return 'p' + Date.now() + Math.random().toString(36).slice(2, 6); }
 function genMsgId() { return 'm' + Date.now() + Math.random().toString(36).slice(2, 6); }
  
@@ -124,7 +129,7 @@ function loadScript(src) {
 const COL_WIDTH = 160;   // ancho de columna por participante
 const COL_PAD   = 40;    // padding izquierdo del canvas
  
-// COMPONENTE PRINCIPAL 
+// ─── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
 export default function SequenceDiagram() {
   const [searchParams] = useSearchParams();
   const id          = searchParams.get('id');
@@ -160,11 +165,11 @@ export default function SequenceDiagram() {
     </div>
   );
  
-  return <DiagramEditor initData={initData} diagramaId={id} tipo={tipo} />;
+  return <DiagramEditor initData={initData} diagramaId={id} tipo={tipo} idProyecto={idProyecto} />;
 }
  
-// EDITOR 
-function DiagramEditor({ initData, diagramaId, tipo }) {
+// ─── EDITOR ───────────────────────────────────────────────────────────────────
+function DiagramEditor({ initData, diagramaId, tipo, idProyecto }) {
   const navigate = useNavigate();
  
   const [participantes, setParticipantes] = useState(initData.participantes);
@@ -193,7 +198,7 @@ function DiagramEditor({ initData, diagramaId, tipo }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [participantes, mensajes, nombre]);
  
-  // GUARDAR 
+  // ─── GUARDAR ──────────────────────────────────────────────────────────────
   async function guardar() {
     if (!diagramaId) return;
     setGuardando(true);
@@ -210,7 +215,7 @@ function DiagramEditor({ initData, diagramaId, tipo }) {
     finally { setGuardando(false); }
   }
  
-  // EXPORTAR PDF (render programático en canvas) 
+  // ─── EXPORTAR PDF (render programático en canvas) ────────────────────────
   async function exportPDF() {
     setExporting(true);
     try {
@@ -322,7 +327,7 @@ function DiagramEditor({ initData, diagramaId, tipo }) {
     finally { setExporting(false); }
   }
  
-  // PARTICIPANTES 
+  // ─── PARTICIPANTES ────────────────────────────────────────────────────────
   function addParticipante(tipo_p) {
     const id = genId();
     const nombres = { actor:'Actor', object:'Objeto', boundary:'Boundary', control:'Control', entity:'Entity' };
@@ -360,7 +365,7 @@ function DiagramEditor({ initData, diagramaId, tipo }) {
     });
   }
  
-  // MENSAJES 
+  // ─── MENSAJES ─────────────────────────────────────────────────────────────
   function addMensaje() {
     if (participantes.length < 2) { alert('Necesitas al menos 2 participantes'); return; }
     const id = genMsgId();
@@ -398,7 +403,7 @@ function DiagramEditor({ initData, diagramaId, tipo }) {
     });
   }
  
-  // RENDER CANVAS 
+  // ─── RENDER CANVAS ────────────────────────────────────────────────────────
   // Centro X de cada participante
   function centerX(participanteId) {
     const idx = participantes.findIndex(p=>p.id===participanteId);
@@ -419,11 +424,11 @@ function DiagramEditor({ initData, diagramaId, tipo }) {
  
       {/* TOOLBAR */}
       <div className="seq-toolbar">
-        <button className="tb" onClick={() => navigate(idProyecto ? `/app/proyectos/${idProyecto}/diagramas/${tipo}` : `/app/proyectos`)}>← Volver</button>
+        <button className="tb back-btn" onClick={() => navigate(idProyecto ? `/app/proyectos/${idProyecto}/diagramas/${tipo}` : `/app/proyectos`)}>← Volver</button>
         <div className="tb-sep" />
         <input className="tb-title" value={nombre} onChange={e=>setNombre(e.target.value)} placeholder="Nombre del diagrama" />
         <button className="tb save-btn" onClick={guardar} disabled={guardando}>
-          {guardando ? '...' : '💾 Guardar'}
+          {guardando ? 'Guardando...' : 'Guardar'}
         </button>
         {guardado && <span className="tb-saved">✓ Guardado</span>}
         <div className="tb-sep" />
@@ -444,7 +449,7 @@ function DiagramEditor({ initData, diagramaId, tipo }) {
         <button className="tb" onClick={addMensaje}>+ Mensaje</button>
         <div className="tb-sep" />
         <button className="tb export-btn" onClick={exportPDF} disabled={exporting}>
-          {exporting ? '⏳...' : '⬇ PDF'}
+          {exporting ? 'Exportando...' : 'Exportar PDF'}
         </button>
       </div>
  
@@ -550,12 +555,12 @@ function DiagramEditor({ initData, diagramaId, tipo }) {
               <h4>Participante</h4>
               <div className="pf">
                 <label>Nombre</label>
-                <input value={selParticipante.nombre}
-                  onChange={e=>updateParticipante(selParticipante.id, { nombre: e.target.value })} />
+                <input value={selParticipante.nombre} onChange={e=>updateParticipante(selParticipante.id,'nombre',e.target.value)}
+                  onInput={e=>updateParticipante(selParticipante.id, 'nombre', e.target.value)} />
               </div>
               <div className="pf">
                 <label>Tipo</label>
-                <select value={selParticipante.tipo} onChange={e=>updateParticipante(selParticipante.id, { tipo: e.target.value })}>
+                <select value={selParticipante.tipo} onChange={e=>updateParticipante(selParticipante.id,'tipo',e.target.value)}>
                   <option value="object">Objeto</option>
                   <option value="actor">Actor</option>
                   <option value="boundary">Boundary</option>

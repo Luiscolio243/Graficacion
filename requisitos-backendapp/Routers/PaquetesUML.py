@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
+from datetime import datetime
 from db import engine
 from Models.Diagrama import Diagrama
 from Models.PaqueteNodo import PaqueteNodo
@@ -85,6 +86,7 @@ def guardar_diagrama_paquetes(id_diagrama):
 
             if "nombre" in data:
                 diagrama.nombre = data["nombre"]
+            diagrama.editado_en = datetime.utcnow()
 
             # Borrar nodos y aristas anteriores
             for nodo in session.scalars(select(PaqueteNodo).where(PaqueteNodo.id_diagrama == id_diagrama)).all():

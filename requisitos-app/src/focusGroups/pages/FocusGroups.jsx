@@ -4,10 +4,10 @@ import { useParams, useNavigate } from "react-router-dom";
 const BASE_URL = "http://127.0.0.1:5000";
 
 const ESTADO_CONFIG = {
-  planificado: { dot: "bg-blue-400",    border: "border-l-blue-400",    badge: "bg-blue-50 text-blue-700 border-blue-200",         label: "Planificado" },
-  en_progreso: { dot: "bg-amber-400",   border: "border-l-amber-400",   badge: "bg-amber-50 text-amber-700 border-amber-200",      label: "En progreso" },
-  realizado:   { dot: "bg-emerald-400", border: "border-l-emerald-400", badge: "bg-emerald-50 text-emerald-700 border-emerald-200", label: "Realizado"   },
-  cancelado:   { dot: "bg-red-400",     border: "border-l-red-400",     badge: "bg-red-50 text-red-700 border-red-200",            label: "Cancelado"   },
+  planificado: { dot: "bg-blue-400",    border: "border-l-blue-400",    badge: "bg-blue-50 text-blue-700 border-blue-200",       label: "Planificado"  },
+  en_progreso: { dot: "bg-amber-400",   border: "border-l-amber-400",   badge: "bg-amber-50 text-amber-700 border-amber-200",    label: "En progreso"  },
+  realizado:   { dot: "bg-emerald-400", border: "border-l-emerald-400", badge: "bg-emerald-50 text-emerald-700 border-emerald-200", label: "Realizado"  },
+  cancelado:   { dot: "bg-red-400",     border: "border-l-red-400",     badge: "bg-red-50 text-red-700 border-red-200",          label: "Cancelado"    },
 };
 
 export default function FocusGroups() {
@@ -100,10 +100,10 @@ export default function FocusGroups() {
 
       {/* Estadísticas */}
       <div className="grid grid-cols-4 gap-4">
-        <StatCard titulo="Total"        valor={focusGroups.length}           color="gray"    />
-        <StatCard titulo="Planificados" valor={porEstado.planificado.length} color="blue"    />
-        <StatCard titulo="En progreso"  valor={porEstado.en_progreso.length} color="amber"   />
-        <StatCard titulo="Realizados"   valor={porEstado.realizado.length}   color="emerald" />
+        <StatCard titulo="Total"        valor={focusGroups.length}           icon={<IconTotal />}     color="gray"    />
+        <StatCard titulo="Planificados" valor={porEstado.planificado.length} icon={<IconCalendario />} color="blue"   />
+        <StatCard titulo="En progreso"  valor={porEstado.en_progreso.length} icon={<IconReloj />}     color="amber"   />
+        <StatCard titulo="Realizados"   valor={porEstado.realizado.length}   icon={<IconCheck />}     color="emerald" />
       </div>
 
       {/* Lista */}
@@ -125,7 +125,6 @@ export default function FocusGroups() {
                 key={estado}
                 estado={estado}
                 focusGroups={porEstado[estado]}
-                idProyecto={id}
                 onVer={setDetalle}
                 onEliminar={setModalEliminar}
               />
@@ -138,10 +137,8 @@ export default function FocusGroups() {
       {detalle && (
         <ModalDetalle
           fg={detalle}
-          idProyecto={id}
           onClose={() => setDetalle(null)}
           onEliminar={(id_fg) => { setModalEliminar(id_fg); setDetalle(null); }}
-          onEditar={(id_fg) => navegar(`/app/proyectos/${id}/requerimientos/focus-groups/${id_fg}/editar`)}
         />
       )}
 
@@ -176,91 +173,130 @@ export default function FocusGroups() {
   );
 }
 
-/* Stat Card */
-function StatCard({ titulo, valor, color }) {
-  const nums = { gray: "text-gray-700", blue: "text-blue-700", amber: "text-amber-700", emerald: "text-emerald-700" };
+/* ── Icons ──────────────────────────────────────────── */
+function IconTotal() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <path d="M4 4h12v2H4V4zm0 4h12v2H4V8zm0 4h8v2H4v-2z" fill="currentColor" opacity="0.8"/>
+    </svg>
+  );
+}
+function IconCalendario() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M3 8h14M7 3v3M13 3v3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+    </svg>
+  );
+}
+function IconReloj() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M10 6v4l2.5 2.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+    </svg>
+  );
+}
+function IconCheck() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M7 10l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+/* ── Stat Card ──────────────────────────────────────── */
+function StatCard({ titulo, valor, icon, color }) {
+  const colors = {
+    gray:    { bg: "bg-gray-100",    text: "text-gray-600",    num: "text-gray-700"    },
+    blue:    { bg: "bg-blue-50",     text: "text-blue-600",    num: "text-blue-700"    },
+    amber:   { bg: "bg-amber-50",    text: "text-amber-600",   num: "text-amber-700"   },
+    emerald: { bg: "bg-emerald-50",  text: "text-emerald-600", num: "text-emerald-700" },
+  };
+  const c = colors[color];
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{titulo}</p>
-      <p className={`text-3xl font-bold ${nums[color]}`}>{valor}</p>
+      <div className={`w-9 h-9 rounded-lg ${c.bg} ${c.text} flex items-center justify-center mb-3`}>
+        {icon}
+      </div>
+      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">{titulo}</p>
+      <p className={`text-3xl font-bold mt-1 ${c.num}`}>{valor}</p>
     </div>
   );
 }
 
-/* Grupo por estado  */
-function Grupo({ estado, focusGroups, idProyecto, onVer, onEliminar }) {
+/* ── Grupo por estado ───────────────────────────────── */
+function Grupo({ estado, focusGroups, onVer, onEliminar }) {
   const cfg = ESTADO_CONFIG[estado] ?? ESTADO_CONFIG.planificado;
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2 px-1">
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
         <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
-        <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">{cfg.label}</span>
-        <span className="text-xs text-gray-400">({focusGroups.length})</span>
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
+          {cfg.label} ({focusGroups.length})
+        </span>
       </div>
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm divide-y divide-gray-100">
-        {focusGroups.map((fg) => (
-          <TarjetaFG
-            key={fg.id_focus_group}
-            fg={fg}
-            idProyecto={idProyecto}
-            onVer={() => onVer(fg)}
-            onEliminar={() => onEliminar(fg.id_focus_group)}
-          />
-        ))}
-      </div>
+      {focusGroups.map((fg) => (
+        <TarjetaFG
+          key={fg.id_focus_group}
+          fg={fg}
+          onVer={() => onVer(fg)}
+          onEliminar={() => onEliminar(fg.id_focus_group)}
+        />
+      ))}
     </div>
   );
 }
 
-/* Tarjeta FG  */
-function TarjetaFG({ fg, idProyecto, onVer, onEliminar }) {
-  const navegar = useNavigate();
+/* ── Tarjeta FG ─────────────────────────────────────── */
+function TarjetaFG({ fg, onVer, onEliminar }) {
   const cfg = ESTADO_CONFIG[fg.estado] ?? ESTADO_CONFIG.planificado;
   const fecha = fg.fecha
     ? new Date(fg.fecha).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" })
     : null;
 
   return (
-    <div className={`flex items-start justify-between gap-4 px-5 py-4 border-l-4 ${cfg.border}`}>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900 truncate">{fg.titulo}</p>
-        {fg.objetivo && (
-          <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{fg.objetivo}</p>
-        )}
-        <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ${cfg.badge}`}>
-            {cfg.label}
-          </span>
-          {fg.tipo_media && (
-            <span className="text-[11px] text-gray-400 capitalize">{fg.tipo_media}</span>
+    <div className={`bg-white border border-gray-200 border-l-4 ${cfg.border} rounded-xl p-5 shadow-sm`}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-900 truncate">{fg.titulo}</p>
+          {fg.objetivo && (
+            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{fg.objetivo}</p>
           )}
-          <span className="text-[11px] text-gray-400">{fg.total_participantes} participantes</span>
-          <span className="text-[11px] text-gray-400">{fg.total_temas} temas</span>
-          {fecha && <span className="text-[11px] text-gray-400">{fecha}</span>}
+          <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ${cfg.badge}`}>
+              {cfg.label}
+            </span>
+            {fg.tipo_media && (
+              <span className="text-[11px] text-gray-400 capitalize">{fg.tipo_media}</span>
+            )}
+            <span className="text-[11px] text-gray-400">{fg.total_participantes} participantes</span>
+            <span className="text-[11px] text-gray-400">{fg.total_temas} temas</span>
+            {fecha && <span className="text-[11px] text-gray-400">{fecha}</span>}
+          </div>
         </div>
-      </div>
-      <div className="flex items-center gap-3 flex-shrink-0 pt-0.5">
-        <button onClick={onVer}
-          className="text-xs font-medium text-gray-500 hover:text-gray-800 transition-colors">
-          Ver
-        </button>
-        <button
-          onClick={() => navegar(`/app/proyectos/${idProyecto}/requerimientos/focus-groups/${fg.id_focus_group}/editar`)}
-          className="text-xs font-medium text-green-600 hover:text-green-800 transition-colors"
-        >
-          Editar
-        </button>
-        <button onClick={onEliminar}
-          className="text-xs font-medium text-gray-400 hover:text-red-500 transition-colors">
-          Eliminar
-        </button>
+        <div className="flex items-center gap-1 flex-shrink-0 pt-0.5">
+          <button
+            onClick={onVer}
+            className="text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-2.5 py-1.5 rounded-md transition-colors"
+          >
+            Ver
+          </button>
+          <button
+            onClick={onEliminar}
+            className="text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 px-2.5 py-1.5 rounded-md transition-colors"
+          >
+            Eliminar
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-/* Modal Detalle  */
-function ModalDetalle({ fg, onClose, onEliminar, onEditar }) {
+/* ── Modal Detalle ──────────────────────────────────── */
+function ModalDetalle({ fg, onClose, onEliminar }) {
   const cfg = ESTADO_CONFIG[fg.estado] ?? ESTADO_CONFIG.planificado;
   const fecha = fg.fecha
     ? new Date(fg.fecha).toLocaleDateString("es-MX", { day: "2-digit", month: "long", year: "numeric" })
@@ -292,6 +328,8 @@ function ModalDetalle({ fg, onClose, onEliminar, onEditar }) {
         </div>
 
         <div className="p-6 space-y-5">
+
+          {/* Stats */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-gray-50 rounded-lg px-4 py-3 text-center">
               <p className="text-2xl font-bold text-gray-900">{fg.total_participantes}</p>
@@ -303,6 +341,7 @@ function ModalDetalle({ fg, onClose, onEliminar, onEditar }) {
             </div>
           </div>
 
+          {/* Objetivo */}
           {fg.objetivo && (
             <div>
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Objetivo</p>
@@ -310,6 +349,7 @@ function ModalDetalle({ fg, onClose, onEliminar, onEditar }) {
             </div>
           )}
 
+          {/* Conclusiones */}
           {fg.conclusiones?.length > 0 && (
             <div>
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Conclusiones</p>
@@ -326,6 +366,7 @@ function ModalDetalle({ fg, onClose, onEliminar, onEditar }) {
             </div>
           )}
 
+          {/* Transcripción */}
           {fg.transcripcion && (
             <div>
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Transcripción / Notas</p>
@@ -341,10 +382,6 @@ function ModalDetalle({ fg, onClose, onEliminar, onEditar }) {
           <button onClick={onClose}
             className="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition text-sm">
             Cerrar
-          </button>
-          <button onClick={() => onEditar(fg.id_focus_group)}
-            className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">
-            Editar
           </button>
           <button onClick={() => onEliminar(fg.id_focus_group)}
             className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm">
